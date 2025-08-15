@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright(C) 2024-2025 Zhihe Computing Technology (Shenzhen) Co., Ltd.
+
+config CPU_ZHXTC9
+	bool
+	select ARCH_EARLY_INIT_R
+	select SYS_CACHE_SHIFT_6
+	select CPU
+	select CPU_RISCV
+	select RISCV_TIMER

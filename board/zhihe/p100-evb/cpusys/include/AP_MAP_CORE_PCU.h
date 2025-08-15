@@ -1,0 +1,38 @@
+/*
+ * Copyright(C) 2025 Zhihe Computing Technology (Shenzhen) Co., Ltd.
+ */
+
+#ifndef __AP_MAP_CORE_PCU_OFFSET_H__
+#define __AP_MAP_CORE_PCU_OFFSET_H__
+
+#include "AP_MAP_CORE_COMMON.h"
+
+#define AP_CORE_PCU_DELAY_TIME(core) AP_CORE_PCU_ADDR(core,0x00)
+#define AP_CORE_PCU_DELAY_TIME_STEP(core) AP_CORE_PCU_ADDR(core,0x04)
+#define AP_CORE_PCU_SW_LPREQ(core) AP_CORE_PCU_ADDR(core,0x08)
+#define AP_CORE_PCU_SW_LPSTATE(core) AP_CORE_PCU_ADDR(core,0x0c)
+#define AP_CORE_PCU_SW_LPS_ACTIVE(core) AP_CORE_PCU_ADDR(core,0x10)
+#define AP_CORE_PCU_SW_LPS_HWSTATE(core) AP_CORE_PCU_ADDR(core,0x14)
+#define AP_CORE_PCU_LPSTS_DEVICE(core) AP_CORE_PCU_ADDR(core,0x18)
+#define AP_CORE_PCU_LPSTS_BPC(core) AP_CORE_PCU_ADDR(core,0x1c)
+#define AP_CORE_PCU_IER(core) AP_CORE_PCU_ADDR(core,0x24)
+#define AP_CORE_PCU_ICR(core) AP_CORE_PCU_ADDR(core,0x28)
+#define AP_CORE_PCU_RISR(core) AP_CORE_PCU_ADDR(core,0x2c)
+#define AP_CORE_PCU_ISR(core) AP_CORE_PCU_ADDR(core,0x30)
+#define AP_CORE_PCU_RECOVERY_SW_ON(core) AP_CORE_PCU_ADDR(core,0x34)
+#define AP_CORE_PCU_RECOVERY_SW_OFF(core) AP_CORE_PCU_ADDR(core,0x38)
+#define AP_CORE_PCU_RECOVERY_HW_ON(core) AP_CORE_PCU_ADDR(core,0x40)
+#define AP_CORE_PCU_RECOVERY_HW_OFF(core) AP_CORE_PCU_ADDR(core,0x44)
+#define AP_CORE_PCU_CUR_STATE(core) AP_CORE_PCU_ADDR(core,0x48)
+#define AP_CORE_PCU_MST_REQ(core) AP_CORE_PCU_ADDR(core,0x4c)
+#define AP_CORE_PCU_MST_STATE(core) AP_CORE_PCU_ADDR(core,0x50)
+#define AP_CORE_PCU_MST_ACCEPT(core) AP_CORE_PCU_ADDR(core,0x54)
+#define AP_CORE_PCU_MST_DENY(core) AP_CORE_PCU_ADDR(core,0x58)
+#define AP_CORE_PCU_BPC_REQ(core) AP_CORE_PCU_ADDR(core,0x5c)
+#define AP_CORE_PCU_BPC_STATE(core) AP_CORE_PCU_ADDR(core,0x60)
+#define AP_CORE_PCU_BPC_ACCEPT(core) AP_CORE_PCU_ADDR(core,0x64)
+#define AP_CORE_PCU_SOFT_STATE(core) AP_CORE_PCU_ADDR(core,0x68)
+#define AP_CORE_PCU_DEVICE_ENABLE_HIGH2LOW(core) AP_CORE_PCU_ADDR(core,0x6c)
+#define AP_CORE_PCU_DEVICE_ENABLE_LOW2HIGH(core) AP_CORE_PCU_ADDR(core,0x70)
+
+#endif

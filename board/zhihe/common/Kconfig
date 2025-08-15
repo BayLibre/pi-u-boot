@@ -1,0 +1,12 @@
+config ZHIHE_MMC_OP_SUPPORT
+	depends on MMC
+	bool "Configure Zhihe MMC operation support"
+	default n
+	help
+		Configure the Zhihe MMC operation support.
+
+config ZHIHE_EFUSE_CMD_SUPPORT
+	bool "Configure Zhihe efuse cmd line support"
+	default n
+	help
+		Configure Zhihe efuse cmd line support

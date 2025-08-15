@@ -1,0 +1,76 @@
+/dts-v1/;
+
+/ {
+	description = "ZhiHe A200 Boot FIT image";
+	#address-cells = <1>;
+ 
+	images {
+		fdt-1 {
+			description = "Device Tree";
+			data = /incbin/("replace-path/replace-dtb");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "none";
+			load = <0x1ff00000>;
+			invalid_hash {
+				algo = "sha256";
+			};
+		};
+
+		opensbi-1 {
+			description = "RISC-V OpenSBI";
+			data = /incbin/("replace-path/fw_dynamic.bin.gz");
+			type = "firmware";
+			os = "opensbi";
+			arch = "riscv";
+			compression = "gzip";
+			load = <0x00000000>;
+			entry = <0x00000000>;
+			invalid_hash {
+				algo = "sha256";
+			};
+		};
+
+		u-boot-1 {
+			description = "U-Boot";
+			data = /incbin/("replace-path/u-boot.bin.gz");
+			type = "firmware";
+			os = "u-boot";
+			arch = "riscv";
+			compression = "gzip";
+			load = <0x10000000>;
+			entry = <0x10000000>;
+			invalid_hash {
+				algo = "sha256";
+			};
+		};
+
+		aon-1 {
+			description = "AON";
+			data = /incbin/("replace-path/light_aon_fpga.bin");
+			type = "firmware";
+			arch = "riscv";
+			compression = "none";
+			load = <0xff 0xffef8000>;
+			entry = <0xff 0xffef8000>;
+			invalid_hash {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		default = "conf-1";
+		conf-1 {
+			description = "Default Configuration";
+			fdt = "fdt-1";
+			firmware = "opensbi-1";
+			loadables = "u-boot-1", "aon-1";
+			invalid_signature {
+				algo = "sha256,rsa2048";
+				key-name-hint = "signature_key_name";
+				sign-images = "fdt", "firmware";
+			};
+		};
+	};
+};

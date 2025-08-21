@@ -436,34 +436,34 @@ void gpio_pin_init(void)
 	gpio_pin_cfg(GPIO0_13, PIN_SPEED_NORMAL, PIN_PN, 0x8);
 
 	// gmac1 pamdmux
-	gpio_pin_mux(GPIO1_2, 1);
-	gpio_pin_mux(GPIO1_3, 1);
-	gpio_pin_mux(GPIO1_4, 1);
-	gpio_pin_mux(GPIO1_5, 1);
-	gpio_pin_mux(GPIO1_6, 1);
-	gpio_pin_mux(GPIO1_7, 1);
-	gpio_pin_mux(GPIO1_8, 1);
-	gpio_pin_mux(GPIO1_9, 1);
-	gpio_pin_mux(GPIO1_10, 1);
-	gpio_pin_mux(GPIO1_11, 1);
-	gpio_pin_mux(GPIO1_12, 1);
-	gpio_pin_mux(GPIO1_13, 1);
-	gpio_pin_mux(GPIO1_14, 1);
-	gpio_pin_mux(GPIO1_15, 1);
-	gpio_pin_cfg(GPIO1_2, PIN_SPEED_NORMAL, PIN_PN, 0xF);
-	gpio_pin_cfg(GPIO1_3, PIN_SPEED_NORMAL, PIN_PN, 0x0);
-	gpio_pin_cfg(GPIO1_4, PIN_SPEED_NORMAL, PIN_PN, 0xF);
-	gpio_pin_cfg(GPIO1_5, PIN_SPEED_NORMAL, PIN_PN, 0xF);
-	gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0xF);
-	gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0xF);
-	gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0xF);
-	gpio_pin_cfg(GPIO1_9, PIN_SPEED_NORMAL, PIN_PN, 0x0);
-	gpio_pin_cfg(GPIO1_10, PIN_SPEED_NORMAL, PIN_PN, 0x0);
-	gpio_pin_cfg(GPIO1_11, PIN_SPEED_NORMAL, PIN_PN, 0x0);
-	gpio_pin_cfg(GPIO1_12, PIN_SPEED_NORMAL, PIN_PN, 0x0);
-	gpio_pin_cfg(GPIO1_13, PIN_SPEED_NORMAL, PIN_PN, 0x0);
-	gpio_pin_cfg(GPIO1_14, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	gpio_pin_cfg(GPIO1_15, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+	// gpio_pin_mux(GPIO1_2, 1);
+	// gpio_pin_mux(GPIO1_3, 1);
+	// gpio_pin_mux(GPIO1_4, 1);
+	// gpio_pin_mux(GPIO1_5, 1);
+	// gpio_pin_mux(GPIO1_6, 1);
+	// gpio_pin_mux(GPIO1_7, 1);
+	// gpio_pin_mux(GPIO1_8, 1);
+	// gpio_pin_mux(GPIO1_9, 1);
+	// gpio_pin_mux(GPIO1_10, 1);
+	// gpio_pin_mux(GPIO1_11, 1);
+	// gpio_pin_mux(GPIO1_12, 1);
+	// gpio_pin_mux(GPIO1_13, 1);
+	// gpio_pin_mux(GPIO1_14, 1);
+	// gpio_pin_mux(GPIO1_15, 1);
+	// gpio_pin_cfg(GPIO1_2, PIN_SPEED_NORMAL, PIN_PN, 0xF);
+	// gpio_pin_cfg(GPIO1_3, PIN_SPEED_NORMAL, PIN_PN, 0x0);
+	// gpio_pin_cfg(GPIO1_4, PIN_SPEED_NORMAL, PIN_PN, 0xF);
+	// gpio_pin_cfg(GPIO1_5, PIN_SPEED_NORMAL, PIN_PN, 0xF);
+	// gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0xF);
+	// gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0xF);
+	// gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0xF);
+	// gpio_pin_cfg(GPIO1_9, PIN_SPEED_NORMAL, PIN_PN, 0x0);
+	// gpio_pin_cfg(GPIO1_10, PIN_SPEED_NORMAL, PIN_PN, 0x0);
+	// gpio_pin_cfg(GPIO1_11, PIN_SPEED_NORMAL, PIN_PN, 0x0);
+	// gpio_pin_cfg(GPIO1_12, PIN_SPEED_NORMAL, PIN_PN, 0x0);
+	// gpio_pin_cfg(GPIO1_13, PIN_SPEED_NORMAL, PIN_PN, 0x0);
+	// gpio_pin_cfg(GPIO1_14, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+	// gpio_pin_cfg(GPIO1_15, PIN_SPEED_NORMAL, PIN_PN, 0x8);
 
 	// i2c0-1
 	gpio_pin_mux(GPIO0_24, 2);
@@ -486,12 +486,12 @@ void gpio_pin_init(void)
 	gpio_pin_cfg(GPIO2_24, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 	gpio_pin_cfg(GPIO2_25, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 	// chip debug
-	// gpio_pin_mux(GPIO1_6, 4);
-	// gpio_pin_mux(GPIO1_7, 4);
-	// gpio_pin_mux(GPIO1_8, 4);
-	// gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	gpio_pin_mux(GPIO1_6, 4);
+	gpio_pin_mux(GPIO1_7, 4);
+	gpio_pin_mux(GPIO1_8, 4);
+	gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
 	/* peri2-padmux config */
 	// uart4

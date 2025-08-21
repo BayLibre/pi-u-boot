@@ -30,7 +30,7 @@
 	"splashpos=m,m\0" \
 	"rdsize=200M\0" \
 	"ramdisk_size=204800\0" \
-	"set_bargs_pre=setenv barg_pre console=${tty_dev},${baudrate} root=${root_device} init=${init_file} rootwait rw earlycon clk_ignore_unused loglevel=${kernel_loglevel} eth=$ethaddr crashkernel=${kdump_buf}\0"
+	"set_bargs_pre=setenv barg_pre console=${tty_dev},${baudrate} root=${root_device} init=${init_file} rootwait rw earlycon clk_ignore_unused loglevel=${kernel_loglevel} crashkernel=${kdump_buf}\0"
 
 #define EVN_PARTITION \
 	"fastboot.has-slot:mmc0boot0=no\0" \
@@ -44,17 +44,7 @@
 	"fastboot.has-slot:home=no\0" \
 	"fastboot.has-slot:gpt=no\0" \
 	"fastboot.has-slot:factory=no\0" \
-	"fastboot.has-slot:uboot_env=no\0" \
-	"partitions=name=uboot_env,start=1MiB,size=512KiB,type=linux;" \
-				"name=factory,size=512KiB,type=linux;" \
-				"name=boot_a,size=256MiB,type=linux,bootable,uuid=04fb8c79-34ec-403e-ad5d-db205c76eff1;" \
-				"name=boot_b,size=256MiB,type=linux,uuid=999c1c6d-eb10-4656-a4ea-0bd5a88fa4e2;" \
-				"name=system_a,size=3GiB,type=system,uuid=ff2a7ab6-5290-4d1c-bcb4-2b60f62ea961;" \
-				"name=system_b,size=3GiB,type=system,uuid=3ee62a15-2457-4b7a-9e8e-785e1a9867f2;" \
-				"name=app_a,size=20GiB,type=linux,uuid=c2d963d5-5601-4f0b-9959-c6b543b40a41;" \
-				"name=app_b,size=1GiB,type=linux,uuid=d52e57e6-8bb7-4974-9282-fdecd05c7c92;" \
-				"name=home,size=-,type=linux,uuid=b8753fb5-3a4c-4de7-b6c0-4fd4a705f750;\0" \
-	"gpt_partition=gpt write ${devtype} ${devnum} $partitions\0"
+	"fastboot.has-slot:uboot_env=no\0"
 
 #define BOOT_FIT \
 	"bootcmd=run select_slot; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
@@ -70,8 +60,8 @@
 
 #define BOOT_NFS \
 	"nfsroot=10.0.11.6:/mnt/ssd/rootfs\0" \
-	"set_nfsbootargs=setenv bootargs ip=${ipaddr}::${gatewayip}:${netmask}:myhostname:eth0:off nfsroot=${nfsroot},nfsvers=4,rw ${barg_pre}\0" \
-	"boot_nfs=setenv autoload no; dhcp; run select_slot; setenv root_device /dev/nfs; bootaon; bootslave; run set_bargs_pre; run set_nfsbootargs; booti $kernel_addr - $dtb_addr\0"
+	"set_nfsbootargs=setenv bootargs ip=${ipaddr}::${gatewayip}:${netmask}:myhostname:eth0:off nfsroot=${nfsroot},proto=tcp,nfsvers=4,rw ${barg_pre}\0" \
+	"boot_nfs=setenv autoload no; dhcp; run select_slot; boot_aon; setenv root_device /dev/nfs; run set_bargs_pre; run set_nfsbootargs; booti $kernel_addr - $dtb_addr\0"
 
 #define CFG_EXTRA_ENV_SETTINGS \
 	EVN_COMMON \

@@ -393,7 +393,7 @@ static int do_mmc_set_mode(struct cmd_tbl *cmdtp, int flag,
 		goto out;
 	}
 
-	mmc = init_mmc_device(curr_device, true);
+	mmc = __init_mmc_device(curr_device, true, mode);
 	if (!mmc)
 		ret = CMD_RET_FAILURE;
 out:
@@ -505,7 +505,7 @@ U_BOOT_CMD(
     "    - 1: MMC_HS(emmc supported),\n"
     "    - 2: SD_HS(sd supported),\n"
     "    - 3: MMC_HS_52 (emmc supported),\n"
-    "    - 4: MMC_DDR_52(not supported),\n"
+    "    - 4: MMC_DDR_52(emmc supported),\n"
     "    - 5: UHS_SDR12(sd supported),\n"
     "    - 6: UHS_SDR25(sd supported),\n"
     "    - 7: UHS_SDR50(sd supported),\n"

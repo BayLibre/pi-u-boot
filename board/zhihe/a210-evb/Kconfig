@@ -1,0 +1,106 @@
+if TARGET_A210_EVB
+
+source board/zhihe/common/Kconfig
+
+config SYS_BOARD
+	default "a210-evb"
+
+choice
+	prompt "Configure the A210 sub platform"
+	optional
+
+config A210_EVB_ON_HAPS
+	bool "HAPS"
+
+config A210_EVB_ON_EMU
+	bool "EMU"
+
+endchoice
+
+config SYS_VENDOR
+	default "zhihe"
+
+config SYS_CPU
+	default "zhxtc9"
+
+config SYS_CONFIG_NAME
+	default "a210-evb"
+
+config ZHP100EVB_DDR_INIT
+	bool "Configure the A210 evb DDR init"
+	default y
+
+config SOC_ZHIHE_D2D
+	bool "Configure d2d"
+
+
+config ZHP100EVB_AUXDISP_CMD_SUPPORT
+        bool "Support configure auxdisp for zhihe a210-evb in uboot command line"
+        default n
+config ZHP100EVB_GPU_MAX_POWER_TEST
+        bool "Support run gpu max power test"
+        default n
+
+config ZHP100EVB_USBATE_CMD_SUPPORT
+        bool "USB C10PHY ATE unit test for zhihe a210-evb in uboot command line"
+        default n
+
+config ZHP100EVB_PCIEATE_CMD_SUPPORT
+        bool "PCIe ATE unit test for zhihe a210-evb in uboot command line"
+        default n
+
+config ZHP100EMU_LP4X
+	bool "ZHP100EMU_LP4X"
+
+config ZHP100EVB_DDR_DUMMY
+	bool "ZHP100EVB_DDR_DUMMY"
+
+config ZHP100EVB_LP4X_4266_1R_2D
+	bool "ZHP100EVB_LP4X_4266_1R_2D"
+
+config ZHP100EVB_LP4X_3733_1R_2D
+	bool "ZHP100EVB_LP4X_3733_1R_2D"
+
+config ZHP100EVB_LP4X_3200_1R_2D
+	bool "ZHP100EVB_LP4X_3200_1R_2D"
+
+config ZHP100EVB_LP4X_4266_2R_2D
+	bool "ZHP100EVB_LP4X_4266_2R_2D"
+
+config LPDDR_EYE
+        bool "DDR diagnose mode configuration"
+        def_bool n
+
+config FW_MSG_L3
+        bool "DDR firmware message L3"
+	def_bool n
+config FW_MSG_L2
+        bool "DDR firmware message L2"
+	def_bool n
+config FW_MSG_L1
+        bool "DDR firmware message L1"
+	def_bool n
+config FW_MSG_TRAIN_1D
+        bool "DDR firmware message train 1D"
+	def_bool n
+config DDR_MSG
+	def_bool y if FW_MSG_L1 || FW_MSG_L2 || FW_MSG_L3
+
+config SPL_FIT_CIPHER
+	bool "SPL_FIT_CIPHER"
+	depends on SPL
+	select FIT_CIPHER
+
+config SPL_AES
+	bool "SPL_AES"
+	depends on SPL
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select CPU_ZHXTC9
+	imply SUPPORT_OF_CONTROL
+	imply OF_CONTROL
+	imply OF_REAL
+	imply SUPPORT_SPL
+	imply SPL_CPU
+endif

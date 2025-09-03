@@ -215,7 +215,7 @@
 		};
 
 		emmc: sdhci@ffe7080000 {
-			compatible = "zhihe,p100-dwcmshc";
+			compatible = "zhihe,a2xx-dwcmshc";
 			reg = <0xff 0xe7080000 0x0 0x10000>;
 			index = <0x0>;
 			clocks = <&dummy_ahb>;

@@ -1,6 +1,0 @@
-P100 EVB
-M:	hongyi <hongyi@zhcomputing.com>
-S:	Maintained
-F:	board/zhihe/p100-evb/
-F:	configs/p100-evb_defconfig
-F:	doc/board/zhihe/p100-evb.rst

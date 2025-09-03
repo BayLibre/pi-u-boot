@@ -1,0 +1,47 @@
+#ifndef CONFIG_STUB_DDR_SS
+
+#include "define_ddr.h"
+#include "ddr_reg_define.h"
+#include "DWC_ddr_umctl2_c_struct.h"
+#include "DWC_ddr_umctl2_header.h"
+
+//A210 update by 20240311//{{{
+//DDRSS
+#define PHY_BADDR 0x04000000
+#define DDR_BADDR 0x04800000
+#define SYS_BADDR 0x04810000
+#define MT_BADDR  0x04820000
+#define SLC_BADDR 0x04840000
+#define CTRL_REG0 SYS_BADDR+0
+#define CTRL_REG1 SYS_BADDR+4
+
+//DDRSoC
+#define DDR_PHY_CH0			0x04000000
+#define DDR_CTRL_CH0		0x04800000
+#define SYSREG_DDR_CH0		0x04810000
+#define PERF_DDR_CH0		0x04811000
+#define MT_DDR_CH0			0x04820000
+#define AXISCR_DDR_CH0		0x24830000
+#define SLC_DDR_CH0			0x04840000
+#define BMU_DDR_CH0			0x04850000
+#define QOSGEN_DDR_CH0		0x04860000
+#define SYSREG_SLC_CH0		0x04861000
+#define RESERVED_DDR		0x04862000
+
+#define SLC_DUAL_SC			0x04900000
+
+#define DDR_PHY_CH1			0x05000000
+#define DDR_CTRL_CH1		0x05800000
+#define SYSREG_DDR_CH1		0x05810000
+#define PERF_DDR_CH1		0x05811000
+#define MT_DDR_CH1			0x05820000
+#define AXISCR_DDR_CH1		0x25830000
+#define SLC_DDR_CH1			0x05840000
+#define BMU_DDR_CH1			0x05850000
+#define QOSGEN_DDR_CH1		0x05860000
+#define SYSREG_SLC_CH1		0x05861000
+
+#define DDR_DCH1_OFFSET     0x1000000
+
+#endif
+

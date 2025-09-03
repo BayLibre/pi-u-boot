@@ -31,4 +31,9 @@
 #define REG_RST_REQ_EN_0			(AONSYS_RSTGEN_BASE + 0x140)
 #define WDT0_SYS_RST_REQ			(1 << 8)
 
+/*
+ * Board Common interface
+ */
+int board_get_boot_sel(void);
+int board_bootrom_fastboot(void);
 #endif

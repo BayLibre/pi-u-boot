@@ -885,7 +885,7 @@ static struct dwc2_udc memory = {
 		.bmAttributes = USB_ENDPOINT_XFER_BULK,
 
 		.ep_type = ep_bulk_out,
-#ifdef CONFIG_TARGET_P100_EVB
+#ifdef CONFIG_TARGET_A210_EVB
 		.fifo_num = 0,
 #else
 		.fifo_num = 1,

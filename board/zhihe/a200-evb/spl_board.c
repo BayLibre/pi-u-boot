@@ -31,7 +31,6 @@
 #include "include/sys_clk.h"
 #include "include/ddr.h"
 #include "rambus/soc_parameter.h"
-#include "../common/include/spl_fit.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -489,34 +488,26 @@ int spl_board_init_f(void)
 
 /* call from common/spl/spl.c:board_init_r */
 #ifdef CONFIG_FIT
-static int g_boot_spl_with_fit = 0;
+
 void board_boot_order(u32 *spl_boot_list)
 {
-	if (g_boot_spl_with_fit) {
-		/* Boot SPL with fit */
-		spl_boot_list[0] = BOOT_DEVICE_BOARD;
-	} else {
-		/* Boot EMMC */
-		spl_boot_list[0] = BOOT_DEVICE_MMC1;
-		/* Boot SPL with fit */
-		spl_boot_list[1] = BOOT_DEVICE_BOARD;
-	}
+	/* Config first boot device */
+	spl_boot_list[0] = spl_boot_device();
 
-	/* FIT Debug */
-	//spl_boot_list[2] = BOOT_DEVICE_RAM;
+	/* Boot SPL with fit */
+	spl_boot_list[1] = BOOT_DEVICE_BOOTROM;
 
 	cpu_performance_enable();
 }
 #else
 void board_boot_order(u32 *spl_boot_list)
 {
-	spl_boot_list[0] = BOOT_DEVICE_BOARD;
+	spl_boot_list[0] = BOOT_DEVICE_BOOTROM;
 	cpu_performance_enable();
 }
 #endif
 
 /* call from common/spl/spl.c:board_init_r */
-#define SOC_OM_ADDRBASE		0xFFEF018010
 void spl_board_init(void)
 {
 #ifdef CONFIG_SPL_ENV_SUPPORT
@@ -524,18 +515,6 @@ void spl_board_init(void)
 	ret = env_init();
 	if (ret == 0) {
 		ret = env_load();
-	}
-#endif
-
-#ifdef CONFIG_FIT
-	/* Boot serial check */
-	g_boot_spl_with_fit = board_spl_boot_check();
-
-	if (!g_boot_spl_with_fit) {
-		/* Fastboot run spl with fit */
-		if ((readl((void *)SOC_OM_ADDRBASE) & 0x4) == 0) {
-			g_boot_spl_with_fit = 1;
-		}
 	}
 #endif
 

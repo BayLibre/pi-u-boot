@@ -21,13 +21,21 @@ cp ${ITS_PATH}/riscv-boot.its ${ITS_FILE_BOOT}
 sed -i "s#replace-path#${IMG_PATH}#g" ${ITS_FILE_LINUX}
 sed -i "s#replace-path#${IMG_PATH}#g" ${ITS_FILE_BOOT}
 
-# Replace fdt filename
-FDT_NAME=p100-haps.dtb
+# Replace first fdt
+FDT_NAME=a210-evb.dtb
 if [ -n "$4" ]; then
     FDT_NAME=$4
 fi
-sed -i "s#replace-dtb#${FDT_NAME}#g" ${ITS_FILE_LINUX}
 sed -i "s#replace-dtb#${FDT_NAME}#g" ${ITS_FILE_BOOT}
+sed -i "s#replace-dtb#${FDT_NAME}#g" ${ITS_FILE_LINUX}
+
+# Linux ITB: Multi fdt files
+shift 4
+count=2
+for arg in "$@"; do
+    sed -i "s#replace${count}-dtb#${FDT_NAME}#g" ${ITS_FILE_LINUX}
+    count=`expr $count + 1`
+done
 
 # Generate riscv-linux.itb
 mkimage -f ${ITS_FILE_LINUX} ${OUT_LINUX_ITB}

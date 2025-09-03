@@ -11,6 +11,8 @@ ifdef CONFIG_RV_BOOK
 obj-y += sys_clk.o
 endif
 
+obj-y += board_common.o
+
 ifdef CONFIG_SPL_BUILD
 obj-y += spl_board.o
 obj-y += sys_clk.o

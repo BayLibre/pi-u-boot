@@ -35,6 +35,7 @@ static int mmc_set_signal_voltage(struct mmc *mmc, uint signal_voltage);
 #ifdef CONFIG_ZHIHE_MMC_OP_SUPPORT
 unsigned int zhihe_fixed_mmc_caps = 0;
 unsigned int zhihe_fixed_sd_caps  = 0;
+static bool zhihe_sd_voltage_switched = false;
 #endif
 
 #if !CONFIG_IS_ENABLED(DM_MMC)
@@ -686,6 +687,9 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 		err = mmc_switch_voltage(mmc, MMC_SIGNAL_VOLTAGE_180);
 		if (err)
 			return err;
+#if CONFIG_IS_ENABLED(ZHIHE_MMC_OP_SUPPORT)
+		zhihe_sd_voltage_switched = true;
+#endif
 	}
 #endif
 
@@ -1811,6 +1815,10 @@ static int sd_select_mode_and_width(struct mmc *mmc, uint card_caps)
 	const struct mode_width_tuning *mwt;
 #if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
 	bool uhs_en = (mmc->ocr & OCR_S18R) ? true : false;
+#if CONFIG_IS_ENABLED(ZHIHE_MMC_OP_SUPPORT)
+	if (!uhs_en)
+		uhs_en = zhihe_sd_voltage_switched;
+#endif
 #else
 	bool uhs_en = false;
 #endif

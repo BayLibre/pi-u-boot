@@ -1569,8 +1569,8 @@ static const struct udevice_id eqos_ids[] = {
 #endif
 #if IS_ENABLED(CONFIG_DWC_ETH_QOS_ZHIHE)
 	{
-		.compatible = "zhihe,p100-dwmac",
-		.data = (ulong)&eqos_zhihe_p100_config
+		.compatible = "zhihe,a2xx-dwmac",
+		.data = (ulong)&eqos_zhihe_a2xx_config
 	},
 #endif
 	{ }

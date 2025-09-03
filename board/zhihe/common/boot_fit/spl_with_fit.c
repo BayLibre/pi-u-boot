@@ -8,7 +8,7 @@
 #include <mapmem.h>
 #include <spl.h>
 #include <spl_load.h>
-#include "../include/spl_fit.h"
+#include "../include/pkg_header.h"
 
 static struct payload_info {
     ulong payload_addr;
@@ -73,4 +73,4 @@ static int spl_with_fit_load_image(struct spl_image_info *spl_image,
     return ret;
 }
 
-SPL_LOAD_IMAGE_METHOD("SPL_WITH_FIT", 0, BOOT_DEVICE_BOARD, spl_with_fit_load_image);
+SPL_LOAD_IMAGE_METHOD("SPL_WITH_FIT", 0, BOOT_DEVICE_BOOTROM, spl_with_fit_load_image);

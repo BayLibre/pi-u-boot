@@ -155,6 +155,7 @@ struct dw_qspi_priv {
 	u8 n_bytes;             /*  bytes per-word  */
 	int len;
 	u32 swap_data;
+	u32 rx_sample_dly;
 
 	u32 fifo_len;           /* depth of the FIFO buffer */
 	void *tx;
@@ -244,7 +245,7 @@ static void spi_hw_init(struct dw_qspi_priv *priv)
 	spi_enable_chip(priv, 0);
 	dw_write(priv, DW_SPI_IMR, 0xff);
 	dw_write(priv, DW_SPI_SER, 0x0);
-	dw_write(priv, DW_SPI_RX_SAMPLE_DLY, 0x4);
+	dw_write(priv, DW_SPI_RX_SAMPLE_DLY, priv->rx_sample_dly);
 	spi_enable_chip(priv, 1);
 
 	/*
@@ -352,6 +353,8 @@ static int dw_qspi_probe(struct udevice *bus)
 	priv->n_bytes       = 1;
 	priv->tmode = SPI_TMOD_TO; /* Tx & Rx */
 
+	/* Use 4 as a default rx sample delay */
+	priv->rx_sample_dly = dev_read_u32_default(bus, "rx-sample-delay", 4);
 	/* Basic HW init */
 	spi_hw_init(priv);
 

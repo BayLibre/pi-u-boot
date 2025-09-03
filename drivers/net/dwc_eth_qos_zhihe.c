@@ -252,7 +252,7 @@ static struct eqos_ops eqos_zhihe_ops = {
 	.eqos_get_tick_clk_rate = eqos_get_tick_clk_rate_zhihe
 };
 
-struct eqos_config __maybe_unused eqos_zhihe_p100_config = {
+struct eqos_config __maybe_unused eqos_zhihe_a2xx_config = {
 	.reg_access_always_ok = false,
 	.mdio_wait = 10000,
 	.swr_wait = 50,

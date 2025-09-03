@@ -22,7 +22,7 @@
 	"audio_ram_addr=0x32000000\0" \
 	"opensbi_file=fw_dynamic.bin\0" \
 	"kernel_file=Image\0" \
-	"dtb_file=p100-evb.dtb\0" \
+	"dtb_file=a200-evb.dtb\0" \
 	"initrd_file=initrd\0" \
 	"aon_file=light_aon_fpga.bin\0" \
 	"str_file=str.bin\0" \

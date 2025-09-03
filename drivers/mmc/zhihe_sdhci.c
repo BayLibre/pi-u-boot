@@ -11,8 +11,14 @@
 #include "zhihe_sdhci.h"
 
 #define HS400_DELAY_LANE 24
+#define HS200_DELAY_LANE 60
 
+#ifdef CONFIG_TARGET_A210_EVB
+volatile int DELAY_LANE = 99;
+#elif defined(CONFIG_TARGET_A200_EVB)
 volatile int DELAY_LANE = 50;
+#endif
+
 /* flag for cmd manual setted DELAY_LANE,non-zero is setted. auto clear in cmd */
 volatile int manual_set_delay =	0; 
 
@@ -75,6 +81,8 @@ static void sdhci_phy_3_3v_init_no_pull(struct sdhci_host *host)
 static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 {
 	uint32_t val;
+	struct mmc *mmc = (struct mmc *)host->mmc;
+
 	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
 	if (plat->pull_up_en == false) {
 		sdhci_phy_1_8v_init_no_pull(host);
@@ -93,6 +101,7 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	val &= ~(1 << UPDATE_DC);
 	sdhci_writeb(host, val, PHY_SDCLKDL_CNFG_R);
 
+	/* configure phy pads */
 	val = (1 << RXSEL) | (1 << WEAKPULL_EN) | (3 << TXSLEW_CTRL_P) | (3 << TXSLEW_CTRL_N);
 	sdhci_writew(host, val, PHY_CMDPAD_CNFG_R);
 	sdhci_writew(host, val, PHY_DATAPAD_CNFG_R);
@@ -104,14 +113,36 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	val = (1 << RXSEL) | (2 << WEAKPULL_EN) | (3 << TXSLEW_CTRL_P) | (3 << TXSLEW_CTRL_N);
 	sdhci_writew(host, val, PHY_STBPAD_CNFG_R);
 
+	if (CONFIG_IS_ENABLED(TARGET_A210_EVB) && mmc->selected_mode == MMC_DDR_52) {
+		/* enable extended delay */
+		val = sdhci_readb(host, PHY_SMPLDL_CNFG_R);
+		sdhci_writeb(host, val | (1 << EXTDLY_EN), PHY_SMPLDL_CNFG_R);
+
+		/* enable software tuning on */
+		val = sdhci_readl(host, AT_CTRL_R);
+		sdhci_writel(host, val | (1 << SW_TUNE_EN), AT_CTRL_R);
+
+		/* set rx phase value */
+		val = sdhci_readl(host, AT_STAT_R);
+		val &= (0xff << CENTER_PH_CODE);
+		val |= (0x48 << CENTER_PH_CODE);
+		sdhci_writel(host, val, AT_STAT_R);
+	}
+
 	/* enable data strobe mode */
-	sdhci_writeb(host, 0, PHY_DLL_CTRL_R);
-	sdhci_writew(host, 0, SDHCI_CLOCK_CONTROL);
-	sdhci_writew(host, 0x8000, PHY_DLLBT_CNFG_R);
-	sdhci_writeb(host, 3 << SLV_INPSEL, PHY_DLLDL_CNFG_R);
-	sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
-	sdhci_writew(host, 0x7, SDHCI_CLOCK_CONTROL);
-	sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
+	if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
+		sdhci_writeb(host, 3 << SLV_INPSEL, PHY_DLLDL_CNFG_R);
+		sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
+		sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
+	} else if (CONFIG_IS_ENABLED(TARGET_A200_EVB)) {
+		sdhci_writeb(host, 0, PHY_DLL_CTRL_R);
+		sdhci_writew(host, 0, SDHCI_CLOCK_CONTROL);
+		sdhci_writew(host, 0x8000, PHY_DLLBT_CNFG_R);
+		sdhci_writeb(host, 3 << SLV_INPSEL, PHY_DLLDL_CNFG_R);
+		sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
+		sdhci_writew(host, 0x7, SDHCI_CLOCK_CONTROL);
+		sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
+	}
 }
 
 static void sdhci_phy_3_3v_init(struct sdhci_host *host)
@@ -148,7 +179,7 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 
 	sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
 	/*set i wait*/
-	sdhci_writeb(host, 0x5, PHY_DLL_CNFG1_R);
+	sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
 }
 
 void snps_set_uhs_timing(struct sdhci_host *host)
@@ -176,8 +207,18 @@ void snps_set_uhs_timing(struct sdhci_host *host)
 		break;
 	case UHS_SDR104:
 	case MMC_HS_200:
+		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
+			restore_delay = DELAY_LANE;
+			/* default not set manual in cmd, when set in cmd, use DELAY_LANE set in cmd */
+			if (!manual_set_delay) {
+				DELAY_LANE = HS200_DELAY_LANE;
+			}
+		}
 		sdhci_phy_1_8v_init(host);
 		reg |= SDHCI_CTRL_UHS_SDR104;
+		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
+			DELAY_LANE = restore_delay; /*restore for other modes*/
+		}
 		break;
 	case MMC_HS_400:
 		restore_delay = DELAY_LANE;
@@ -197,18 +238,9 @@ void snps_set_uhs_timing(struct sdhci_host *host)
 	sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
 
 	if (mmc->selected_mode == MMC_HS_400) {
-		// //disable delay lane
-		// sdhci_writeb(host, 1 << UPDATE_DC, PHY_SDCLKDL_CNFG_R);
-		// //set delay lane
-		// sdhci_writeb(host, DELAY_LANE, PHY_SDCLKDL_DC_R);
-		// //enable delay lane
-		// reg = sdhci_readb(host, PHY_SDCLKDL_CNFG_R);
-		// reg &= ~(1 << UPDATE_DC);
-		// sdhci_writeb(host, reg, PHY_SDCLKDL_CNFG_R);
-
 		//disable auto tuning
 		reg = sdhci_readl(host, AT_CTRL_R);
-		reg &= ~1;
+		reg &= ~(1 << AT_EN);
 		sdhci_writel(host, reg, AT_CTRL_R);
 	} else {
 		sdhci_writeb(host, 0, PHY_DLLDL_CNFG_R);
@@ -447,7 +479,7 @@ static int snps_sdhci_bind(struct udevice *dev)
 	return sdhci_bind(dev, &plat->mmc, &plat->cfg);
 }
 
-static const struct udevice_id snps_sdhci_ids[] = { { .compatible = "zhihe,p100-dwcmshc" }, {} };
+static const struct udevice_id snps_sdhci_ids[] = { { .compatible = "zhihe,a2xx-dwcmshc" }, {} };
 
 U_BOOT_DRIVER(snps_sdhci_drv) = {
 	.name = "snps_sdhci",

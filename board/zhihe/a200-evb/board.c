@@ -29,13 +29,11 @@
 #if IS_ENABLED(CONFIG_FASTBOOT)
 static void fastboot_check(void)
 {
-	int boot_mode = readl((void *)SOC_OM_ADDRBASE) & 0x7;
-	if (boot_mode & BIT(2))
-		return;
-
-	run_command("env default -fa;env save", 0);
-	run_command("echo fastboot check success", 0);
-	run_command("fastboot usb 0", 0);
+	if (board_bootrom_fastboot()) {
+		run_command("env default -fa;env save", 0);
+		run_command("echo fastboot check success", 0);
+		run_command("fastboot usb 0", 0);
+	}
 }
 #endif
 

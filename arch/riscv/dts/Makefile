@@ -11,7 +11,7 @@ dtb-$(CONFIG_TARGET_SIPEED_MAIX) += k210-maix-bit.dtb
 dtb-$(CONFIG_TARGET_STARFIVE_VISIONFIVE2) += jh7110-starfive-visionfive-2.dtb
 dtb-$(CONFIG_TARGET_TH1520_LPI4A) += th1520-lichee-pi-4a.dtb
 dtb-$(CONFIG_TARGET_XILINX_MBV) += xilinx-mbv32.dtb
-dtb-$(CONFIG_TARGET_P100_EVB) += p100-haps.dtb p100-emu.dtb p100-evb.dtb p100-spl-haps.dtb p100-spl-emu.dtb
+dtb-$(CONFIG_TARGET_A210_EVB) += a210-haps.dtb a210-virt.dtb a210-evb.dtb a210-spl-haps.dtb a210-spl-emu.dtb
 dtb-$(CONFIG_TARGET_A200_EVB) += a200-evb.dtb
 
 include $(srctree)/scripts/Makefile.dts

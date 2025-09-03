@@ -10,8 +10,8 @@
 #include <mapmem.h>
 #include <spl.h>
 #include <sysinfo.h>
-#include "../include/spl_fit.h"
-#include "../include/boot_image.h"
+#include "../include/boot.h"
+#include "../include/pkg_header.h"
 
 static int fit_image_check(const void *fit, const char *image_name, int image_noffset, void *os_fdt)
 {

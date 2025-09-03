@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0
 
-config CLK_ZHIHE_P100
-	bool "clock driver for Zhihe P100"
+config CLK_ZHIHE_A210
+	bool "Clock driver for ZhiHe A210"
 	depends on CLK
 	help
 	  This clock driver adds support for clock related settings for
-	  Zhihe P100 soc.
+	  Zhihe A210 soc.

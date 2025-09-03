@@ -37,5 +37,5 @@ static int spl_rvbl_load_image(struct spl_image_info *spl_image, struct spl_boot
 	return 0;
 }
 
-SPL_LOAD_IMAGE_METHOD("RVBL", 0, BOOT_DEVICE_BOARD, spl_rvbl_load_image);
+SPL_LOAD_IMAGE_METHOD("RVBL", 0, BOOT_DEVICE_BOOTROM, spl_rvbl_load_image);
 #endif /* CONFIG_FIT */

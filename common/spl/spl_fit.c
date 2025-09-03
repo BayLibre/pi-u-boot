@@ -861,6 +861,14 @@ __weak int board_spl_fit_is_verify(void)
 }
 #endif
 
+/*
+ * Weak default function to switch fit config
+ */
+__weak const char * board_get_fit_config(void)
+{
+	return NULL;
+}
+
 /* Parse and load full fitImage in SPL */
 int spl_load_fit_image(struct spl_image_info *spl_image,
 		       const struct legacy_img_hdr *header)
@@ -873,6 +881,8 @@ int spl_load_fit_image(struct spl_image_info *spl_image,
 	ulong fw_len = 0, dt_len = 0, img_len = 0;
 	int idx, conf_noffset;
 	int ret;
+
+	fit_uname_config = board_get_fit_config();
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE
 	images.verify = board_spl_fit_is_verify();

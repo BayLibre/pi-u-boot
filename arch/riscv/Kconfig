@@ -46,8 +46,8 @@ config TARGET_TH1520_LPI4A
 config TARGET_XILINX_MBV
 	bool "Support AMD/Xilinx MicroBlaze V"
 
-config TARGET_P100_EVB
-	bool "Support ZhiHe EVB Board"
+config TARGET_A210_EVB
+	bool "Support ZhiHe A210 EVB Board"
 	select SYS_CACHE_SHIFT_6
 
 config TARGET_A200_EVB
@@ -99,7 +99,7 @@ source "board/sophgo/milkv_duo/Kconfig"
 source "board/starfive/visionfive2/Kconfig"
 source "board/thead/th1520_lpi4a/Kconfig"
 source "board/xilinx/mbv/Kconfig"
-source "board/zhihe/p100-evb/Kconfig"
+source "board/zhihe/a210-evb/Kconfig"
 source "board/zhihe/a200-evb/Kconfig"
 
 # platform-specific options below

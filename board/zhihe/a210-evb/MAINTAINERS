@@ -1,0 +1,6 @@
+A210 EVB
+M:	hongyi <hongyi@zhcomputing.com>
+S:	Maintained
+F:	board/zhihe/a210-evb/
+F:	configs/a210-evb_defconfig
+F:	doc/board/zhihe/a210-evb.rst

@@ -122,7 +122,7 @@ fi
 generate_programming_firmware $2 $3
 
 # Example1: Generate all firmware
-# generate_firmware p100-bootzero/bootzero.bin u-boot/spl/u-boot-spl.bin riscv-boot.itb
+# generate_firmware bootzero/bootzero.bin u-boot/spl/u-boot-spl.bin riscv-boot.itb
 #
 # Output files
 # bootzero-rvbl.bin u-boot-spl-rvbl.bin btz-with-spl-rvbl.bin
@@ -130,20 +130,20 @@ generate_programming_firmware $2 $3
 # Need to prepare the riscv-boot.itb file in advance
 # Before calling mkimage, please confirm that the correct file path is configured in the riscv-boot.its file
 # ----
-# cp u-boot/board/zhihe/p100-evb/riscv-boot.its .
+# cp u-boot/board/zhihe/a210-evb/riscv-boot.its .
 # gzip -kf opensbi/build/platform/generic/firmware/fw_dynamic.bin
 # gzip -kf u-boot/u-boot.bin
 # mkimage -f riscv-boot.its riscv-boot.itb
 # ----
 #
 # Example2: Generate boot firmware
-# u-boot/board/zhihe/p100-evb/script/generate_firmware.sh bootzero/bootzero.bin u-boot/spl/u-boot-spl.bin
+# u-boot/board/zhihe/a210-evb/script/generate_firmware.sh bootzero/bootzero.bin u-boot/spl/u-boot-spl.bin
 #
 # Output files
 # bootzero-rvbl.bin u-boot-spl-rvbl.bin spl-with-fit-rvbl.bin btz-with-spl-rvbl.bin
 #
 # Example3: Generate rvbl firmware
-# u-boot/board/zhihe/p100-evb/script/generate_firmware.sh rvbl spl/u-boot-spl.bin spl/u-boot-spl-rvbl.bin
+# u-boot/board/zhihe/a210-evb/script/generate_firmware.sh rvbl spl/u-boot-spl.bin spl/u-boot-spl-rvbl.bin
 #
 # Output files
 # spl/u-boot-spl-rvbl.bin

@@ -70,11 +70,30 @@
 #endif
 
 /*
+ * Board check
+ */
+enum board_type {
+    BOARD_EVB,
+    BOARD_CORE,
+    BOARD_UNKNOWN,
+};
+
+enum ddr_type {
+    DDR_4266_1Rank_2GB,
+    DDR_4266_1Rank_4GB,
+    DDR_4266_2Rank_8GB,
+    DDR_UNKNOWN,
+};
+
+/*
  * Board Common interface
  */
 int board_get_boot_sel(void);
 int board_get_die_count(void);
-
-void gpio_pin_init(void);
+int board_bootrom_fastboot(void);
+void gpio_pin_init(enum board_type board);
+void board_type_check(void);
+enum board_type board_get_type(void);
+enum ddr_type board_get_ddrtype(void);
 
 #endif

@@ -8,6 +8,7 @@
 
 #include "include/addr_defines.h"
 #include "include/board.h"
+#include <linux/delay.h>
 
 #define PAD_GRP_BASE_SET(x)          (x << 12)
 #define PAD_GRP_IDX_GET(x)           ((x >> 12) & 0xF)
@@ -400,12 +401,59 @@ int gpio_pin_cfg(pin_name_t pin_name, uint32_t slew_rate, uint32_t pullmode, uin
 	return ret;
 }
 
-void gpio_pin_init(void)
+#define AON_GPIO0_24		(0x1 << (AOGPIO0_24 - 1))	// PHY1_nRST
+#define AON_GPIO0_25		(0x1 << (AOGPIO0_25 - 1))	// PHY0_nRST
+
+static void gmac_phy_rst(void)
+{
+	//GPIO reset
+	writel(readl((void *)(AP_AON_GPIO0_BADDR + 0x4)) | AON_GPIO0_24,
+	       (void *)(AP_AON_GPIO0_BADDR + 0x4));
+	writel(readl((void *)(AP_AON_GPIO0_BADDR + 0x4)) | AON_GPIO0_25,
+	       (void *)(AP_AON_GPIO0_BADDR + 0x4));
+
+	writel(readl((void *)AP_AON_GPIO0_BADDR) & ~AON_GPIO0_24,
+	       (void *)AP_AON_GPIO0_BADDR);
+	writel(readl((void *)AP_AON_GPIO0_BADDR) & ~AON_GPIO0_25,
+	       (void *)AP_AON_GPIO0_BADDR);
+	wmb();
+	/* At least 10ms */
+	mdelay(50);
+	writel(readl((void *)AP_AON_GPIO0_BADDR) | AON_GPIO0_24,
+	       (void *)AP_AON_GPIO0_BADDR);
+	writel(readl((void *)AP_AON_GPIO0_BADDR) | AON_GPIO0_25,
+	       (void *)AP_AON_GPIO0_BADDR);
+	wmb();
+}
+
+#define AP_GPIO0_27		(0x1 << 27)	// USBtypeC_PWREN
+
+static void usbc_pwren(void)
+{
+	writel(readl((void *)(AP_GPIO0_BADDR + 0x4)) | AP_GPIO0_27,
+	       (void *)(AP_GPIO0_BADDR + 0x4));
+
+	writel(readl((void *)AP_GPIO0_BADDR) | AP_GPIO0_27,
+	       (void *)AP_GPIO0_BADDR);
+	wmb();
+}
+
+void gpio_pin_init(enum board_type board)
 {
 	/* aon-padmux config */
 
-	/* peri1-padmux config */
-	// gmac0 pamdmux
+	if (board == BOARD_UNKNOWN) {
+		debug("board type is unknown\n");
+		return;
+	}
+
+	// Common IO pamdmux
+	// uart4
+	gpio_pin_mux(GPIO2_0, 1);
+	gpio_pin_mux(GPIO2_1, 1);
+	gpio_pin_cfg(GPIO2_0, PIN_SPEED_NORMAL, PIN_PN, 0x2);
+	gpio_pin_cfg(GPIO2_1, PIN_SPEED_NORMAL, PIN_PN, 0x2);
+	// gmac0
 	gpio_pin_mux(GPIO0_0, 1);
 	gpio_pin_mux(GPIO0_1, 1);
 	gpio_pin_mux(GPIO0_2, 1);
@@ -434,117 +482,6 @@ void gpio_pin_init(void)
 	gpio_pin_cfg(GPIO0_11, PIN_SPEED_NORMAL, PIN_PN, 0x8);
 	gpio_pin_cfg(GPIO0_12, PIN_SPEED_NORMAL, PIN_PN, 0x8);
 	gpio_pin_cfg(GPIO0_13, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-
-	// gmac1 pamdmux
-	// gpio_pin_mux(GPIO1_2, 1);
-	// gpio_pin_mux(GPIO1_3, 1);
-	// gpio_pin_mux(GPIO1_4, 1);
-	// gpio_pin_mux(GPIO1_5, 1);
-	// gpio_pin_mux(GPIO1_6, 1);
-	// gpio_pin_mux(GPIO1_7, 1);
-	// gpio_pin_mux(GPIO1_8, 1);
-	// gpio_pin_mux(GPIO1_9, 1);
-	// gpio_pin_mux(GPIO1_10, 1);
-	// gpio_pin_mux(GPIO1_11, 1);
-	// gpio_pin_mux(GPIO1_12, 1);
-	// gpio_pin_mux(GPIO1_13, 1);
-	// gpio_pin_mux(GPIO1_14, 1);
-	// gpio_pin_mux(GPIO1_15, 1);
-	// gpio_pin_cfg(GPIO1_2, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_3, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_4, PIN_SPEED_NORMAL, PIN_PN, 0xC);
-	// gpio_pin_cfg(GPIO1_5, PIN_SPEED_NORMAL, PIN_PN, 0xC);
-	// gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0xC);
-	// gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0xC);
-	// gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0xC);
-	// gpio_pin_cfg(GPIO1_9, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_10, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_11, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_12, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_13, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_14, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	// gpio_pin_cfg(GPIO1_15, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-
-	// i2c0-1
-	gpio_pin_mux(GPIO0_24, 2);
-	gpio_pin_mux(GPIO0_25, 2);
-	gpio_pin_cfg(GPIO0_24, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO0_25, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// i2c1-1
-	gpio_pin_mux(GPIO0_26, 2);
-	gpio_pin_mux(GPIO0_27, 2);
-	gpio_pin_cfg(GPIO0_26, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO0_27, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// i2c2-0
-	gpio_pin_mux(GPIO0_22, 2);
-	gpio_pin_mux(GPIO0_23, 2);
-	gpio_pin_cfg(GPIO0_22, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO0_23, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// i2c3-2
-	gpio_pin_mux(GPIO2_24, 1);
-	gpio_pin_mux(GPIO2_25, 1);
-	gpio_pin_cfg(GPIO2_24, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_25, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// chip debug
-	gpio_pin_mux(GPIO1_6, 4);
-	gpio_pin_mux(GPIO1_7, 4);
-	gpio_pin_mux(GPIO1_8, 4);
-	gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-
-	/* peri2-padmux config */
-	// uart4
-	gpio_pin_mux(GPIO2_0, 1);
-	gpio_pin_mux(GPIO2_1, 1);
-	gpio_pin_cfg(GPIO2_0, PIN_SPEED_NORMAL, PIN_PN, 0x2);
-	gpio_pin_cfg(GPIO2_1, PIN_SPEED_NORMAL, PIN_PN, 0x2);
-
-	// i2c4-2
-	gpio_pin_mux(GPIO2_26, 1);
-	gpio_pin_mux(GPIO2_27, 1);
-	gpio_pin_cfg(GPIO2_26, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_27, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// i2c5-0
-	gpio_pin_mux(GPIO2_2, 5);
-	gpio_pin_mux(GPIO2_3, 5);
-	gpio_pin_cfg(GPIO2_2, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_3, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// i2c6-0
-	gpio_pin_mux(GPIO2_4, 5);
-	gpio_pin_mux(GPIO2_5, 5);
-	gpio_pin_cfg(GPIO2_4, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_5, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	// i2c7-0
-	gpio_pin_mux(GPIO2_10, 5);
-	gpio_pin_mux(GPIO2_11, 5);
-	gpio_pin_cfg(GPIO2_10, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_11, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-
-	// spi0-0
-	gpio_pin_mux(GPIO0_28, 2);
-	gpio_pin_mux(GPIO0_29, 2);
-	gpio_pin_mux(GPIO0_30, 0); // cs0 gpio
-	gpio_pin_mux(GPIO0_31, 0); // cs1 gpio
-	gpio_pin_mux(GPIO1_1, 6);
-	gpio_pin_cfg(GPIO0_28, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO0_29, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO0_30, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO0_31, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO1_1, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-
-	// spi1-1
-	gpio_pin_mux(GPIO2_17, 2);
-	gpio_pin_mux(GPIO2_18, 0); // cs0 gpio
-	gpio_pin_mux(GPIO2_19, 0); // cs1 gpio
-	gpio_pin_mux(GPIO2_21, 2);
-	gpio_pin_mux(GPIO2_22, 2);
-	gpio_pin_cfg(GPIO2_17, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_18, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_19, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_21, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-	gpio_pin_cfg(GPIO2_22, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-
 	// qspi0-0
 	gpio_pin_mux(GPIO0_18, 1);
 	gpio_pin_mux(GPIO0_19, 0); // cs0 gpio
@@ -558,20 +495,140 @@ void gpio_pin_init(void)
 	gpio_pin_cfg(GPIO0_21, PIN_SPEED_NORMAL, PIN_PN, 0x8);
 	gpio_pin_cfg(GPIO0_22, PIN_SPEED_NORMAL, PIN_PN, 0x8);
 	gpio_pin_cfg(GPIO0_23, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+	// i2c4-2
+	gpio_pin_mux(GPIO2_26, 1);
+	gpio_pin_mux(GPIO2_27, 1);
+	gpio_pin_cfg(GPIO2_26, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	gpio_pin_cfg(GPIO2_27, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	// i2c7-0
+	gpio_pin_mux(GPIO2_10, 5);
+	gpio_pin_mux(GPIO2_11, 5);
+	gpio_pin_cfg(GPIO2_10, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	gpio_pin_cfg(GPIO2_11, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
-	// qspi1-1
-	gpio_pin_mux(GPIO2_29, 0); // cs0 gpio
-	gpio_pin_mux(GPIO3_2, 1);
-	gpio_pin_mux(GPIO3_5, 1);
-	gpio_pin_mux(GPIO3_6, 1);
-	gpio_pin_mux(GPIO3_7, 1);
-	gpio_pin_mux(GPIO3_8, 1);
-	gpio_pin_cfg(GPIO2_29, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	gpio_pin_cfg(GPIO3_2, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	gpio_pin_cfg(GPIO3_5, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	gpio_pin_cfg(GPIO3_6, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	gpio_pin_cfg(GPIO3_7, PIN_SPEED_NORMAL, PIN_PN, 0x8);
-	gpio_pin_cfg(GPIO3_8, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+	/* BOARD_CORE IO pamdmux */
+	if (board == BOARD_CORE) {
+		gmac_phy_rst();
+		usbc_pwren();
 
-	/* peri3-padmux config */
+		// gmac1
+		gpio_pin_mux(GPIO1_2, 1);
+		gpio_pin_mux(GPIO1_3, 1);
+		gpio_pin_mux(GPIO1_4, 1);
+		gpio_pin_mux(GPIO1_5, 1);
+		gpio_pin_mux(GPIO1_6, 1);
+		gpio_pin_mux(GPIO1_7, 1);
+		gpio_pin_mux(GPIO1_8, 1);
+		gpio_pin_mux(GPIO1_9, 1);
+		gpio_pin_mux(GPIO1_10, 1);
+		gpio_pin_mux(GPIO1_11, 1);
+		gpio_pin_mux(GPIO1_12, 1);
+		gpio_pin_mux(GPIO1_13, 1);
+		gpio_pin_mux(GPIO1_14, 1);
+		gpio_pin_mux(GPIO1_15, 1);
+		gpio_pin_cfg(GPIO1_2, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_3, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_4, PIN_SPEED_NORMAL, PIN_PN, 0xC);
+		gpio_pin_cfg(GPIO1_5, PIN_SPEED_NORMAL, PIN_PN, 0xC);
+		gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0xC);
+		gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0xC);
+		gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0xC);
+		gpio_pin_cfg(GPIO1_9, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_10, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_11, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_12, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_13, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_14, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO1_15, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+
+		// i2c5-0
+		gpio_pin_mux(GPIO2_28, 1);
+		gpio_pin_mux(GPIO2_29, 1);
+		gpio_pin_cfg(GPIO2_28, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_29, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// i2c6-0
+		gpio_pin_mux(GPIO2_8, 5);
+		gpio_pin_mux(GPIO2_9, 5);
+		gpio_pin_cfg(GPIO2_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_9, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	}
+
+	/* BOARD_EVB IO pamdmux */
+	if (board == BOARD_EVB) {
+		// chip debug
+		gpio_pin_mux(GPIO1_6, 4);
+		gpio_pin_mux(GPIO1_7, 4);
+		gpio_pin_mux(GPIO1_8, 4);
+		gpio_pin_cfg(GPIO1_6, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO1_7, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO1_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// spi0-0
+		gpio_pin_mux(GPIO0_28, 2);
+		gpio_pin_mux(GPIO0_29, 2);
+		gpio_pin_mux(GPIO0_30, 0); // cs0 gpio
+		gpio_pin_mux(GPIO0_31, 0); // cs1 gpio
+		gpio_pin_mux(GPIO1_1, 6);
+		gpio_pin_cfg(GPIO0_28, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO0_29, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO0_30, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO0_31, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO1_1, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+
+		// spi1-1
+		gpio_pin_mux(GPIO2_17, 2);
+		gpio_pin_mux(GPIO2_18, 0); // cs0 gpio
+		gpio_pin_mux(GPIO2_19, 0); // cs1 gpio
+		gpio_pin_mux(GPIO2_21, 2);
+		gpio_pin_mux(GPIO2_22, 2);
+		gpio_pin_cfg(GPIO2_17, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_18, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_19, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_21, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_22, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+
+		// qspi1-1
+		gpio_pin_mux(GPIO2_29, 0); // cs0 gpio
+		gpio_pin_mux(GPIO3_2, 1);
+		gpio_pin_mux(GPIO3_5, 1);
+		gpio_pin_mux(GPIO3_6, 1);
+		gpio_pin_mux(GPIO3_7, 1);
+		gpio_pin_mux(GPIO3_8, 1);
+		gpio_pin_cfg(GPIO2_29, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO3_2, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO3_5, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO3_6, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO3_7, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+		gpio_pin_cfg(GPIO3_8, PIN_SPEED_NORMAL, PIN_PN, 0x8);
+
+		// i2c0-1
+		gpio_pin_mux(GPIO0_24, 2);
+		gpio_pin_mux(GPIO0_25, 2);
+		gpio_pin_cfg(GPIO0_24, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO0_25, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// i2c1-1
+		gpio_pin_mux(GPIO0_26, 2);
+		gpio_pin_mux(GPIO0_27, 2);
+		gpio_pin_cfg(GPIO0_26, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO0_27, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// i2c2-0
+		gpio_pin_mux(GPIO0_22, 2);
+		gpio_pin_mux(GPIO0_23, 2);
+		gpio_pin_cfg(GPIO0_22, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO0_23, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// i2c3-2
+		gpio_pin_mux(GPIO2_24, 1);
+		gpio_pin_mux(GPIO2_25, 1);
+		gpio_pin_cfg(GPIO2_24, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_25, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// i2c5-0
+		gpio_pin_mux(GPIO2_2, 5);
+		gpio_pin_mux(GPIO2_3, 5);
+		gpio_pin_cfg(GPIO2_2, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_3, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		// i2c6-0
+		gpio_pin_mux(GPIO2_4, 5);
+		gpio_pin_mux(GPIO2_5, 5);
+		gpio_pin_cfg(GPIO2_4, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		gpio_pin_cfg(GPIO2_5, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+	}
 }

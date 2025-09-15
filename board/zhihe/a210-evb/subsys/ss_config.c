@@ -3,6 +3,9 @@
  * (C) Copyright 2025 Zhihe Computing Technology (Shenzhen) Co., Ltd.
  */
 
+//#define DEBUG 1
+
+#include <log.h>
 #include <dm/ofnode.h>
 #include "../include/utils/utils.h"
 #include "../include/addr_defines.h"
@@ -95,7 +98,7 @@ void venc_cclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -117,7 +120,7 @@ void vdec_cclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -139,7 +142,7 @@ void vp_aclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -161,7 +164,7 @@ void g2d_cclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -183,7 +186,7 @@ void gpu_cclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -220,7 +223,7 @@ void npu_cclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -257,7 +260,7 @@ void npu_aclk_config(unsigned int freq)
 		printf("wrong freq for %s!\n", __func__);
 		break;
 	}
-	printf("%s %dMHz\n", __func__, freq);
+	debug("%s %dMHz\n", __func__, freq);
 	return;
 }
 
@@ -299,11 +302,11 @@ void top_crg_pll_config(void)
 void bpc_config(char *str, u32 base_addr, u32 bpc_ctrl)
 {
 	if ((bpc_ctrl & (1 << 0)) != 0) {
-		printf("Enter %s bpc_config sw model...\n", str);
+		debug("Enter %s bpc_config sw model...\n", str);
 		wr(base_addr + 0x000, 0x1); // 0x1 bypass
 		wr(base_addr + 0x13c, 0x18); // bpc 9000 ocgen &rset
 	} else {
-		printf("Enter %s bpc_config hw model...\n", str);
+		debug("Enter %s bpc_config hw model...\n", str);
 		wr(base_addr + 0x000, 0x0);
 	}
 	wr(base_addr + 0x004, 0x10101); // pwr venc bpc 3000| fence
@@ -319,28 +322,28 @@ void pcu_intr(char *str, u32 base_addr)
 		data = rd(base_addr + 0x2c); // read pcu intr
 	}
 	if (((data & (1 << 0)) != 0) || ((data & (1 << 3)) != 0)) {
-		printf("%s pcu_intr accept\n", str);
+		debug("%s pcu_intr accept\n", str);
 	}
 	if (((data & (1 << 1)) != 0) || ((data & (1 << 4)) != 0)) {
-		printf("%s pcu_intr deny\n", str);
+		debug("%s pcu_intr deny\n", str);
 	}
 	if (((data & (1 << 2)) != 0) || ((data & (1 << 5)) != 0)) {
-		printf("%s pcu_intr timeout\n", str);
+		debug("%s pcu_intr timeout\n", str);
 	}
 	wr(base_addr + 0x28, data); // clr cpu intr
 }
 
 void pcu_config(char *str, u32 base_addr, u32 pcu_ctrl, u32 state)
 {
-	printf("Enter %s pcu_config intr enable...\n", str);
+	debug("Enter %s pcu_config intr enable...\n", str);
 	wr(base_addr + 0x24, 0x3f); // interrupt enable
 	if ((pcu_ctrl & (1 << 0)) != 0) {
-		printf("Enter %s pcu_config: pcu reg trigger...\n", str);
+		debug("Enter %s pcu_config: pcu reg trigger...\n", str);
 		wr(base_addr + 0x0c, (state & 0x1f)); // lpstate = power on
 		wr(base_addr + 0x08, 0x1); // lqreq
 		pcu_intr(str, base_addr); // wait for accept
 	} else {
-		printf("Enter %s pcu_config: wait r2p trigger...\n", str);
+		debug("Enter %s pcu_config: wait r2p trigger...\n", str);
 	}
 }
 
@@ -355,17 +358,17 @@ void vpss_r2p_intr(u32 r2p_ctrl)
 			data = rd(AP_VP_PTRL_R2P_BADDR + 0x1c); // rd r2p intr
 		}
 		if ((data & (1 << 0)) != 0) {
-			printf("vpss_r2p_intr accept\n");
+			debug("vpss_r2p_intr accept\n");
 		}
 		if ((data & (1 << 1)) != 0) {
-			printf("vpss_r2p_intr deny\n");
+			debug("vpss_r2p_intr deny\n");
 		}
 		if ((data & (1 << 2)) != 0) {
 			printf("vpss_r2p_intr timeout\n");
 		}
 		wr(AP_VP_PTRL_R2P_BADDR + 0x14, data); // clr pwr pcu intr
 	} else {
-		printf("vpss_r2p intr bypass: pcu reg trigger...\n");
+		debug("vpss_r2p intr bypass: pcu reg trigger...\n");
 	}
 }
 
@@ -375,7 +378,7 @@ void vpss_r2p_low_power_config(u32 r2p_ctrl, u32 pctrl_en)
 	//srand((unsigned int)time(NULL));
 	//order = rand() % 2;
 	order = 0;
-	printf("Enter vpss_r2p_config: intr enable...\n");
+	debug("Enter vpss_r2p_config: intr enable...\n");
 	wr(AP_VP_PTRL_R2P_BADDR + 0x10, 0x7); // r2p intr en
 	if ((r2p_ctrl & (1 << 0)) == 0) {
 		wr(AP_VP_PTRL_R2P_BADDR + 0x08,
@@ -383,36 +386,36 @@ void vpss_r2p_low_power_config(u32 r2p_ctrl, u32 pctrl_en)
 		wr(AP_VP_PTRL_R2P_BADDR + 0x04, 0x01);
 		if ((pctrl_en & 0x7) == 0x0 || (pctrl_en & 0x7) == 0x2 || (pctrl_en & 0x7) == 0x4 ||
 			(pctrl_en & 0x7) == 0x6) {
-			printf(
+			debug(
 				"Enter vpss_r2p_config: r2p need set: trigger pwr pcu ctrl_en | pctrl_en='h%x, order='h%x\n",
 				pctrl_en, order);
 		} else if ((pctrl_en & 0x7) == 0x1) {
-			printf(
+			debug(
 				"Enter vpss_r2p_config: pwr pcu ctrl_en, venc&vdec ctrl_dis | pctrl_en='h%x, order='h%x\n",
 				pctrl_en, order);
 			pcu_intr("vp_wrap_pctrl", AP_VP_PTRL_VP_WRAP_PTRL_PCU_BADDR);
 		} else if ((pctrl_en & 0x7) == 0x3) {
-			printf(
+			debug(
 				"Enter vpss_r2p_config: pwr&venc pcu ctrl_en,vdec ctrl_dis | pctrl_en='h%x, order='h%x\n",
 				pctrl_en, order);
 			pcu_intr("vp_venc_pctrl", AP_VP_PTRL_VENC_PTRL_PCU_BADDR);
 			pcu_intr("vp_wrap_pctrl", AP_VP_PTRL_VP_WRAP_PTRL_PCU_BADDR);
 		} else if ((pctrl_en & 0x7) == 0x5) {
-			printf(
+			debug(
 				"Enter vpss_r2p_config: pwr&vdec pcu ctrl_en,venc ctrl_dis | pctrl_en='h%x, order='h%x\n",
 				pctrl_en, order);
 			pcu_intr("vp_vdec_pctrl", AP_VP_PTRL_VDEC_PTRL_PCU_BADDR);
 			pcu_intr("vp_wrap_pctrl", AP_VP_PTRL_VP_WRAP_PTRL_PCU_BADDR);
 		} else if ((pctrl_en & 0x7) == 0x7) {
-			printf("Enter vpss_r2p_config: pwr&venc&vdec pcu ctrl_en ||pctrl_en='h%x, order='h%x\n",
+			debug("Enter vpss_r2p_config: pwr&venc&vdec pcu ctrl_en ||pctrl_en='h%x, order='h%x\n",
 				   pctrl_en, order);
 			pcu_intr("vp_vdec_pctrl", AP_VP_PTRL_VDEC_PTRL_PCU_BADDR);
 			pcu_intr("vp_venc_pctrl", AP_VP_PTRL_VENC_PTRL_PCU_BADDR);
 			pcu_intr("vp_wrap_pctrl", AP_VP_PTRL_VP_WRAP_PTRL_PCU_BADDR);
 		}
-		printf("Enter vpss_r2p_config: r2p trigger pcu...\n");
+		debug("Enter vpss_r2p_config: r2p trigger pcu...\n");
 	} else {
-		printf("vpss_r2p_config bypass: pcu reg trigger...\n");
+		debug("vpss_r2p_config bypass: pcu reg trigger...\n");
 	}
 	vpss_r2p_intr(r2p_ctrl);
 }
@@ -471,7 +474,7 @@ void lp_vp_ss_ccu_init(void)
 
 void vpss_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	wr(AP_VP_PTRL_PCA_BADDR + 0x20, 0x0); // pca off
 	vpss_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, ON);
 	wr(AP_VP_SYSREG_BADDR + 0x200, 0xffffffff); // VP_CLK_EN
@@ -487,7 +490,7 @@ void vpss_cpr_init(void)
 
 void vpss_cpr_deinit(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	vpss_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, OFF);
 	wr(AP_VP_SYSREG_BADDR + 0x200, 0x0); // VP_CLK_EN
 	wr(AP_VP_SYSREG_BADDR + 0x400, 0x0); // VP_RSTN
@@ -503,7 +506,7 @@ void lp_vi_ss_ccu_init(void)
 
 void viss_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	viss_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, ON);
 	wr(AP_VI_SYSREG_BADDR + 0x200, 0xFFFFFFFF); // VI_CLK_EN
 	wr(AP_VI_SYSREG_BADDR + 0x204, 0xFFFFFFFF); // VI_CLK_EN2
@@ -516,7 +519,7 @@ void viss_cpr_init(void)
 
 void viss_cpr_deinit(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	viss_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, OFF);
 	wr(AP_VI_SYSREG_BADDR + 0x200, 0); // VI_CLK_EN
 	wr(AP_VI_SYSREG_BADDR + 0x204, 0); // VI_CLK_EN2
@@ -532,7 +535,7 @@ void lp_vo_ss_ccu_init(void)
 
 void vo_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	voss_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, ON);
 	wr(AP_VO_SYSREG_BADDR + 0x200, 0xFFFFFFFF); // VO_CLK_EN
 	wr(AP_VO_SYSREG_BADDR + 0x400, 0xFFFFFFFF); // VO_RSTN
@@ -544,7 +547,7 @@ void vo_cpr_init(void)
 
 void vo_cpr_deinit(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	voss_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, OFF);
 	wr(AP_VO_SYSREG_BADDR + 0x200, 0x0); // VO_CLK_EN
 	wr(AP_VO_SYSREG_BADDR + 0x400, 0x0); // VO_RSTN
@@ -553,23 +556,23 @@ void vo_cpr_deinit(void)
 void npu_low_power_config(u32 pcu, u32 bpc, power_mode enable)
 {
 	if (rd(NPU_INDICATOR) == 0xdead) {
-		printf("npu sramc recovering\n");
+		debug("npu sramc recovering\n");
 		bpc_config("npu_ss_bpc", AP_NPU_PCTRL_BPC_BADDR, BPC_HW_MODEL);
-		printf("npu wrapper OFF->ON\n");
+		debug("npu wrapper OFF->ON\n");
 		pcu_config("npu_ss_pcu", AP_NPU_PCTRL_PCU_BADDR, pcu, 0x1f);
-		printf("npu wrapper ON->ICG\n");
+		debug("npu wrapper ON->ICG\n");
 		pcu_config("npu_ss_pcu", AP_NPU_PCTRL_PCU_BADDR, pcu, 0xf);
 		wr(0x30846250, 0);
-		printf("npu sram iso en = 0\n");
-		printf("npu wrapper ICG->ON\n");
+		debug("npu sram iso en = 0\n");
+		debug("npu wrapper ICG->ON\n");
 		pcu_config("npu_ss_pcu", AP_NPU_PCTRL_PCU_BADDR, pcu, 0x1f);
-		printf("npu ip OFF->ON\n");
+		debug("npu ip OFF->ON\n");
 		bpc_config("npu_ip_bpc", AP_NPU_IP_BPC_BADDR, BPC_HW_MODEL);
 		pcu_config("npu_ip_pcu", AP_NPU_IP_PCU_BADDR, pcu, 0x1f);
 		wr(0x07112070, 0xffff);
 		wr(0x07112074, 0);
 		wr(0x0711207c, 1);
-		printf("0x30a00000=0x%x\n", rd(0x30a00000));
+		debug("0x30a00000=0x%x\n", rd(0x30a00000));
 	} else {
 		if (enable == ON) {
 			bpc_config("npu_ss_bpc", AP_NPU_PCTRL_BPC_BADDR, bpc);
@@ -594,7 +597,7 @@ void lp_npu_ss_ccu_init(void)
 
 void npu_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	wr(AON_NPU_PCTRL_PCA_BADDR + 0x20, 0x0); // pca off
 	npu_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, ON);
 	//cfg rst/clk register
@@ -608,7 +611,7 @@ void npu_cpr_init(void)
 
 void peri_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 
 	wr(AP_PERI0_SYSREG_BADDR + 0x200, 0xffffffff); // PERI0_CLK_EN
 	wr(AP_PERI0_SYSREG_BADDR + 0x400, 0xffffffff); // PERI0_RST_N
@@ -665,7 +668,7 @@ void lp_pcie_ss_ccu_init(void)
 
 void pcie_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 
 	wr(AP_AON_PADCTRL_BADDR + 0x414, (rd(AP_AON_PADCTRL_BADDR + 0x414) & 0xffffff0f) | (0x1 << 4));
 	wr(AP_PERI1_PADCTRL_BADDR + 0x404,
@@ -688,7 +691,7 @@ void usb_low_power_config(u32 pcu, u32 bpc, power_mode enable)
 
 void lp_usb_ss_ccu_init(void)
 {
-	printf("lp_usb_ss_ccu_init\n");
+	debug("lp_usb_ss_ccu_init\n");
 	lp_ccu_reg_init_with_gating(AP_USB_PCTRL_CFG_CCU_BADDR, USB_CCU_DLY_TIME,
 								USB_CCU_DLY_TIME_STEP);
 	lp_ccu_reg_init_with_gating(AP_USB_CTRL_AXI_CCU_BADDR, USB_CCU_DLY_TIME, USB_CCU_DLY_TIME_STEP);
@@ -698,7 +701,7 @@ void lp_usb_ss_ccu_init(void)
 
 void usb_cpr_init(unsigned int ss_cfg)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	usb_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL, ON);
 	udelay(1);
 	wr(AP_USB_CPR_BADDR + 0x4, 0xffffffff);
@@ -944,7 +947,7 @@ static u32 get_chip_id(void)
 
 void aon_cpr_init(void)
 {
-	printf("%s\n", __func__);
+	debug("%s\n", __func__);
 	u32 chip_id = get_chip_id();
 
 	aon_low_power_config(PCU_REG_TRIGGER, BPC_HW_MODEL);

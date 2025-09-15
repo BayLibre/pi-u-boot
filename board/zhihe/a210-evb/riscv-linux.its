@@ -30,7 +30,7 @@
 				algo = "sha256";
 			};
 		};
-/*
+
 		fdt-2 {
 			description = "Core Device Tree";
 			data = /incbin/("replace-path/replace2-dtb");
@@ -42,7 +42,7 @@
 				algo = "sha256";
 			};
 		};
-*/
+
 		opensbi-1 {
 			description = "RISC-V OpenSBI";
 			data = /incbin/("replace-path/fw_dynamic.bin");
@@ -115,7 +115,7 @@
 				sign-images = "kernel", "fdt", "firmware", "uboot", "aon", "initrd";
 			};
 		};
-/*
+
 		conf-dev {
 			description = "DEV Configuration";
 			fdt = "fdt-2";
@@ -131,6 +131,5 @@
 				sign-images = "kernel", "fdt", "firmware", "uboot", "aon", "initrd";
 			};
 		};
-*/
 	};
 };

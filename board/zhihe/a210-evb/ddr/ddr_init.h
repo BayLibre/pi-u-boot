@@ -8,6 +8,7 @@
 
 #define DEBUG
 #include <log.h>
+#include "../include/board.h"
 
 /* ddr timing info struct define */
 struct dram_cfg_param {
@@ -46,12 +47,6 @@ enum pstate {
     PS1,
     PS2,
     PS3,
-};
-
-enum ddr_type {
-    DDR_4266_1Rank_2GB,
-    DDR_4266_1Rank_4GB,
-    DDR_4266_2Rank_8GB,
 };
 
 /* DDR CTRL & PHY Register addr define */

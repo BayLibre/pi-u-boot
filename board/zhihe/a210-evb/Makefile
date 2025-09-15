@@ -20,6 +20,7 @@ endif
 obj-y += subsys/ss_config.o
 obj-y += subsys/ss_dwdma.o
 obj-y += board_common.o
+obj-y += adc/adc.o
 
 # Build DDR?
 #                   (ifdef CONFIG_SPL)  (ifndef CONFIG_SPL)

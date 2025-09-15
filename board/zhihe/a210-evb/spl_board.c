@@ -22,6 +22,7 @@
 #include "d2d/d2d.h"
 #endif
 #include "include/board.h"
+#include "adc/adc.h"
 #include "../common/include/boot.h"
 #include "rambus/soc_parameter.h"
 
@@ -78,6 +79,29 @@ static void sim_ddr_check(long blocksize /*MB*/, long total /*GB*/)
 }
 #endif
 
+static void pmp_init(void)
+{
+    /* TOR: 0x0 ~ 0x70100000: L=0 XWR=0x7 */
+    csr_write(pmpaddr0, 0x70200000 >> 2);
+
+    /* TOR: 0x70100000 ~ 0x80000000: L=1 XWR=0x0 */
+    csr_write(pmpaddr1, 0x80000000 >> 2);
+
+    /* 0x80000000 ~ : No permission configuration, executable and accessible */
+
+    /*
+     * PMPCFG 8~15, One address table entry uses one byte configuration attribute
+     * Attribute: 0xLUUAAXWR
+     *            L:
+     *                 0-Machine mode ignores permission configuration
+     *                 1-Lock and All modes need to check permission configuration
+     *            U:   Reserved
+     *            AA:  00-OFF 01-TOR 10-NA4(unsupported) 11-NAPOT
+     *            XWR: permission configuration
+     */
+    csr_write(pmpcfg0, 0x880F);
+}
+
 /* call from common/spl/spl.c:board_init_r */
 void board_boot_order(u32 *spl_boot_list)
 {
@@ -124,7 +148,9 @@ int spl_board_init_f(void)
 
 	ddr_low_power_init();
 
-	ret = ddr_init(ddr_determine_type());
+	board_type_check();
+
+	ret = ddr_init(board_get_ddrtype());
 	if (ret)
 		return ret;
 
@@ -132,6 +158,8 @@ int spl_board_init_f(void)
 
 	// ddr_dfmu_mt_test();
 	// ddr_dfmu_mt_test_single();
+
+	pmp_init();
 
 	return 0;
 }
@@ -184,13 +212,15 @@ void *board_spl_fit_buffer_addr(ulong fit_size, int sectors, int bl_len)
 int board_get_ddr_info(u64 *start, u64 *size)
 {
 	*start = CFG_SYS_SDRAM_BASE;
-	*size = ddr_determine_size(ddr_determine_type());
+	*size = ddr_determine_size(board_get_ddrtype());
 	return 0;
 }
 
 /* Override weak imp at common/spl/spl_fit.c */
 const char * board_get_fit_config(void)
 {
+	enum board_type type;
+
 	static char *ftds[] = {
 		"conf-evb",
 		"conf-dev"
@@ -201,8 +231,83 @@ const char * board_get_fit_config(void)
 		return NULL;
 	}
 
-	/* TODO: ADC check */
+	/* Select config by board type */
+	type = board_get_type();
+	switch(type) {
+	case BOARD_EVB:
+		return ftds[0];
+	case BOARD_CORE:
+		return ftds[1];
+	default:
+		;
+	}
 
 	return ftds[0];
 }
 
+/*
+ * Board type check
+ */
+/*
+Attention:
+The following variable must not be initialized to zero.
+This global variable is assigned in the 'f' stage and
+must persist into the 'r' stage of the SPL.
+If it is initialized to zero and becomes a BSS variable,
+it will be re-zeroed upon entering the 'r' stage, causing data loss.
+*/
+static enum board_type _board_type = BOARD_UNKNOWN;
+static enum ddr_type _ddr_type = DDR_UNKNOWN;
+
+void board_type_check(void)
+{
+	adc_init();
+
+	u64 adc_ch0_mv = adc_read(0, 16);
+	u64 adc_ch2_mv = adc_read(2, 16);
+	printf("Board check: ch0=%llumV ch2=%llumV\n", adc_ch0_mv, adc_ch2_mv);
+
+	/* BOARD_EVB ch2 (800mv ~ 100mv) */
+	if (adc_ch2_mv >= 800 && adc_ch2_mv <= 1000) {
+		_board_type = BOARD_EVB;
+	} else {
+		_board_type = BOARD_CORE;
+	}
+
+	if (_board_type == BOARD_EVB) {
+		if (adc_ch0_mv >= 0 && adc_ch0_mv <= 100) {
+			printf("Board info: bid=%d, DDR_4266_1Rank_2GB * 2\n", _board_type);
+			_ddr_type = DDR_4266_1Rank_2GB;
+		} else if (adc_ch0_mv >= 500 && adc_ch0_mv <= 700) {
+			printf("Board info: bid=%d, DDR_4266_1Rank_4GB * 2\n", _board_type);
+			_ddr_type = DDR_4266_1Rank_4GB;
+		} else if (adc_ch0_mv >= 1100 && adc_ch0_mv <= 1300) {
+			printf("Board info: bid=%d, DDR_4266_2Rank_8GB * 2\n", _board_type);
+			_ddr_type = DDR_4266_2Rank_8GB;
+		}else {
+			printf("Board info: bid=%d, ch0 value is not supported, set default DDR_4266_1Rank_2GB)\n", _board_type);
+			_ddr_type = DDR_4266_1Rank_2GB;
+		}
+	} else if (_board_type == BOARD_CORE) {
+		if (adc_ch2_mv >= 1700 && adc_ch2_mv <= 1900) {
+			printf("Board info: bid=%d, DDR_4266_1Rank_4GB * 2\n", _board_type);
+			_ddr_type = DDR_4266_1Rank_4GB;
+		} else {
+			printf("Board info: bid=%d, DDR_4266_1Rank_2GB * 2\n", _board_type);
+			_ddr_type = DDR_4266_1Rank_2GB;
+		}
+	} else {
+		printf("Board info: bid=%d, ch2 value is not supported, set default DDR_4266_1Rank_2GB)\n", _board_type);
+		_ddr_type = DDR_4266_1Rank_2GB;
+	}
+}
+
+enum board_type board_get_type(void)
+{
+	return _board_type;
+}
+
+enum ddr_type board_get_ddrtype(void)
+{
+	return _ddr_type;
+}

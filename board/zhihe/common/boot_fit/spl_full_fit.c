@@ -104,23 +104,35 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 {
     u64 start;
     u64 size;
+    const char *board_type;
+    int chosen;
+    void *fdt_uboot = find_uboot_fdt_blob();
+    if (!fdt_uboot) {
+        return;
+    }
+    debug("uboot fdt blob 0x%p\n", fdt_uboot);
 
     /* 1. Add u-boot info to os fdt for opensbi can boot to u-boot */
     spl_fdt_fixup(map_sysmem(CONFIG_SYS_LOAD_ADDR, 0), spl_image->fdt_addr);
 
     /* 2. Fixup DDR size, write to u-boot fdt */
     if (board_get_ddr_info(&start, &size) == 0) {
-        void *fdt_uboot = find_uboot_fdt_blob();
-        debug("uboot fdt blob 0x%p\n", fdt_uboot);
-
-        if (fdt_uboot) {
-            int ret = fdt_fixup_memory(fdt_uboot, start, size);
-            debug("fixup mem ret %d\n", ret);
-            if (ret) {
-                printf("Warning: failed fixup memeory\n");
-            }
+        int ret = fdt_fixup_memory(fdt_uboot, start, size);
+        debug("fixup mem ret %d\n", ret);
+        if (ret) {
+            printf("Warning: failed fixup memeory\n");
         }
     }
+
+    /* 3. Set board type pass to u-boot */
+	chosen = fdt_find_or_add_subnode(fdt_uboot, 0, "chosen");
+	if (chosen < 0) {
+		pr_err("%s: could not find/create '/chosen'\n", __func__);
+		return;
+	}
+    board_type = board_get_fit_config();
+    fdt_setprop_string(fdt_uboot, chosen,
+            "board", board_type);
 }
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE

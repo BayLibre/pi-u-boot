@@ -16,6 +16,7 @@
 #include "include/board.h"
 #include "configs/a210-evb.h"
 #include "rambus/soc_parameter.h"
+#include "../common/include/boot.h"
 
 /*
  * static functions
@@ -46,6 +47,29 @@ static void fastboot_check(void)
  */
 int board_init(void)
 {
+	const char *conf;
+	int chosen_node = 0;
+	enum board_type board = BOARD_UNKNOWN;
+
+	void *fdt_uboot = find_uboot_fdt_blob();
+	if (!fdt_uboot) {
+		printf("%s(%d) get uboot fdt blob failed.\n", __func__, __LINE__);
+		return -1;
+	}
+
+	chosen_node = fdt_path_offset(fdt_uboot, "/chosen");
+	conf = fdt_getprop(fdt_uboot, chosen_node, "board", NULL);
+	if (conf && strncmp(conf, "conf-dev", 8) == 0) {
+		board = BOARD_CORE;
+	} else if (conf && strncmp(conf, "conf-evb", 8) == 0) {
+		board = BOARD_EVB;
+	} else {
+		board = BOARD_UNKNOWN;
+	}
+	gpio_pin_init(board);
+
+	debug("%s(%d) uboot fdt blob 0x%p board-type: %s\n", __func__, __LINE__, fdt_uboot, conf);
+
 	clk_init();
 #ifdef CONFIG_ZHIHE_RAMBUS_ALGO
 	/* libsecurity.a.bin soc parameter init */
@@ -63,7 +87,6 @@ int board_init(void)
 	};
 	csi_init_soc_parameter(&soc_parameter);
 #endif
-	gpio_pin_init();
 	return 0;
 }
 

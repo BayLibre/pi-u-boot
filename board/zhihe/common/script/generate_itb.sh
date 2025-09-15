@@ -33,7 +33,10 @@ sed -i "s#replace-dtb#${FDT_NAME}#g" ${ITS_FILE_LINUX}
 shift 4
 count=2
 for arg in "$@"; do
-    sed -i "s#replace${count}-dtb#${FDT_NAME}#g" ${ITS_FILE_LINUX}
+    if [ ! -e ${IMG_PATH}/${arg} ]; then
+        arg=${FDT_NAME}
+    fi
+    sed -i "s#replace${count}-dtb#${arg}#g" ${ITS_FILE_LINUX}
     count=`expr $count + 1`
 done
 

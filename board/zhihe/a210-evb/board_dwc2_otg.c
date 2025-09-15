@@ -16,8 +16,11 @@
 
 /* USB20_0 */
 #define AP_USB20_SYSREG_BADDR 0x0008300000
+#define USB20_0_PHY_ANA_CFG  (AP_USB20_SYSREG_BADDR + 0x0)
 #define USB20_0_PHY_CFG (AP_USB20_SYSREG_BADDR + 0x4)
 #define USB20_0_PHY_CFG_DM_PULDDOWN (1 << 1)
+#define TXVREFTUNE_MASK (0xF << 17)
+#define USB20_0_PHY_ANA_CFG_HS_DV_VOLTAGE_LEVEL_POS_16_PER (0xB << 17)
 
 /* USB20_1 */
 #define USB20_1_PHY_CFG (AP_USB20_SYSREG_BADDR + 0x1004)
@@ -44,6 +47,11 @@ int board_usb_init(int index, enum usb_init_type init)
 	/* USB2_0 PHY CFG, set dm pulldown for HS */
 	val = readl((void __iomem *)USB20_0_PHY_CFG);
 	writel(val | USB20_0_PHY_CFG_DM_PULDDOWN, (void __iomem *)USB20_0_PHY_CFG);
+
+	/* Adjust High-Speed DC Level Voltage */
+	val = readl((void __iomem *)USB20_0_PHY_ANA_CFG);
+	val &= ~TXVREFTUNE_MASK;
+	writel(val | USB20_0_PHY_ANA_CFG_HS_DV_VOLTAGE_LEVEL_POS_16_PER, (void __iomem *)USB20_0_PHY_ANA_CFG);
 
 	/* USB2_1 PHY CFG, set dm pulldown for HS */
 	val = readl((void __iomem *)USB20_1_PHY_CFG);

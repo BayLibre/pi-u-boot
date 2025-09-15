@@ -8,5 +8,6 @@
 void *find_uboot_fdt_blob(void);
 u32 spl_boot_get_device(void);
 u32 spl_boot_device(void);
+const char * board_get_fit_config(void);
 
 #endif

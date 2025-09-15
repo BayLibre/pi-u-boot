@@ -798,56 +798,6 @@ void ddr_registers_dump(void)
     }
 }
 
-enum ddr_type ddr_determine_type(void)
-{
-    u32 event = 0;
-    u64 result = 0;
-    u64 scale = 439453125;
-    u32 sample_times = 10;
-
-    wr(0x00540200, rd(0x00540200) | 0x8000);
-    wr(0x00540400, rd(0x00540200) | 0x800);
-    wr(0x005a0004, 0x10);
-    wr(0x005a0004, 0x0);
-    wr(0x005a0000, 0x3);
-    wr(0x005a000c, 0x1);
-    wr(0x005a0050, 0xf);
-    wr(0x005a0054, 0xf);
-    wr(0x005a0014, 0x10004);
-    wr(0x005a0018, 0x160);
-    wr(0x005a001c, 0xe);
-
-    for (int i = 0; i < sample_times; i++, event = 0) {
-        wr(0x005a000c, 0x1001);
-        wr(0x005a0004, 0x1);
-        wr(0x005a0010, 0x1);
-        while (!(event & 0x8000)) {
-            event = rd(0x005a0020);
-        }
-        wr(0x005a0004, 0x0);
-        result += event & 0xFFF;
-    }
-    wr(0x005a0004, 0x10);
-
-    result /= sample_times;
-    result *= scale;
-    result /= 1000000000;
-
-    if (result >= 0 && result <= 100) {
-        printf("DDR_4266_1Rank_2GB * 2\n");
-        return DDR_4266_1Rank_2GB;
-    } else if (result >= 500 && result <= 700) {
-        printf("DDR_4266_1Rank_4GB * 2\n");
-        return DDR_4266_1Rank_4GB;
-    } else if (result >= 1100 && result <= 1300) {
-        printf("DDR_4266_2Rank_8GB * 2\n");
-        return DDR_4266_2Rank_8GB;
-    }else {
-        printf("ADC value=%llumV not supported\n", result);
-        return DDR_4266_1Rank_2GB;
-    }
-}
-
 u64 ddr_determine_size(enum ddr_type type)
 {
     switch(type) {

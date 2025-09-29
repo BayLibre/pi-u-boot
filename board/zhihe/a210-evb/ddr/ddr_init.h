@@ -6,7 +6,7 @@
 #ifndef __ZHIHE_DDR_INIT_H_
 #define __ZHIHE_DDR_INIT_H_
 
-#define DEBUG
+// #define DEBUG
 #include <log.h>
 #include "../include/board.h"
 

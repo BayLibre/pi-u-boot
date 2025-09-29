@@ -11,7 +11,7 @@
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
-			load = <0x1ff00000>;
+			load = <0x0c000000>;
 			invalid_hash {
 				algo = "sha256";
 			};

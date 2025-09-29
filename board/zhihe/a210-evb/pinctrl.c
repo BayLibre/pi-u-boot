@@ -5,6 +5,7 @@
 
 #include <command.h>
 #include <asm/io.h>
+#include <asm/gpio.h>
 
 #include "include/addr_defines.h"
 #include "include/board.h"
@@ -551,6 +552,18 @@ void gpio_pin_init(enum board_type board)
 		gpio_pin_mux(GPIO2_9, 5);
 		gpio_pin_cfg(GPIO2_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 		gpio_pin_cfg(GPIO2_9, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+
+		// pci-e device reset
+		gpio_pin_mux(GPIO0_30, 0);
+		unsigned int gpio;
+		int ret = gpio_lookup_name("gpio@0_30", NULL, NULL, &gpio);
+		if (ret == 0) {
+			ret = gpio_request(gpio, "cmd_gpio");
+			if (ret == 0) {
+				gpio_direction_output(gpio, 1);
+				gpio_free(gpio);
+			}
+		}
 	}
 
 	/* BOARD_EVB IO pamdmux */

@@ -110,35 +110,6 @@ static void pll_config(int speed)
     wr(SLC_DUAL_SC + 0x18, 0x10000);
 }
 
-void ddrphy_init_set_dfi_clk(unsigned int drate)
-{
-    switch (drate) {
-    case 4266:
-        pll_config(4266);
-        break;
-    case 3733:
-        pll_config(3733);
-        break;
-    case 3200:
-        pll_config(3200);
-        break;
-    case 2933:
-        pll_config(2933);
-        break;
-    case 2133:
-        pll_config(2133);
-        break;
-    case 1600:
-        pll_config(1600);
-        break;
-    case 1086:
-        pll_config(1086);
-        break;
-    default:
-        return;
-    }
-}
-
 static void ddr_ss_crg_release(void)
 {
     int rdata;
@@ -389,14 +360,11 @@ int ddr_init(enum ddr_type type)
     }
 
     unsigned int initial_drate = dram_timing->fsp_table[0];
-    printf("DDRINFO: start DDR init, data rate: %d \n", initial_drate);
+    debug("DDRINFO: start DDR init, data rate: %d \n", initial_drate);
     //broadcast mode for ddr ch0 and ch1, for future fast ddr init
     // ddr_apb_broadcast_en();
 
     /* Step1: Follow the crg up procedure */
-    // default to the frequency point 0 clock
-    ddrphy_init_set_dfi_clk(initial_drate);
-
     //ddr top crg release
     ddr_ss_crg_release();
     //slc internal crg release,ch0 and ch1
@@ -442,7 +410,7 @@ int ddr_init(enum ddr_type type)
     ddr_auto_refresh_en();
     /* Step8:  auto self refresh enable*/
 
-    printf("DDRINFO: DDR init pass!\n");
+    debug("DDRINFO: DDR init pass!\n");
 
 #endif
 

@@ -43,7 +43,7 @@ void cpuss_c908_pll_cfg(u32 freq)
             break;
         }
     }
-    printf("c908 pll locked\n");
+    debug("c908 pll locked\n");
 }
 
 void cpuss_c920_pll_cfg(u32 freq)
@@ -83,5 +83,5 @@ void cpuss_c920_pll_cfg(u32 freq)
             break;
         }
     }
-    printf("c920 pll locked\n");
+    debug("c920 pll locked\n");
 }

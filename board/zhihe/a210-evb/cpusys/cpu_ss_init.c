@@ -120,7 +120,7 @@ static void cpu_ss_pctrl_init(void)
 
 void cpu_freq_banner(void)
 {
-	printf("c908 target freq=%dMhz, c920 targe freq=%dMhz\n",
+	debug("c908 target freq=%dMhz, c920 targe freq=%dMhz\n",
 		ofnode_conf_read_int("c908-pll-freq", 1200) /
 		ofnode_conf_read_int("c908-ccu-div", 1),
 		ofnode_conf_read_int("c920-pll-freq", 2040) /
@@ -128,11 +128,11 @@ void cpu_freq_banner(void)
 	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908);
 	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
 	mdelay(2);
-	printf("c908 actual freq=%dMhz, ", rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000); 
+	printf("c908 freq=%dMhz, ", rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000); 
 	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920);
 	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
 	mdelay(2);
-	printf("c920 actual freq=%dMhz\n", rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000);
+	printf("c920 freq=%dMhz\n", rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000);
 }
 
 /*

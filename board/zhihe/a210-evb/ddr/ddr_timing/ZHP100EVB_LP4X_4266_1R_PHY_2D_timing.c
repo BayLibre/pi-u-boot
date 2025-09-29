@@ -34694,7 +34694,7 @@ static const short int DCCM_2D[0x2be] = {
 
 
 void ddr_phy_training_4266_1r(unsigned int fsp_table[4]) { 
-	printf("%s\n", __func__);
+
  int i;
  
  // dwc_ddrphy_phyinit_userCustom_A_bringupPower ();
@@ -34990,7 +34990,7 @@ ddr_phy_reg_wr(0xd0000,0x1);
 // // 
 // //##############################################################
 // 
-ddrphy_init_set_dfi_clk (fsp_table[0]);
+// ddrphy_init_set_dfi_clk (fsp_table[0]);
 
 // 
 // // [dwc_ddrphy_phyinit_userCustom_E_setDfiClk] End of dwc_ddrphy_phyinit_userCustom_E_setDfiClk()
@@ -35089,7 +35089,7 @@ ddr_phy_reg_wr(0xd0000,0x1);
 // // 
 // //##############################################################
 // 
-ddrphy_init_set_dfi_clk (fsp_table[0]);
+// ddrphy_init_set_dfi_clk (fsp_table[0]);
 
 // 
 // // [dwc_ddrphy_phyinit_userCustom_E_setDfiClk] End of dwc_ddrphy_phyinit_userCustom_E_setDfiClk()

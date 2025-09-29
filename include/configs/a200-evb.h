@@ -15,7 +15,7 @@
 	"kernel_loglevel=4\0" \
 	"opensbi_addr=0x0\0" \
 	"kernel_addr=0x00200000\0" \
-	"dtb_addr=0x1ff00000\0" \
+	"dtb_addr=0x0c000000\0" \
 	"initrd_addr=0x1e000000\0" \
 	"aon_ram_addr=0xffffef8000\0" \
 	"str_ram_addr=0xffe0000000\0" \

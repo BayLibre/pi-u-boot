@@ -15,13 +15,13 @@
 	"kernel_loglevel=4\0" \
 	"opensbi_addr=0x80000000\0" \
 	"kernel_addr=0x80200000\0" \
-	"dtb_addr=0x9ff00000\0" \
+	"dtb_addr=0x8c000000\0" \
 	"initrd_addr=0x9e000000\0" \
 	"opensbi_file=fw_dynamic.bin\0" \
 	"kernel_file=Image\0" \
 	"dtb_file=a210-evb.dtb\0" \
 	"initrd_file=initrd\0" \
-	"aon_file=firmware/p100_aon.bin\0" \
+	"aon_file=a210-aon.bin\0" \
 	"str_file=str.bin\0" \
 	"initrd_size=0x400000\0" \
 	"init_file=/sbin/init\0" \

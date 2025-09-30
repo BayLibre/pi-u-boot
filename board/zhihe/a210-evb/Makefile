@@ -2,11 +2,14 @@
 
 ifdef CONFIG_SPL_BUILD
 obj-y += spl_board.o
+obj-y += spl_call_bram.o
 obj-$(CONFIG_SPL_ENV_SUPPORT) += spl_call_opensbi.o
 obj-y += cpusys/ccu_cfg.o
 obj-y += cpusys/cpu_ss_init.o
 obj-y += cpusys/pctrl_cfg.o
 obj-y += cpusys/pll_cfg.o
+obj-y += arch_ext/bram_start.o
+obj-y += arch_ext/arch_ext.o
 obj-$(CONFIG_SOC_ZHIHE_D2D) += d2d/d2d_init.o
 else
 obj-y += board.o pinctrl.o

@@ -1218,6 +1218,13 @@ static int uncompress_blob(const void *src, ulong sz_src, void **dstp)
 	return 0;
 }
 
+#ifdef CONFIG_SPL_BUILD
+__weak ulong * board_spl_get_separate_bss_binary_end(void)
+{
+	return (ulong *)_image_binary_end;
+}
+#endif
+
 /**
  * fdt_find_separate() - Find a devicetree at the end of the image
  *
@@ -1233,7 +1240,7 @@ static void *fdt_find_separate(void)
 #ifdef CONFIG_SPL_BUILD
 	/* FDT is at end of BSS unless it is in a different memory region */
 	if (IS_ENABLED(CONFIG_SPL_SEPARATE_BSS))
-		fdt_blob = (ulong *)_image_binary_end;
+		fdt_blob = board_spl_get_separate_bss_binary_end();
 	else
 		fdt_blob = (ulong *)__bss_end;
 #else

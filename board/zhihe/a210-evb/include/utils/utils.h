@@ -9,5 +9,6 @@
 #include <rand.h>
 #include <time.h>
 #include "io.h"
+#include <linux/delay.h>
 
 #endif

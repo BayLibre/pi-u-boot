@@ -5,8 +5,10 @@
 #ifndef __BAORD_H_
 #define __BAORD_H_
 
+#include <linux/types.h>
 #include <stdint.h>
 #include "addr_defines.h"
+#include "../arch_ext/arch_ext.h"
 
 /* Boot Sel Register */
 #define BOOTSEL_REG_ADDR (AP_AON_SYSREG_BADDR + 0x104)
@@ -95,5 +97,15 @@ void gpio_pin_init(enum board_type board);
 void board_type_check(void);
 enum board_type board_get_type(void);
 enum ddr_type board_get_ddrtype(void);
+
+/*
+ * arch ext bram call
+ */
+void board_spl_prepare_bram_section(void);
+
+/*
+ * Bram call user interface
+ */
+void board_spl_switch_ddrpll(int speed);
 
 #endif

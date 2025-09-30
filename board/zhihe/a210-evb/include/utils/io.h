@@ -7,7 +7,6 @@
 #define _DDR_UTILS_IO_H
 
 #include <asm-generic/int-ll64.h>
-#include <linux/delay.h>
 
 /*
  * register access tools

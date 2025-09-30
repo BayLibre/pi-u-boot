@@ -5,7 +5,7 @@
 #include <dm/ofnode.h>
 #include "include/cpu_ss.h"
 #include "../include/addr_defines.h"
-#include "../include/utils/io.h"
+#include "../include/utils/utils.h"
 
 /*
  * cpu_ss power init

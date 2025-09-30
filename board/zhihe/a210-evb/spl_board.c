@@ -79,15 +79,15 @@ static void sim_ddr_check(long blocksize /*MB*/, long total /*GB*/)
 }
 #endif
 
-static void pmp_init(void)
+static void pmp_init_eanble_bram_ocram_ddr(void)
 {
-    /* TOR: 0x0 ~ 0x70100000: L=0 XWR=0x7 */
+    /* TOR: 0x0 ~ 0x70200000: L=0 XWR=0x7 Enable BRAM & OCRAM */
     csr_write(pmpaddr0, 0x70200000 >> 2);
 
-    /* TOR: 0x70100000 ~ 0x80000000: L=1 XWR=0x0 */
+    /* TOR: 0x70200000 ~ 0x80000000: L=1 XWR=0x0 Disable Invalid memory */
     csr_write(pmpaddr1, 0x80000000 >> 2);
 
-    /* 0x80000000 ~ : No permission configuration, executable and accessible */
+    /* 0x80000000 ~ : No configuration, Enabled DDR */
 
     /*
      * PMPCFG 8~15, One address table entry uses one byte configuration attribute
@@ -150,16 +150,23 @@ int spl_board_init_f(void)
 
 	board_type_check();
 
+	/* Bram call init */
+	board_spl_prepare_bram_section();
+	invalidate_icache_all();
+
+	/* DDR switch ppl */
+	//board_spl_switch_ddrpll(4266);
+
 	ret = ddr_init(board_get_ddrtype());
 	if (ret)
 		return ret;
 
+	/* DDR Debug */
 	// ddr_registers_dump();
-
 	// ddr_dfmu_mt_test();
 	// ddr_dfmu_mt_test_single();
 
-	pmp_init();
+	pmp_init_eanble_bram_ocram_ddr();
 
 	return 0;
 }

@@ -236,6 +236,63 @@ int spl_call_opensbi(void * entry, ulong hartid, ulong dtb, ulong info, ulong sl
 /*********************
  * DDR PLL
  *********************/
+ATT_BRAM_TEXT static void ddr_pll_config(int speed)
+{
+    int rdata;
+    if (speed == 4266) {
+        // 4266
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata &= 0xff000000;
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40400000);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x1310a02);
+        udelay(2);
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+    } else if (speed == 3733) {
+        // 3733
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata &= 0xff000000;
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40600000);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01204d01);
+        udelay(2);
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+    } else if (speed == 3200) {
+        // 3200
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata &= 0xff000000;
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40155555);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01408501);
+        udelay(2);
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+    } else if (speed == 2133) {
+        // 2133
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata &= 0xff000000;
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40000000);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01608501);
+        udelay(2);
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+    } else if (speed == 1066) {
+        // 1066
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata &= 0xff000000;
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40aaaaab);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x002608501);
+        udelay(2);
+        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+    } else {
+        ;
+    }
+    while ((rd(AP_SLC_DUAL_SYSREG_BADDR + 0x18) & 1) != 0x1) {
+        ; // pll lock
+    }
+    wr(AP_SLC_DUAL_SYSREG_BADDR + 0x18, 0x10000);
+}
+
 ATT_BRAM_TEXT static void bram_switch_ddrpll(ulong speed)
 {
     pmp_init_enable_bram();
@@ -248,7 +305,12 @@ ATT_BRAM_TEXT static void bram_switch_ddrpll(ulong speed)
     put_ulong(speed);
     putchar('\n');
 
+    ddr_pll_config((int)speed);
+
     pmp_init_enable_bram_ocram();
+
+    /* Ensure PMP takes effect */
+    udelay(1000);
 }
 
 void board_spl_switch_ddrpll(int speed)

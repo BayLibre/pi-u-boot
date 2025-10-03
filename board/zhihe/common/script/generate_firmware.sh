@@ -83,17 +83,26 @@ function generate_boot_firmware() {
         if echo $1 | grep "bootzero.bin" > /dev/null; then
             generate_rvbl $1 none bootzero-rvbl.bin
             cp bootzero-rvbl.bin ${BTZ_SPL_FILE}
+            BTZ_LEN=`stat -c%s ${BTZ_SPL_FILE}`
+            FILL_LEN=`expr 131072 - ${BTZ_LEN}`
+            
+            # Padding to 128K
+            dd if=/dev/zero bs=1 count=${FILL_LEN} >> ${BTZ_SPL_FILE} 2>/dev/null
+            cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
         else
             # bootzero2.bin
             cp $1 ${BTZ_SPL_FILE}
+            if [ $(stat -c%s ${BTZ_SPL_FILE}) -lt 131072 ]; then
+                echo "Bootzero compatibility mode should pading to 128K"
+                # Padding to 128K
+                BTZ_LEN=`stat -c%s ${BTZ_SPL_FILE}`
+                FILL_LEN=`expr 131072 - ${BTZ_LEN}`
+                dd if=/dev/zero bs=1 count=${FILL_LEN} >> ${BTZ_SPL_FILE} 2>/dev/null
+                cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
+            else
+                cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
+            fi
         fi
-
-        BTZ_LEN=`stat -c%s ${BTZ_SPL_FILE}`
-        FILL_LEN=`expr 131072 - ${BTZ_LEN}`
-        
-        # Padding to 128K
-        dd if=/dev/zero bs=1 count=${FILL_LEN} >> ${BTZ_SPL_FILE} 2>/dev/null
-        cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
     fi
 }
 

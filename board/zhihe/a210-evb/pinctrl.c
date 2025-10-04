@@ -507,8 +507,8 @@ void gpio_pin_init(enum board_type board)
 	gpio_pin_cfg(GPIO2_10, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 	gpio_pin_cfg(GPIO2_11, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
-	/* BOARD_CORE IO pamdmux */
-	if (board == BOARD_CORE) {
+	/* BOARD_DEV IO pamdmux */
+	if (board == BOARD_DEV) {
 		gmac_phy_rst();
 		usbc_pwren();
 

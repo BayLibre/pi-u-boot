@@ -7,6 +7,7 @@ obj-$(CONFIG_FIT) += boot_fit/spl_full_fit.o
 obj-$(CONFIG_FIT) += boot_fit/spl_ram_fit.o
 obj-$(CONFIG_FIT) += boot_fit/spl_switch_boot.o
 obj-y += boot_mmode/spl_rvbl_payload.o
+obj-y += boot_mmode/spl_boot_fixup.o
 obj-y += boot/boot_method.o
 else
 # U-Boot

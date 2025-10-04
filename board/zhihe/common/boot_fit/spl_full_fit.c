@@ -106,6 +106,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     u64 size;
     const char *board_type;
     int chosen;
+
     void *fdt_uboot = find_uboot_fdt_blob();
     if (!fdt_uboot) {
         return;
@@ -125,14 +126,13 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     }
 
     /* 3. Set board type pass to u-boot */
-	chosen = fdt_find_or_add_subnode(fdt_uboot, 0, "chosen");
-	if (chosen < 0) {
-		pr_err("%s: could not find/create '/chosen'\n", __func__);
-		return;
-	}
-    board_type = board_get_fit_config();
-    fdt_setprop_string(fdt_uboot, chosen,
-            "board", board_type);
+    chosen = fdt_find_or_add_subnode(fdt_uboot, 0, "chosen");
+    if (chosen >= 0) {
+        board_type = board_get_fit_config();
+        fdt_setprop_string(fdt_uboot, chosen, "board", board_type);
+    } else {
+        pr_err("%s: could not find/create '/chosen'\n", __func__);
+    }
 }
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE

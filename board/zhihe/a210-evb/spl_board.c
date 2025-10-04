@@ -243,7 +243,7 @@ const char * board_get_fit_config(void)
 	switch(type) {
 	case BOARD_EVB:
 		return ftds[0];
-	case BOARD_CORE:
+	case BOARD_DEV:
 		return ftds[1];
 	default:
 		;
@@ -278,7 +278,7 @@ void board_type_check(void)
 	if (adc_ch2_mv >= 800 && adc_ch2_mv <= 1000) {
 		_board_type = BOARD_EVB;
 	} else {
-		_board_type = BOARD_CORE;
+		_board_type = BOARD_DEV;
 	}
 
 	if (_board_type == BOARD_EVB) {
@@ -295,7 +295,7 @@ void board_type_check(void)
 			printf("Board info: bid=%d, ch0 value is not supported, set default DDR_4266_1Rank_2GB)\n", _board_type);
 			_ddr_type = DDR_4266_1Rank_2GB;
 		}
-	} else if (_board_type == BOARD_CORE) {
+	} else if (_board_type == BOARD_DEV) {
 		if (adc_ch2_mv >= 1700 && adc_ch2_mv <= 1900) {
 			printf("Board info: bid=%d, DDR_4266_1Rank_4GB * 2\n", _board_type);
 			_ddr_type = DDR_4266_1Rank_4GB;

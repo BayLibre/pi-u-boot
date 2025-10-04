@@ -76,7 +76,7 @@
  */
 enum board_type {
     BOARD_EVB,
-    BOARD_CORE,
+    BOARD_DEV,
     BOARD_UNKNOWN,
 };
 

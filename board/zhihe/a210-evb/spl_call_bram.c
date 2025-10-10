@@ -10,6 +10,7 @@
 /*********************
  * System
  *********************/
+#ifdef DEBUG_INFO
 ATT_BRAM_TEXT static void putchar(int c)
 {
     volatile int *thr = (int *)0x8401000;
@@ -37,6 +38,7 @@ ATT_BRAM_TEXT static void put_ulong(ulong val)
         val <<= 4;
     }
 }
+#endif
 
 #ifndef RISCV_SMODE_TIMER_FREQ
 #define RISCV_SMODE_TIMER_FREQ 24000000UL
@@ -198,11 +200,12 @@ ATT_BRAM_TEXT static void bram_switch_slc(ulong slc_en)
     /* Ensure PMP takes effect */
     udelay(1000);
 
-    // ATT_BRAM_DATA static char str[] = "switch_slc ";
-    // puts(str);
-    // put_ulong(slc_en);
-    // putchar('\n');
-
+#ifdef DEBUG_LOG
+    ATT_BRAM_DATA static char str[] = "switch_slc ";
+    puts(str);
+    put_ulong(slc_en);
+    putchar('\n');
+#endif
     /* Disabled SRAM & Cache */
     if (slc_en) {
         slc_cache_init(AP_DDR0_SLC_SYSREG_BADDR, AP_DDR0_SLC_CORE_BADDR);
@@ -300,10 +303,12 @@ ATT_BRAM_TEXT static void bram_switch_ddrpll(ulong speed)
     /* Ensure PMP takes effect */
     udelay(1000);
 
+#ifdef DEBUG_LOG
     ATT_BRAM_DATA static char str[] = "switch_ddrpll ";
     puts(str);
     put_ulong(speed);
     putchar('\n');
+#endif
 
     ddr_pll_config((int)speed);
 

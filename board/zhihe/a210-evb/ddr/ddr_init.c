@@ -9,7 +9,7 @@
 
 #include "../include/utils/utils.h"
 #include "../include/addr_defines.h"
-
+#include "../include/board.h"
 
 // #define UTILS_TEST
 #ifdef UTILS_TEST
@@ -50,65 +50,6 @@ static void utils_test(void)
 #endif
 
 #if !(defined(CONFIG_ZHP100EVB_DDR_DUMMY) || defined(CONFIG_ZHP100EMU_LP4X))
-static void pll_config(int speed)
-{
-    int rdata;
-    if (speed == 4266) {
-        // 4266
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        rdata &= 0xff000000;
-        wr(SLC_DUAL_SC + 0xc, rdata | 0x40400000);
-        wr(SLC_DUAL_SC + 0x8, 0x1310a02);
-        udelay(2);
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        wr(SLC_DUAL_SC + 0xc, rdata & 0xbfffffff);
-    } else if (speed == 3733) {
-        printf("pll_config for 3733!\n");
-        // 3733
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        rdata &= 0xff000000;
-        wr(SLC_DUAL_SC + 0xc, rdata | 0x40600000);
-        wr(SLC_DUAL_SC + 0x8, 0x01204d01);
-        udelay(2);
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        wr(SLC_DUAL_SC + 0xc, rdata & 0xbfffffff);
-    } else if (speed == 3200) {
-        printf("pll_config for 3200!\n");
-        // 3200
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        rdata &= 0xff000000;
-        wr(SLC_DUAL_SC + 0xc, rdata | 0x40155555);
-        wr(SLC_DUAL_SC + 0x8, 0x01408501);
-        udelay(2);
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        wr(SLC_DUAL_SC + 0xc, rdata & 0xbfffffff);
-    } else if (speed == 2133) {
-        // 2133
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        rdata &= 0xff000000;
-        wr(SLC_DUAL_SC + 0xc, rdata | 0x40000000);
-        wr(SLC_DUAL_SC + 0x8, 0x01608501);
-        udelay(2);
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        wr(SLC_DUAL_SC + 0xc, rdata & 0xbfffffff);
-    } else if (speed == 1066) {
-        // 1066
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        rdata &= 0xff000000;
-        wr(SLC_DUAL_SC + 0xc, rdata | 0x40aaaaab);
-        wr(SLC_DUAL_SC + 0x8, 0x002608501);
-        udelay(2);
-        rdata = rd(SLC_DUAL_SC + 0xc);
-        wr(SLC_DUAL_SC + 0xc, rdata & 0xbfffffff);
-    } else {
-        debug("Reserved Pll setting\n");
-    }
-    debug("Freq    is %0x \n", rd(SLC_DUAL_SC + 0x8));
-    while ((rd(SLC_DUAL_SC + 0x18) & 1) != 0x1) {
-        ; // pll lock
-    }
-    wr(SLC_DUAL_SC + 0x18, 0x10000);
-}
 
 static void ddr_ss_crg_release(void)
 {
@@ -359,12 +300,15 @@ int ddr_init(enum ddr_type type)
         return -1;
     }
 
-    unsigned int initial_drate = dram_timing->fsp_table[0];
+    int initial_drate = (int)dram_timing->fsp_table[0];
     debug("DDRINFO: start DDR init, data rate: %d \n", initial_drate);
     //broadcast mode for ddr ch0 and ch1, for future fast ddr init
     // ddr_apb_broadcast_en();
 
     /* Step1: Follow the crg up procedure */
+    // default to the frequency point 0 clock
+    board_spl_switch_ddrpll(initial_drate);
+
     //ddr top crg release
     ddr_ss_crg_release();
     //slc internal crg release,ch0 and ch1

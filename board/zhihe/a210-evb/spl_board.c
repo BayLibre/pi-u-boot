@@ -154,9 +154,7 @@ int spl_board_init_f(void)
 	board_spl_prepare_bram_section();
 	invalidate_icache_all();
 
-	/* DDR switch ppl */
-	//board_spl_switch_ddrpll(4266);
-
+	/* DDR init */
 	ret = ddr_init(board_get_ddrtype());
 	if (ret)
 		return ret;

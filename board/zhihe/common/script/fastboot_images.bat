@@ -10,7 +10,7 @@ IF EXIST "bootzero-rvbl.bin" (
     fastboot flash ram spl-with-fit-rvbl.bin || goto :error
     fastboot reboot 
 ) ELSE (
-    fastboot flash ram emmc_boot-loader.img || goto :error
+    fastboot flash ram spl-with-fit-rvbl.bin || goto :error
     fastboot reboot 
 )
 

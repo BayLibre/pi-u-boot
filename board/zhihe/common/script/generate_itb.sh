@@ -36,6 +36,7 @@ for arg in "$@"; do
     if [ ! -e ${IMG_PATH}/${arg} ]; then
         arg=${FDT_NAME}
     fi
+    sed -i "s#replace${count}-dtb#${arg}#g" ${ITS_FILE_BOOT}
     sed -i "s#replace${count}-dtb#${arg}#g" ${ITS_FILE_LINUX}
     count=`expr $count + 1`
 done

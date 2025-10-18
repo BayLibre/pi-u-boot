@@ -10,7 +10,7 @@ if [ -e bootzero-rvbl.bin ]; then
     fastboot flash ram spl-with-fit-rvbl.bin || { echo $FAIL; exit 1; }
     fastboot reboot 
 else
-    fastboot flash ram emmc_boot-loader.img || { echo $FAIL; exit 1; }
+    fastboot flash ram spl-with-fit-rvbl.bin || { echo $FAIL; exit 1; }
     fastboot reboot
 fi
 

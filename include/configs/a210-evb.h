@@ -50,7 +50,11 @@
 
 #ifdef CONFIG_RISCV_SMODE
 #define BOOT_FIT \
-	"bootcmd=run select_slot; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
+	"loadfdt=ext4load    ${boot_device} ${dtb_addr}     ${dtb_file}\0" \
+	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}\0" \
+	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
+	"load_image=run loadkernel; run loadinitrd\0" \
+	"bootcmd=run select_slot; run load_image; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
 	"altbootcmd=run rollback; run rollback_finish; reset;\0"
 #else
 #define BOOT_FIT
@@ -63,7 +67,7 @@
 	"loadsbi=ext4load    ${boot_device} ${opensbi_addr} ${opensbi_file}\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
 	"loadaon=ext4load    ${boot_device} ${tmp_addr}     ${aon_file}; cp.b ${tmp_addr} ${aon_addr} $filesize\0" \
-	"load_image=run loadsbi;run loadfdt;run loadkernel; run loadinitrd; run loadaon\0" \
+	"load_image=run loadfdt; run loadsbi; run loadkernel; run loadinitrd; run loadaon\0" \
 	"bootcmd=run select_slot; run load_image; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr $opensbi_addr;\0"
 #else
 #define BOOT_XT

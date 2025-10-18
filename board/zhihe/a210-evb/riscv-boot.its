@@ -6,8 +6,20 @@
  
 	images {
 		fdt-1 {
-			description = "Device Tree";
+			description = "EVB Device Tree";
 			data = /incbin/("replace-path/replace-dtb");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "none";
+			load = <0x8c000000>;
+			invalid_hash {
+				algo = "sha256";
+			};
+		};
+
+		fdt-2 {
+			description = "DEV Device Tree";
+			data = /incbin/("replace-path/replace2-dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
@@ -60,16 +72,28 @@
 	};
 
 	configurations {
-		default = "conf-1";
-		conf-1 {
-			description = "Default Configuration";
+		default = "conf-evb";
+		conf-evb {
+			description = "EVB Configuration";
 			fdt = "fdt-1";
 			firmware = "opensbi-1";
 			loadables = "u-boot-1", "aon-1";
 			invalid_signature {
 				algo = "sha256,rsa2048";
 				key-name-hint = "signature_key_name";
-				sign-images = "fdt", "firmware";
+				sign-images = "fdt", "firmware", "uboot", "aon", "initrd";
+			};
+		};
+
+		conf-dev {
+			description = "DEV Configuration";
+			fdt = "fdt-2";
+			firmware = "opensbi-1";
+			loadables = "u-boot-1", "aon-1";
+			invalid_signature {
+				algo = "sha256,rsa2048";
+				key-name-hint = "signature_key_name";
+				sign-images = "fdt", "firmware", "uboot", "aon", "initrd";
 			};
 		};
 	};

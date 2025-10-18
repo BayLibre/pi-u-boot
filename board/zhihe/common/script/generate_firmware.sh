@@ -65,45 +65,25 @@ function generate_programming_firmware() {
 # Integrate the Bootzero and SPL bin files
 # $1 - Bootzero bin filename
 # $2 - SPL bin filename
-# $3 - Output firmware filename
+# $3 - boot itb
 function generate_boot_firmware() {
     echo "Generate boot firmware"
 
     BTZ_SPL_FILE=btz-with-spl-rvbl.bin
-
-    if [ -n "$3" ]; then
-        SPL_FIT_FILE=$3
-    fi
+    BTZ_UBOOT_FILE=btz-with-uboot-rvbl.bin
 
     generate_rvbl $2 none u-boot-spl-rvbl.bin
 
     if [ "$1" == "none" ]; then
          cp u-boot-spl-rvbl.bin ${BTZ_SPL_FILE}
     else
-        if echo $1 | grep "bootzero.bin" > /dev/null; then
-            generate_rvbl $1 none bootzero-rvbl.bin
-            cp bootzero-rvbl.bin ${BTZ_SPL_FILE}
-            BTZ_LEN=`stat -c%s ${BTZ_SPL_FILE}`
-            FILL_LEN=`expr 131072 - ${BTZ_LEN}`
-            
-            # Padding to 128K
-            dd if=/dev/zero bs=1 count=${FILL_LEN} >> ${BTZ_SPL_FILE} 2>/dev/null
-            cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
-        else
-            # bootzero2.bin
-            cp $1 ${BTZ_SPL_FILE}
-            if [ $(stat -c%s ${BTZ_SPL_FILE}) -lt 131072 ]; then
-                echo "Bootzero compatibility mode should pading to 128K"
-                # Padding to 128K
-                BTZ_LEN=`stat -c%s ${BTZ_SPL_FILE}`
-                FILL_LEN=`expr 131072 - ${BTZ_LEN}`
-                dd if=/dev/zero bs=1 count=${FILL_LEN} >> ${BTZ_SPL_FILE} 2>/dev/null
-                cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
-            else
-                cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
-            fi
-        fi
+        # bootzero2.bin
+        cp $1 ${BTZ_SPL_FILE}
+        cat u-boot-spl-rvbl.bin >> ${BTZ_SPL_FILE}
     fi
+    cp ${BTZ_SPL_FILE} ${BTZ_UBOOT_FILE}
+    fallocate -l 0xD0000 ${BTZ_UBOOT_FILE}
+    cat $3 >> ${BTZ_UBOOT_FILE}
 }
 
 if [ "$1" == "rvbl" ]; then
@@ -123,7 +103,7 @@ if [ ! -e $2 ]; then
     exit 1;
 fi
 
-generate_boot_firmware $1 $2
+generate_boot_firmware $1 $2 $3
 
 if [ -z $3 ]; then
     echo "  The third parameter is null, ignore generate programming firmware"

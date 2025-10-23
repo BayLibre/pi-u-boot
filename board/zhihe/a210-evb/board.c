@@ -37,7 +37,7 @@ static void clk_init(void)
 static void fastboot_check(void)
 {
 	if (board_bootrom_fastboot()) {
-		run_command("env default -fa;env save", 0);
+		run_command("env default -fa;fnv load", 0);
 		run_command("echo fastboot check success", 0);
 		run_command("fastboot usb 0", 0);
 	}
@@ -56,10 +56,12 @@ int board_init(void)
 	if (fdt_uboot) {
 		chosen_node = fdt_path_offset(fdt_uboot, "/chosen");
 		conf = fdt_getprop(fdt_uboot, chosen_node, "board", NULL);
-		if (conf && strncmp(conf, "conf-dev", 8) == 0) {
+		if (conf && strcmp(conf, STR_BOARD_DEV) == 0) {
 			_board_type = BOARD_DEV;
-		} else if (conf && strncmp(conf, "conf-evb", 8) == 0) {
+		} else if (conf && strcmp(conf, STR_BOARD_EVB) == 0) {
 			_board_type = BOARD_EVB;
+		} else if (conf && strcmp(conf, STR_BOARD_EVB_D2D) == 0) {
+			_board_type = BOARD_EVB_D2D;
 		} else {
 			_board_type = BOARD_UNKNOWN;
 		}
@@ -67,6 +69,7 @@ int board_init(void)
 		printf("%s(%d) get uboot fdt blob failed.\n", __func__, __LINE__);
 	}
 
+	printf("Board: %s(%d)\n", conf, _board_type);
 	gpio_pin_init(_board_type);
 
 	debug("%s(%d) uboot fdt blob 0x%p board-type: %s\n", __func__, __LINE__, fdt_uboot, conf);
@@ -99,17 +102,6 @@ int board_late_init(void)
 	fastboot_check();
 #endif
 
-	/* Reconfig dtb_file, after load emmc env */
-	switch(_board_type) {
-	case BOARD_EVB:
-		env_set("dtb_file", "a210-evb.dtb");
-		break;
-	case BOARD_DEV:
-		env_set("dtb_file", "a210-dev.dtb");
-		break;
-	default:
-		env_set("dtb_file", "soc.dtb");;
-	}
 	return 0;
 }
 #endif

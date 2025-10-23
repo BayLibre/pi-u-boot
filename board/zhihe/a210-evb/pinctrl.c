@@ -508,7 +508,7 @@ void gpio_pin_init(enum board_type board)
 	gpio_pin_cfg(GPIO2_11, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
 	/* BOARD_DEV IO pamdmux */
-	if (board == BOARD_DEV) {
+	if (board == BOARD_DEV || board == BOARD_EVB_D2D) {
 		gmac_phy_rst();
 		usbc_pwren();
 
@@ -553,7 +553,7 @@ void gpio_pin_init(enum board_type board)
 		gpio_pin_cfg(GPIO2_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 		gpio_pin_cfg(GPIO2_9, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
-		// pci-e device reset
+		// SOM1: pci-e device reset, SOM2: Fan power
 		gpio_pin_mux(GPIO0_30, 0);
 		unsigned int gpio;
 		int ret = gpio_lookup_name("gpio@0_30", NULL, NULL, &gpio);

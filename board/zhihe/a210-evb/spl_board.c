@@ -226,28 +226,20 @@ const char * board_get_fit_config(void)
 {
 	enum board_type type;
 
-	static char *ftds[] = {
-		"conf-evb",
-		"conf-dev"
-	};
-
-	/* CCTBoot or Fastboot, Load riscv-boot.itb ,Set default config */
-	if (spl_boot_get_device() == BOOT_DEVICE_BOOTROM) {
-		return NULL;
-	}
-
 	/* Select config by board type */
 	type = board_get_type();
 	switch(type) {
 	case BOARD_EVB:
-		return ftds[0];
+		return STR_BOARD_EVB;
 	case BOARD_DEV:
-		return ftds[1];
+		return STR_BOARD_DEV;
+	case BOARD_EVB_D2D:
+		return STR_BOARD_EVB_D2D;
 	default:
 		;
 	}
 
-	return ftds[0];
+	return STR_BOARD_EVB;
 }
 
 /*
@@ -266,6 +258,13 @@ static enum ddr_type _ddr_type = DDR_UNKNOWN;
 
 void board_type_check(void)
 {
+	if (board_get_die_count() > 1) {
+		_board_type = BOARD_EVB_D2D;
+		_ddr_type = DDR_4266_1Rank_4GB;
+
+		return;
+	}
+
 	adc_init();
 
 	u64 adc_ch0_mv = adc_read(0, 16);

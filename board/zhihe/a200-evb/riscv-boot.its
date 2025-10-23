@@ -7,7 +7,7 @@
 	images {
 		fdt-1 {
 			description = "Device Tree";
-			data = /incbin/("replace-path/replace-dtb");
+			data = /incbin/("replace-path/th1520-lichee-pi-4a.dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";

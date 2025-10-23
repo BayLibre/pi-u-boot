@@ -77,8 +77,13 @@
 enum board_type {
     BOARD_EVB,
     BOARD_DEV,
+    BOARD_EVB_D2D,
     BOARD_UNKNOWN,
 };
+
+#define STR_BOARD_EVB "conf-evb"
+#define STR_BOARD_DEV "conf-dev"
+#define STR_BOARD_EVB_D2D "conf-evb-d2d"
 
 enum ddr_type {
     DDR_4266_1Rank_2GB,

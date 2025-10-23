@@ -90,34 +90,18 @@ do_help() {
 # $1 its file
 # $2 work dir, input images path
 # $3 output itb file
-# $4 $5 ... multi fdt filename
 do_fit() {
     ITS_FILE_ORG=$1
     ITS_FILE=$(mktemp --suffix=.its)
     cp ${ITS_FILE_ORG} ${ITS_FILE}
     WORK_PATH=$2
     OUT_BOOT_ITB=$3
-    FDT_NAME=$4
 
     # GZ file
     cat $1 | grep "replace-path.*gz" | awk -F'.gz|/' '{print $4}' | xargs -i gzip -kf ${WORK_PATH}/{}
 
     # Replace image path
     sed -i "s#replace-path#${WORK_PATH}#g" ${ITS_FILE}
-
-    # Replace main fdt
-    sed -i "s#replace-dtb#${FDT_NAME}#g" ${ITS_FILE}
-
-    # Multi fdt files
-    shift 4
-    count=2
-    for arg in "$@"; do
-        if [ ! -e ${WORK_PATH}/${arg} ]; then
-            arg=${FDT_NAME}
-        fi
-        sed -i "s#replace${count}-dtb#${arg}#g" ${ITS_FILE}
-        count=`expr $count + 1`
-    done
 
     cat ${ITS_FILE}
 
@@ -146,7 +130,7 @@ do_image() {
     SPL_RVBL=${OUT_PATH}/u-boot-spl-rvbl.bin
     generate_rvbl ${FILE_SPL} none ${SPL_RVBL}
 
-    if [ "$1" == "none" ]; then
+    if [ "$1" = "none" ]; then
          cp ${SPL_RVBL} ${BTZ_SPL_FILE}
     else
         # bootzero2.bin
@@ -175,6 +159,6 @@ elif [ $do_fit -eq 1 ]; then
 elif [ $do_image -eq 1 ]; then
     do_image $@
 else
-    echo "v20251018"
+    echo "v20251022"
     exit 1
 fi

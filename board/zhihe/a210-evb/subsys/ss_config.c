@@ -1089,11 +1089,6 @@ void ss_cpr_init(unsigned int ss_cfg)
 					iopmp_permission, 1); //GPU
 	}
 
-	if (ss_cfg & (1 << D2D_CPR)) {
-		config_iopmp(chip_id, AP_D2D_RX_DFMU_IOPMP_BADDR, iopmp_mode, IOPMP_DEVICE_ID_D2D_RX,
-					iopmp_permission, 0); //D2D RX
-	}
-
 	if (ss_cfg & (1 << D2D_CPU_CPR)) {
 		config_iopmp(chip_id, AON_CPU_SS_IOPMP_BADDR, iopmp_mode, IOPMP_DEVICE_ID_REMOTE_CPU,
 					iopmp_permission, 0); //D2D ACE

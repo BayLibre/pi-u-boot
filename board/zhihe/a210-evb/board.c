@@ -37,7 +37,7 @@ static void clk_init(void)
 static void fastboot_check(void)
 {
 	if (board_bootrom_fastboot()) {
-		run_command("env default -fa;fnv load", 0);
+		run_command("env default -fa;env save;fnv load", 0);
 		run_command("echo fastboot check success", 0);
 		run_command("fastboot usb 0", 0);
 	}

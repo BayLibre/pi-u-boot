@@ -28,7 +28,7 @@
 	config {
 		c908-pll-freq = <1896>;
 		c908-ccu-div = <1>;
-		c920-pll-freq = <2298>;
+		c920-pll-freq = <1896>;
 		c920-ccu-div = <1>;
 		cpu-ccu-enable = <0>;
 		ddr-ccu-enable = <0>;

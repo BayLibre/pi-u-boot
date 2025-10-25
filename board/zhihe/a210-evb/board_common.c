@@ -42,11 +42,11 @@ int board_get_die_count(void)
 		return 1;
 
 	/*
-	 * 2DIE 1_010 1_110
-	 * 4DIE 1_011 1_111 
+	 * 4DIE 1_010 1_110
+	 * 2DIE 1_011 1_111
 	 */
 	if (boot_sel_raw & MDIE_MASK)
-		return 4;
-	else
 		return 2;
+	else
+		return 4;
 }

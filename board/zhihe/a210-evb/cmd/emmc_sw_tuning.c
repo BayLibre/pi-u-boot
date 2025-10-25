@@ -10,27 +10,27 @@
 #define SD_MSH8_BADDR 0x00510000
 
 static void hw_wr8(u64 addr, u8 data) {
-    wr8(addr,data);
+    chip_wr8(addr,data);
 }
 
 static u8 hw_rd8(u64 addr) {
-    return rd8(addr);
+    return chip_rd8(addr);
 }
 
 static void hw_wr16(u64 addr, u16 data) {
-    wr16(addr,data);
+    chip_wr16(addr,data);
 }
 
 static u16 hw_rd16(u64 addr) {
-    return rd16(addr);
+    return chip_rd16(addr);
 }
 
 static void hw_wr32(u64 addr, u32 data) {
-    wr(addr,data);
+    chip_wr(addr,data);
 }
 
 static u32 hw_rd32(u64 addr) {
-    return rd(addr);
+    return chip_rd(addr);
 }
 
 static void hw_wait_ns(u64 ns) {
@@ -116,25 +116,25 @@ static void hw_emmc_clk_change(u64 emmc_base_addr, u32 clk_divisor){
     clk_ctrl_data = (clk_ctrl_data & 0x3F) + (freq_sel << 8) + (upper_freq_sel << 6);
     hw_wr16(clk_ctrl_r , clk_ctrl_data);                 
     //Enable SD/eMMC clock
-    clk_ctrl_data = rd16(clk_ctrl_r);
+    clk_ctrl_data = chip_rd16(clk_ctrl_r);
     sd_clk_en = 0x1;
     internal_clk_en = 0x1;
     clk_ctrl_data = clk_ctrl_data | (sd_clk_en << 2) | (internal_clk_en);
-    wr16(clk_ctrl_r , clk_ctrl_data);           
+    chip_wr16(clk_ctrl_r , clk_ctrl_data);           
     //Check Clock Stability
-    u16 rdata = rd16(clk_ctrl_r)     ;
+    u16 rdata = chip_rd16(clk_ctrl_r)     ;
     while(0x2 != (rdata & 0x2)){
-        rdata = rd16(clk_ctrl_r)    ;                             
+        rdata = chip_rd16(clk_ctrl_r)    ;                             
     } 
     //Enable SD/eMMC clock
-    clk_ctrl_data = rd16(clk_ctrl_r);
+    clk_ctrl_data = chip_rd16(clk_ctrl_r);
     pll_enable = 0x1;
     clk_ctrl_data = clk_ctrl_data | (pll_enable << 3);
-    wr16(clk_ctrl_r , clk_ctrl_data);           
+    chip_wr16(clk_ctrl_r , clk_ctrl_data);           
     //Check Clock Stability
-    rdata = rd16(clk_ctrl_r)     ;                                
+    rdata = chip_rd16(clk_ctrl_r)     ;                                
     while(0x2 != (rdata & 0x2)){
-        rdata = rd16(clk_ctrl_r)    ;                             
+        rdata = chip_rd16(clk_ctrl_r)    ;                             
     } 
 }
 

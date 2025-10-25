@@ -42,11 +42,11 @@ static void dump_configuration(int index)
 	uint32_t pmpcfg;
 	uint32_t high_pmpaddr0, high_pmpaddr1, high_pmpaddr2, high_pmpaddr3;
 	for (int count = 0; count < IOPMP_CFG_COUNT_MAX; count++) {
-		pmpcfg = rd(iopmp_datas[index].base_addr + count * 4);
-		high_pmpaddr0 = rd(iopmp_datas[index].base_addr +  + 0x804 + count * 0x20);
-		high_pmpaddr1 = rd(iopmp_datas[index].base_addr +  + 0x80c + count * 0x20);
-		high_pmpaddr2 = rd(iopmp_datas[index].base_addr +  + 0x814 + count * 0x20);
-		high_pmpaddr3 = rd(iopmp_datas[index].base_addr +  + 0x81c + count * 0x20);
+		pmpcfg = chip_rd(iopmp_datas[index].base_addr + count * 4);
+		high_pmpaddr0 = chip_rd(iopmp_datas[index].base_addr +  + 0x804 + count * 0x20);
+		high_pmpaddr1 = chip_rd(iopmp_datas[index].base_addr +  + 0x80c + count * 0x20);
+		high_pmpaddr2 = chip_rd(iopmp_datas[index].base_addr +  + 0x814 + count * 0x20);
+		high_pmpaddr3 = chip_rd(iopmp_datas[index].base_addr +  + 0x81c + count * 0x20);
 		//printf("0x%x, 0x%x, 0x%x, 0x%x, 0x%x\n", pmpcfg, high_pmpaddr0, high_pmpaddr1, high_pmpaddr2, high_pmpaddr3);
 		if (pmpcfg != 0) {
 			struct iopmp_entry_t entry0, entry1, entry2, entry3;

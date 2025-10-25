@@ -7,65 +7,57 @@
 #define _DDR_UTILS_IO_H
 
 #include <asm-generic/int-ll64.h>
+#include <asm/io.h>
 
 /*
  * register access tools
  */
 #define BIT(nr) (1UL << (nr))
-#define MEM32(addr) *((volatile unsigned int *)(addr))
-#define MEM16(addr) *((volatile unsigned short *)(addr))
-#define MEM8(addr) *((volatile unsigned char *)(addr))
 
-static inline void wr(u64 addr, u32 data)
+static inline void chip_wr(u64 addr, u32 data)
 {
-	MEM32(addr) = data;
+	writel(data, (volatile void __iomem *)addr);
 }
 
-static inline void wr16(u64 addr, u16 data)
+static inline void chip_wr16(u64 addr, u16 data)
 {
-	MEM16(addr) = data;
+	writew(data, (volatile void __iomem *)addr);
 }
 
-static inline void wr8(u64 addr, u8 data)
+static inline void chip_wr8(u64 addr, u8 data)
 {
-	MEM8(addr) = data;
+	writeb(data, (volatile void __iomem *)addr);
 }
 
-static inline u32 rd(u64 addr)
+static inline u32 chip_rd(u64 addr)
 {
-	u32 data;
-	data = MEM32(addr);
-	return data;
+	return readl((volatile void __iomem *)addr);
 }
 
-static inline u16 rd16(u64 addr)
+static inline u16 chip_rd16(u64 addr)
 {
-	u32 data;
-	data = MEM16(addr);
-	return (u16)data;
+	return readw((volatile void __iomem *)addr);
 }
 
-static inline u8 rd8(u64 addr)
+static inline u8 chip_rd8(u64 addr)
 {
-	u32 data;
-	data = MEM8(addr);
-	return (u8)data;
+	return readb((volatile void __iomem *)addr);
 }
 
-static inline u32 wr_rd(u64 addr, u32 data)
+static inline u32 chip_wr_rd(u64 addr, u32 data)
 {
-	wr(addr, data);
-	return rd(addr);
+	chip_wr(addr, data);
+	return chip_rd(addr);
 }
 
 static inline void reg_bit_set(u64 addr, u32 start_bit, u32 num, u32 value)
 {
 	u32 data;
 	u32 bit_mask = ((1 << num) - 1);
-	data = rd(addr);
+	data = chip_rd(addr);
 	data &= ~(bit_mask << start_bit);
 	data |= ((value & bit_mask) << start_bit);
-	wr(addr, data);
+	chip_wr(addr, data);
 }
 
 #endif /* _DDR_UTILS_IO_H */

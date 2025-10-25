@@ -133,36 +133,36 @@ ATT_BRAM_TEXT static void slc_cache_init(u64 addr_sysreg_base, u64 addr_core_bas
     //*********************************
     //slc0/1 rst_n
     wdata = 0x0;
-    wr(addr_sysreg_base+0x0,wdata);
+    chip_wr(addr_sysreg_base+0x0,wdata);
 	udelay(20);
     wdata = 0x3;
-    wr(addr_sysreg_base+0x0,wdata);
+    chip_wr(addr_sysreg_base+0x0,wdata);
 
     //slc0/1 enbaled/csr_en
-    rdata = rd(addr_sysreg_base+0x4);
+    rdata = chip_rd(addr_sysreg_base+0x4);
     wdata = ((rdata & 0xffffffcf)|0x30);
-    wr(addr_sysreg_base+0x4,wdata);
+    chip_wr(addr_sysreg_base+0x4,wdata);
 
     //*********************************
     // SLC0/1 Init
     //*********************************
     //cahche0/1 init cfg
     wdata = 0x0;
-    wr(addr_core_base+0x100, wdata); //cache0, Initialize tag mem
+    chip_wr(addr_core_base+0x100, wdata); //cache0, Initialize tag mem
     rdata = 0x1;
     while((rdata & 0x1) != 0x0) {
-        rdata = rd(addr_core_base+0x104);
+        rdata = chip_rd(addr_core_base+0x104);
     }
     wdata = 0x10000;
-    wr(addr_core_base+0x100, wdata); //cache0, Initialize data mem
+    chip_wr(addr_core_base+0x100, wdata); //cache0, Initialize data mem
     rdata = 0x1;
     while((rdata & 0x1) != 0x0) {
-        rdata = rd(addr_core_base+0x104);
+        rdata = chip_rd(addr_core_base+0x104);
     }
 
     //enable lookup & fill
     wdata = 0x3;
-    wr(addr_core_base+0x10, wdata); //cache0, cache enable
+    chip_wr(addr_core_base+0x10, wdata); //cache0, cache enable
 
     //Policy Select
 	// wdata = 0xff0007; //write-back, rd/wr allocate
@@ -170,26 +170,26 @@ ATT_BRAM_TEXT static void slc_cache_init(u64 addr_sysreg_base, u64 addr_core_bas
 	// wdata = 0xf70007; //write-back, rd allocated, wr no-allocate
 	// wdata = 0xb70007; //write-back, rd no-allocated, wr no-allocate
 	wdata = 0xbf0007; //write-back, rd/wr allocate
-    wr(addr_core_base+0x18, wdata); //cache0, allocate override
+    chip_wr(addr_core_base+0x18, wdata); //cache0, allocate override
 
     //enable cache
     wdata = 0x1;
-    wr(addr_core_base+0x0, wdata); //cache0, transaction enbale
+    chip_wr(addr_core_base+0x0, wdata); //cache0, transaction enbale
 
     //*********************************
     //SLC0/1 Perf monitor setting
     //*********************************
     //duration
     wdata = 0xffffffff; //*256 cycle
-    wr(addr_core_base+0x484, wdata); //cache0, transaction enbale
+    chip_wr(addr_core_base+0x484, wdata); //cache0, transaction enbale
 
     //rtt/wtt watermark
     wdata = (50 << 16) + 50;
-    wr(addr_core_base+0x488, wdata); //cache0, transaction enbale
+    chip_wr(addr_core_base+0x488, wdata); //cache0, transaction enbale
 
     //enable perf, free-run + enable
     wdata = 0x6;
-    wr(addr_core_base+0x480, wdata); //cache0, transaction enbale
+    chip_wr(addr_core_base+0x480, wdata); //cache0, transaction enbale
 
 }
 
@@ -244,56 +244,56 @@ ATT_BRAM_TEXT static void ddr_pll_config(int speed)
     int rdata;
     if (speed == 4266) {
         // 4266
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
         rdata &= 0xff000000;
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40400000);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x1310a02);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40400000);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x1310a02);
         udelay(2);
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
     } else if (speed == 3733) {
         // 3733
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
         rdata &= 0xff000000;
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40600000);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01204d01);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40600000);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01204d01);
         udelay(2);
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
     } else if (speed == 3200) {
         // 3200
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
         rdata &= 0xff000000;
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40155555);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01408501);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40155555);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01408501);
         udelay(2);
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
     } else if (speed == 2133) {
         // 2133
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
         rdata &= 0xff000000;
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40000000);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01608501);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40000000);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x01608501);
         udelay(2);
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
     } else if (speed == 1066) {
         // 1066
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
         rdata &= 0xff000000;
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40aaaaab);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x002608501);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata | 0x40aaaaab);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0x8, 0x002608501);
         udelay(2);
-        rdata = rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
-        wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
+        rdata = chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0xc);
+        chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0xc, rdata & 0xbfffffff);
     } else {
         ;
     }
-    while ((rd(AP_SLC_DUAL_SYSREG_BADDR + 0x18) & 1) != 0x1) {
+    while ((chip_rd(AP_SLC_DUAL_SYSREG_BADDR + 0x18) & 1) != 0x1) {
         ; // pll lock
     }
-    wr(AP_SLC_DUAL_SYSREG_BADDR + 0x18, 0x10000);
+    chip_wr(AP_SLC_DUAL_SYSREG_BADDR + 0x18, 0x10000);
 }
 
 ATT_BRAM_TEXT static void bram_switch_ddrpll(ulong speed)

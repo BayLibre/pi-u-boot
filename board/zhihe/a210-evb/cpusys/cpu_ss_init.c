@@ -12,14 +12,14 @@
  */
 static void pmic_ctrl_bypass(void)
 {
-	wr(AON_AON_PMIC_CTRL_BADDR + 0x50, 0x300a3197);
+	chip_wr(AON_AON_PMIC_CTRL_BADDR + 0x50, 0x300a3197);
 }
 
 static void pca_off(void)
 {
-	wr(AP_C920_PCA_BADDR + 0x20, 0x0);
-	wr(AP_CPU_SS_TOP_MEM_PCA_BADDR + 0x20, 0x0);
-	wr(AP_CPU_SS_TOP_LOGIC_PCA_BADDR + 0x20, 0x0);
+	chip_wr(AP_C920_PCA_BADDR + 0x20, 0x0);
+	chip_wr(AP_CPU_SS_TOP_MEM_PCA_BADDR + 0x20, 0x0);
+	chip_wr(AP_CPU_SS_TOP_LOGIC_PCA_BADDR + 0x20, 0x0);
 }
 
 static void cpu_ss_power_init(void)
@@ -39,13 +39,13 @@ static void c908_pll_init(void)
 	if(freq == 1200)
 		return;
 
-	reg = rd(AP_TOP_CRG_BADDR + 0x4);
+	reg = chip_rd(AP_TOP_CRG_BADDR + 0x4);
 	reg &= ~0x7;
 	reg |= 0x4;
-	wr(AP_TOP_CRG_BADDR + 0x4, reg);
-	wr(AP_CPU_SS_CLK_SYSREG_C908_CLK_CTRL, 1);
+	chip_wr(AP_TOP_CRG_BADDR + 0x4, reg);
+	chip_wr(AP_CPU_SS_CLK_SYSREG_C908_CLK_CTRL, 1);
 	cpuss_c908_pll_cfg(freq);
-	wr(AP_CPU_SS_CLK_SYSREG_C908_CLK_CTRL, 0);
+	chip_wr(AP_CPU_SS_CLK_SYSREG_C908_CLK_CTRL, 0);
 }
 
 static void c920_pll_init(void)
@@ -56,13 +56,13 @@ static void c920_pll_init(void)
 	if(freq == 2040)
 		return;
 
-	reg = rd(AP_TOP_CRG_BADDR + 0x8);
+	reg = chip_rd(AP_TOP_CRG_BADDR + 0x8);
 	reg &= ~0x7;
 	reg |= 0x4;
-	wr(AP_TOP_CRG_BADDR + 0x8, reg);
-	wr(AP_CPU_SS_CLK_SYSREG_C920_CLK_CTRL, 1);
+	chip_wr(AP_TOP_CRG_BADDR + 0x8, reg);
+	chip_wr(AP_CPU_SS_CLK_SYSREG_C920_CLK_CTRL, 1);
 	cpuss_c920_pll_cfg(freq);
-	wr(AP_CPU_SS_CLK_SYSREG_C920_CLK_CTRL, 0);
+	chip_wr(AP_CPU_SS_CLK_SYSREG_C920_CLK_CTRL, 0);
 }
 
 static void cpu_ss_pll_init(void)
@@ -114,8 +114,8 @@ static void cpu_ss_pctrl_init(void)
 	}
 
 	/* Enable C920 Jtag */
-	wr(AP_C920_BPC_BPC_SW_SLEEP_USER, 0x00);
-	wr(AP_CORE_BPC_SW_SLEEP_USER(3), 0x00);
+	chip_wr(AP_C920_BPC_BPC_SW_SLEEP_USER, 0x00);
+	chip_wr(AP_CORE_BPC_SW_SLEEP_USER(3), 0x00);
 }
 
 void cpu_freq_banner(void)
@@ -125,14 +125,14 @@ void cpu_freq_banner(void)
 		ofnode_conf_read_int("c908-ccu-div", 1),
 		ofnode_conf_read_int("c920-pll-freq", 2040) /
 		ofnode_conf_read_int("c920-ccu-div", 1));
-	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908);
-	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
+	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908);
+	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
 	mdelay(2);
-	printf("c908 freq=%dMhz, ", rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000); 
-	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920);
-	wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
+	printf("c908 freq=%dMhz, ", chip_rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000); 
+	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920);
+	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
 	mdelay(2);
-	printf("c920 freq=%dMhz\n", rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000);
+	printf("c920 freq=%dMhz\n", chip_rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000);
 }
 
 /*

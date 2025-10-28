@@ -3,7 +3,7 @@
 ifdef CONFIG_SPL_BUILD
 # SPL
 obj-$(CONFIG_FIT) += boot_fit/spl_with_fit.o
-obj-$(CONFIG_FIT) += boot_fit/spl_full_fit.o
+obj-$(CONFIG_FIT) += boot_fit/spl_fit_boot_fixup.o
 obj-$(CONFIG_FIT) += boot_fit/spl_ram_fit.o
 obj-$(CONFIG_FIT) += boot_fit/spl_switch_boot.o
 obj-y += boot_mmode/spl_rvbl_payload.o

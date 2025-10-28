@@ -5,38 +5,39 @@
 	#address-cells = <1>;
 
 	images {
+		tee-1 {
+			description = "optee-os";
+			data = /incbin/("replace-path/tee.bin.gz");
+			type = "firmware";
+			os = "tee";
+			arch = "riscv";
+			compression = "gzip";
+			load = <0x88000000>;
+			entry = <0x88000000>;
+			invalid_hash {
+					algo = "sha256";
+			};
+		};
 		fdt-evb {
 			description = "EVB Device Tree";
-			data = /incbin/("replace-path/a210-evb.dtb");
+			data = /incbin/("replace-path/a210-evb-sec.dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
 			load = <0x8c000000>;
-			hash {
+			invalid_hash {
 				algo = "sha256";
 			};
 		};
 
 		fdt-dev {
 			description = "DEV Device Tree";
-			data = /incbin/("replace-path/a210-dev.dtb");
+			data = /incbin/("replace-path/a210-dev-sec.dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
 			load = <0x8c000000>;
-			hash {
-				algo = "sha256";
-			};
-		};
-
-		fdt-evb-d2d {
-			description = "EVB D2D Device Tree";
-			data = /incbin/("replace-path/a210-evb-d2d.dtb");
-			type = "flat_dt";
-			arch = "riscv";
-			compression = "none";
-			load = <0x8c000000>;
-			hash {
+			invalid_hash {
 				algo = "sha256";
 			};
 		};
@@ -50,7 +51,7 @@
 			compression = "gzip";
 			load = <0x80000000>;
 			entry = <0x80000000>;
-			hash {
+			invalid_hash {
 				algo = "sha256";
 			};
 		};
@@ -64,7 +65,7 @@
 			compression = "gzip";
 			load = <0x90000000>;
 			entry = <0x90000000>;
-			hash {
+			invalid_hash {
 				algo = "sha256";
 			};
 		};
@@ -77,7 +78,7 @@
 			compression = "none";
 			load = <0x308f8000>;
 			entry = <0x308f8000>;
-			hash {
+			invalid_hash {
 				algo = "sha256";
 			};
 		};
@@ -89,11 +90,12 @@
 			description = "EVB Configuration";
 			fdt = "fdt-evb";
 			firmware = "opensbi-1";
-			loadables = "u-boot-1", "aon-1";
+			tee = "tee-1";
+			loadables = "u-boot-1", "aon-1", "tee-1";
 			invalid_signature {
 				algo = "sha256,rsa2048";
 				key-name-hint = "signature_key_name";
-				sign-images = "fdt", "firmware", "uboot", "aon";
+				sign-images = "fdt", "firmware", "uboot", "aon", "tee";
 			};
 		};
 
@@ -101,23 +103,12 @@
 			description = "DEV Configuration";
 			fdt = "fdt-dev";
 			firmware = "opensbi-1";
-			loadables = "u-boot-1", "aon-1";
+			tee = "tee-1";
+			loadables = "u-boot-1", "aon-1", "tee-1";
 			invalid_signature {
 				algo = "sha256,rsa2048";
 				key-name-hint = "signature_key_name";
-				sign-images = "fdt", "firmware", "uboot", "aon";
-			};
-		};
-
-		conf-evb-d2d {
-			description = "EVB D2D Configuration";
-			fdt = "fdt-evb-d2d";
-			firmware = "opensbi-1";
-			loadables = "u-boot-1", "aon-1";
-			invalid_signature {
-				algo = "sha256,rsa2048";
-				key-name-hint = "signature_key_name";
-				sign-images = "fdt", "firmware", "uboot", "aon";
+				sign-images = "fdt", "firmware", "uboot", "aon", "tee";
 			};
 		};
 	};

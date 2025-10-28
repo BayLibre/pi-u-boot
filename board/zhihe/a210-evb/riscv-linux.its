@@ -3,7 +3,7 @@
 / {
 	description = "ZhiHe A210 FIT image";
 	#address-cells = <1>;
- 
+
 	images {
 		kernel-1 {
 			description = "Linux Kernel";
@@ -18,7 +18,7 @@
 				algo = "sha256";
 			};
 		};
-	
+
 		fdt-1 {
 			description = "Default Device Tree";
 			data = /incbin/("replace-path/replace-dtb");

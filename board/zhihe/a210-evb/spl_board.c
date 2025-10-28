@@ -25,6 +25,7 @@
 #include "adc/adc.h"
 #include "../common/include/boot.h"
 #include "rambus/soc_parameter.h"
+#include "include/utils/utils.h"
 
 //#define DDR_CHECK 1
 
@@ -131,33 +132,54 @@ static void ddr_low_power_init(void)
 		lp_ddr_ss_pctrl_init();
 }
 
+static int init_chip(int chip_id)
+{
+	int ret;
+	chip_set(chip_id);
+
+	cpu_ss_init();
+	clk_init();
+	ddr_low_power_init();
+
+	/* DDR init */
+	ret = ddr_init(board_get_ddrtype());
+	chip_set(0);
+	return ret;
+}
+
+static void init_all_chips(void)
+{
+	int die_count = board_get_die_count();
+	int ret = 0;
+
+	/* fastboot mode, should not init other chips */
+	if (board_bootrom_fastboot())
+		die_count = 1;
+
+	board_type_check();
+	/* Bram call init */
+	board_spl_prepare_bram_section();
+	invalidate_icache_all();
+
+	for (int i = 0; i < die_count; i++) {
+		printf("init chip-%d\n", i);
+		ret = init_chip(i);
+		if (ret) {
+			printf("init chip-%d fail\n", i);
+			while(1);
+		}
+	}
+}
+
 /* weak imp at arch/riscv/lib/spl.c */
 int spl_board_init_f(void)
 {
-	int ret;
-
 	/* Due to SPL not supporting DM_EVENT,
 	 * cpu_probe_all cannot be automatically
 	 * called during dm_init_and_scan
 	 */
 	cpu_probe_all();
-
-	cpu_ss_init();
-
-	clk_init();
-
-	ddr_low_power_init();
-
-	board_type_check();
-
-	/* Bram call init */
-	board_spl_prepare_bram_section();
-	invalidate_icache_all();
-
-	/* DDR init */
-	ret = ddr_init(board_get_ddrtype());
-	if (ret)
-		return ret;
+	init_all_chips();
 
 	/* DDR Debug */
 	// ddr_registers_dump();
@@ -234,6 +256,8 @@ const char * board_get_fit_config(void)
 	case BOARD_DEV:
 		return STR_BOARD_DEV;
 	case BOARD_EVB_D2D:
+		if (board_bootrom_fastboot())
+			return STR_BOARD_EVB;
 		return STR_BOARD_EVB_D2D;
 	default:
 		;

@@ -200,11 +200,6 @@ int spl_start_uboot(void)
 #endif
 
 #ifdef CONFIG_SYS_MMCSD_FS_BOOT
-__weak int board_get_mmc_boot_partition(void)
-{
-	return CONFIG_SYS_MMCSD_FS_BOOT_PARTITION;
-}
-
 static int spl_mmc_do_fs_boot(struct spl_image_info *spl_image,
 			      struct spl_boot_device *bootdev,
 			      struct mmc *mmc,
@@ -212,7 +207,7 @@ static int spl_mmc_do_fs_boot(struct spl_image_info *spl_image,
 {
 	int err = -ENOSYS;
 
-	__maybe_unused int partition = board_get_mmc_boot_partition();
+	__maybe_unused int partition = CONFIG_SYS_MMCSD_FS_BOOT_PARTITION;
 
 #if CONFIG_SYS_MMCSD_FS_BOOT_PARTITION == -1
 	{

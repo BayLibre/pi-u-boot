@@ -8,11 +8,10 @@
 
 #ifdef CONFIG_SPL_ENV_SUPPORT
 /*
- * The default weak implementation of this function is in common/spl/spl_mmc.c
  * This function is called before loading the FIT file to return the eMMC partition ID
  * For this function to take effect, CONFIG_SYS_MMCSD_FS_BOOT_PARTITION must not be defined as -1
  */
-int board_get_mmc_boot_partition(void)
+int spl_get_mmc_bootfs_partition(void)
 {
     char *act_slot;
     char bootpart_name[]="x_bootpart";
@@ -30,4 +29,11 @@ int board_get_mmc_boot_partition(void)
     printf("  Bootpart: %d\n", bootpart_id);
     return bootpart_id;
 }
+
+char *spl_get_osfdt_info(ulong *paddr)
+{
+    *paddr = env_get_hex("dtb_addr", 0);
+    return env_get("dtb_file");
+}
+
 #endif

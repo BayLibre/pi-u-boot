@@ -16,7 +16,7 @@ typedef enum {
     MAX_CPR,
 } ss_contrl;
 
-//#define SS_CFG_DEFAULT (1 << PERI_CPR) | (1 << USB_CPR) | (1 << PCIE_SATA_CPR)
-#define SS_CFG_DEFAULT 0x7FF
+#define SS_CFG_DEFAULT (1 << PERI_CPR) | (1 << USB_CPR) | (1 << PCIE_SATA_CPR) | (1 << VP_CPR) | (1 << VI_CPR) | (1 << NPU_CPR) | (1 << VO_CPR) | (1 << GPU_CPR)| (1 << TEE_CPR)
+// #define SS_CFG_DEFAULT 0x7FF
 
 #endif /* _SS_H_ */

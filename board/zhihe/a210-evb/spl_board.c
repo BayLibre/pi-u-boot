@@ -143,6 +143,10 @@ static int init_chip(int chip_id)
 
 	/* DDR init */
 	ret = ddr_init(board_get_ddrtype());
+
+	/* CPR init */
+	ss_cpr_init(SS_CFG_DEFAULT);
+
 	chip_set(0);
 	return ret;
 }
@@ -205,8 +209,6 @@ void spl_board_init(void)
 	/* Boot serial check */
 	//g_boot_spl_with_fit = board_spl_boot_check();
 
-	/* CPR init */
-	ss_cpr_init(SS_CFG_DEFAULT);
 #ifdef CONFIG_SOC_ZHIHE_D2D
 	/* Note: After this call, all cores except die0 core0 will enter WFI state */
 	d2d_ss_init();

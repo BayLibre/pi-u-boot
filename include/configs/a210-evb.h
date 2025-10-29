@@ -50,10 +50,9 @@
 
 #ifdef CONFIG_RISCV_SMODE
 #define BOOT_FIT \
-	"loadfdt=if test -n ${dtb_file}; then echo Load ${dtb_file}; ext4load ${boot_device} ${dtb_addr} ${dtb_file}; fi\0" \
 	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}; md5sum ${kernel_addr} $filesize\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
-	"load_image=run loadfdt; run loadkernel; run loadinitrd\0" \
+	"load_image= run loadkernel; run loadinitrd\0" \
 	"bootcmd=run select_slot; run load_image; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
 	"altbootcmd=run rollback; run rollback_finish; reset;\0"
 #else

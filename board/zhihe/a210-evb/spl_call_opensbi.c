@@ -19,7 +19,7 @@ int board_spl_call_opensbi(void * entry, ulong hartid, ulong dtb, ulong info)
 {
 	ulong slc_en = env_get_ulong("slc_en", 10, 0);
 	
-	printf("SLC Firmware(%ld)", slc_en);
+	printf("## Load SLC Firmware(%ld)", slc_en);
 
 	spl_call_opensbi(entry, hartid, dtb, info, slc_en);
 

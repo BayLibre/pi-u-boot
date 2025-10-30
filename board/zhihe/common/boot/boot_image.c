@@ -13,7 +13,7 @@
 /*
  * Find uboot fdt blob
  */
-void *find_uboot_fdt_blob(void)
+void *spl_find_uboot_fdt_blob(void)
 {
     int ret;
     const uint32_t *blob = (int *)ALIGN(CONFIG_TEXT_BASE, 4);

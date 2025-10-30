@@ -128,11 +128,11 @@ void cpu_freq_banner(void)
 	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908);
 	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C908 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
 	mdelay(2);
-	printf("c908 freq=%dMhz, ", chip_rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000); 
+	printf("Freq: c908 freq=%dMhz, ", chip_rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000); 
 	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920);
 	chip_wr(AP_CPU_SS_SYSREG_CLK_MON_CTRL, AP_CPU_SS_SYSREG_CLK_MON_C920 | AP_CPU_SS_SYSREG_CLK_MON_ENABLE);
 	mdelay(2);
-	printf("c920 freq=%dMhz\n", chip_rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000);
+	printf("Freq: c920 freq=%dMhz\n", chip_rd(AP_CPU_SS_SYSREG_CLK_FREQ_STS) / 1000);
 }
 
 /*

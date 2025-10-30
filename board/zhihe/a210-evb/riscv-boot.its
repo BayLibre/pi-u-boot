@@ -84,8 +84,8 @@
 	};
 
 	configurations {
-		default = "conf-evb";
-		conf-evb {
+		default = "a210-evb";
+		a210-evb {
 			description = "EVB Configuration";
 			fdt = "fdt-evb";
 			firmware = "opensbi-1";
@@ -97,7 +97,7 @@
 			};
 		};
 
-		conf-dev {
+		a210-dev {
 			description = "DEV Configuration";
 			fdt = "fdt-dev";
 			firmware = "opensbi-1";
@@ -109,7 +109,7 @@
 			};
 		};
 
-		conf-evb-d2d {
+		a210-evb-d2d {
 			description = "EVB D2D Configuration";
 			fdt = "fdt-evb-d2d";
 			firmware = "opensbi-1";

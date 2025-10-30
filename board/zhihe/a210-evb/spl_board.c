@@ -166,10 +166,10 @@ static void init_all_chips(void)
 	invalidate_icache_all();
 
 	for (int i = 0; i < die_count; i++) {
-		printf("init chip-%d\n", i);
+		printf("Chip: init chip-%d\n", i);
 		ret = init_chip(i);
 		if (ret) {
-			printf("init chip-%d fail\n", i);
+			printf("spl: init chip-%d fail\n", i);
 			while(1);
 		}
 	}

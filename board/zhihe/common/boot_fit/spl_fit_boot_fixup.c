@@ -131,8 +131,22 @@ static int spl_mmc_find_device(struct mmc **mmcp, int mmc_dev)
 static int reload_dtb_from_ext4fs(void)
 {
     int err = 0;
+    ulong dtb_addr = 0;
+    char dtb_filename_buf[64];
+    char *dtb_file = NULL;
+    struct mmc *mmc = NULL;
 
-    static struct mmc *mmc = NULL;
+    /* Check dtb filename */
+    dtb_file = spl_get_osfdt_info(&dtb_addr);
+    if (dtb_file == NULL) {
+        sprintf(dtb_filename_buf, "%s.dtb", board_get_fit_config());
+        dtb_file = dtb_filename_buf;
+    }
+
+    if (dtb_addr == 0) {
+        printf("spl: dtb addr check fail, use default\n");
+        return -1;
+    }
 
     /* MMC Init */
     err = spl_mmc_find_device(&mmc, CONFIG_FASTBOOT_FLASH_MMC_DEV);
@@ -175,26 +189,23 @@ static int reload_dtb_from_ext4fs(void)
     }
 
     /* Read dtb file */
-    ulong dtb_addr;
-    char *dtb_file = spl_get_osfdt_info(&dtb_addr);
-    if (dtb_file && dtb_addr) {
-        loff_t filelen;
-        err = ext4fs_open(dtb_file, &filelen);
-        if (err < 0) {
-            printf("spl: ext4fs_open failed\n");
-            return -1;
-        }
-
-        loff_t actlen;
-        char *buf=(char*)dtb_addr;
-        err = ext4fs_read(buf, 0, filelen, &actlen);
-        if (err == 0) {
-            printf("## Reload dtb from %s to 0x%lx(%lld)\n", dtb_file, dtb_addr, actlen);
-        } else {
-            printf("spl: ext4fs_read failed\n");
-        }
-        ext4fs_close();
+    loff_t filelen;
+    err = ext4fs_open(dtb_file, &filelen);
+    if (err < 0) {
+        printf("spl: ext4fs_open %s failed\n", dtb_file);
+        return -1;
     }
+
+    loff_t actlen;
+    char *buf=(char*)dtb_addr;
+    err = ext4fs_read(buf, 0, filelen, &actlen);
+    if (err == 0) {
+        printf("## Load %s to 0x%lx(%lld)\n", dtb_file, dtb_addr, actlen);
+    } else {
+        printf("spl: ext4fs_read failed\n");
+    }
+    ext4fs_close();
+
     return err;
 }
 
@@ -225,7 +236,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     /* reload dtb file */
     reload_dtb_from_ext4fs();
 
-    void *fdt_uboot = find_uboot_fdt_blob();
+    void *fdt_uboot = spl_find_uboot_fdt_blob();
     if (!fdt_uboot) {
         return;
     }

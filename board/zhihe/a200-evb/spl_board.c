@@ -542,3 +542,9 @@ int board_get_ddr_info(u64 *start, u64 *size)
 	*size = get_ddr_density();
 	return 0;
 }
+
+/* Override weak imp at common/spl/spl_fit.c */
+const char * board_get_fit_config(void)
+{
+	return "th1520-lichee-pi-4a";
+}

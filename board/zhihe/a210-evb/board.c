@@ -38,6 +38,8 @@ static void fastboot_check(void)
 {
 	if (board_bootrom_fastboot()) {
 		run_command("env default -fa;env save;fnv load", 0);
+		/* Config eMMC BOOT_PARTITION_ENABLE, fix qspiboot access emmcboot fail */
+		run_command("mmc partconf 0 0 1 0", 0);
 		run_command("echo fastboot check success", 0);
 		run_command("fastboot usb 0", 0);
 	}
@@ -52,7 +54,7 @@ int board_init(void)
 	const char *conf;
 	int chosen_node = 0;
 
-	void *fdt_uboot = find_uboot_fdt_blob();
+	void *fdt_uboot = gd->fdt_blob;
 	if (fdt_uboot) {
 		chosen_node = fdt_path_offset(fdt_uboot, "/chosen");
 		conf = fdt_getprop(fdt_uboot, chosen_node, "board", NULL);

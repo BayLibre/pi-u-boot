@@ -60,8 +60,8 @@
 	};
 
 	configurations {
-		default = "conf-1";
-		conf-1 {
+		default = "th1520-lichee-pi-4a";
+		th1520-lichee-pi-4a {
 			description = "Default Configuration";
 			fdt = "fdt-1";
 			firmware = "opensbi-1";

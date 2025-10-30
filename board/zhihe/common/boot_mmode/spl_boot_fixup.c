@@ -35,7 +35,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     u64 size;
     const char *board_type;
     int chosen;
-    void *fdt_uboot = find_uboot_fdt_blob();
+    void *fdt_uboot = spl_find_uboot_fdt_blob();
     if (!fdt_uboot) {
         return;
     }

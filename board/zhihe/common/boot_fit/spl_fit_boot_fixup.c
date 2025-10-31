@@ -139,7 +139,7 @@ static int reload_dtb_from_ext4fs(void)
     /* Check dtb filename */
     dtb_file = spl_get_osfdt_info(&dtb_addr);
     if (dtb_file == NULL) {
-        sprintf(dtb_filename_buf, "%s.dtb", board_get_fit_config());
+        sprintf(dtb_filename_buf, "%s.dtb", board_get_fit_dtb_name(1));
         dtb_file = dtb_filename_buf;
     }
 
@@ -230,8 +230,6 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 {
     u64 start;
     u64 size;
-    const char *board_type;
-    int chosen;
 
     /* reload dtb file */
     reload_dtb_from_ext4fs();
@@ -255,13 +253,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     }
 
     /* 3. Set board type pass to u-boot */
-    chosen = fdt_find_or_add_subnode(fdt_uboot, 0, "chosen");
-    if (chosen >= 0) {
-        board_type = board_get_fit_config();
-        fdt_setprop_string(fdt_uboot, chosen, "board", board_type);
-    } else {
-        pr_err("%s: could not find/create '/chosen'\n", __func__);
-    }
+    board_set_binfo_to_fdt(fdt_uboot);
 }
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE

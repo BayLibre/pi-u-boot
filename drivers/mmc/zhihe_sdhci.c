@@ -14,7 +14,7 @@
 #define HS200_DELAY_LANE 60
 
 #ifdef CONFIG_TARGET_A210_EVB
-volatile int DELAY_LANE = 99;
+volatile int DELAY_LANE = 24;
 #elif defined(CONFIG_TARGET_A200_EVB)
 volatile int DELAY_LANE = 50;
 #endif

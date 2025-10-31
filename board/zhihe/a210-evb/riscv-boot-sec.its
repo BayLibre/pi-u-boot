@@ -85,8 +85,8 @@
 	};
 
 	configurations {
-		default = "a210-evb";
-		a210-evb {
+		default = "a210-evb-sec";
+		a210-evb-sec {
 			description = "EVB Configuration";
 			fdt = "fdt-evb";
 			firmware = "opensbi-1";
@@ -99,7 +99,7 @@
 			};
 		};
 
-		a210-dev {
+		a210-dev-sec {
 			description = "DEV Configuration";
 			fdt = "fdt-dev";
 			firmware = "opensbi-1";

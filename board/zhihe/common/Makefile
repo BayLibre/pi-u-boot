@@ -17,3 +17,4 @@ obj-$(CONFIG_ZHIHE_MMC_OP_SUPPORT) += mmc/mmc.o
 obj-$(CONFIG_ENV_IS_IN_MMC) += factory_nv/nv_mmc.o
 endif
 
+obj-y += board_check.o

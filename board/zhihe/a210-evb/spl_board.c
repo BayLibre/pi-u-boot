@@ -245,31 +245,54 @@ int board_get_ddr_info(u64 *start, u64 *size)
 	return 0;
 }
 
+/*
+ * Get Board info
+ */
+const char * board_get_fit_dtb_name(int do_multi_check)
+{
+	static char dtb_name_buf[64];
+
+	const char * name;
+	enum board_type type = board_get_type();
+
+	/* Convert to string type */
+	switch(type) {
+	case BOARD_EVB:
+		name = STR_BOARD_EVB;
+		break;
+	case BOARD_DEV:
+		name = STR_BOARD_DEV;
+		break;
+	case BOARD_EVB_D2D:
+		if (board_bootrom_fastboot()) {
+			name = STR_BOARD_EVB;  /* Fixme: D2D use EVB dtb */
+		} else {
+			name = STR_BOARD_EVB_D2D;
+		}
+		break;
+	default:
+		name = STR_BOARD_EVB;
+	}
+	strcpy(dtb_name_buf, name);
+
+	/* Convert to string type */
+	if (do_multi_check) {
+		if (board_multi_fit_check("-sec")) {
+			strcat(dtb_name_buf, "-sec");
+		}
+	}
+
+	return dtb_name_buf;
+}
+
 /* Override weak imp at common/spl/spl_fit.c */
 const char * board_get_fit_config(void)
 {
-	enum board_type type;
-
-	/* Select config by board type */
-	type = board_get_type();
-	switch(type) {
-	case BOARD_EVB:
-		return STR_BOARD_EVB;
-	case BOARD_DEV:
-		return STR_BOARD_DEV;
-	case BOARD_EVB_D2D:
-		if (board_bootrom_fastboot())
-			return STR_BOARD_EVB;
-		return STR_BOARD_EVB_D2D;
-	default:
-		;
-	}
-
-	return STR_BOARD_EVB;
+	return board_get_fit_dtb_name(1);
 }
 
 /*
- * Board type check
+ * Do board type check
  */
 /*
 Attention:

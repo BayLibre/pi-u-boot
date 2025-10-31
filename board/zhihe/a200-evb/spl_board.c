@@ -543,8 +543,15 @@ int board_get_ddr_info(u64 *start, u64 *size)
 	return 0;
 }
 
+/*
+ * Get Board info
+ */
+const char * board_get_fit_dtb_name(int do_multi_check)
+{
+	return "th1520-lichee-pi-4a";
+}
 /* Override weak imp at common/spl/spl_fit.c */
 const char * board_get_fit_config(void)
 {
-	return "th1520-lichee-pi-4a";
+	return board_get_fit_dtb_name(1);
 }

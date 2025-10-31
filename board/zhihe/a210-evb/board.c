@@ -14,11 +14,8 @@
 
 #include "include/addr_defines.h"
 #include "include/board.h"
-#include "configs/a210-evb.h"
 #include "rambus/soc_parameter.h"
 #include "../common/include/boot.h"
-
-static enum board_type _board_type = BOARD_UNKNOWN;
 
 /*
  * static functions
@@ -51,30 +48,21 @@ static void fastboot_check(void)
  */
 int board_init(void)
 {
-	const char *conf;
-	int chosen_node = 0;
+	enum board_type type = BOARD_UNKNOWN;
+	const char * name = board_get_binfo_from_fdt((void *)gd->fdt_blob);
 
-	void *fdt_uboot = gd->fdt_blob;
-	if (fdt_uboot) {
-		chosen_node = fdt_path_offset(fdt_uboot, "/chosen");
-		conf = fdt_getprop(fdt_uboot, chosen_node, "board", NULL);
-		if (conf && strcmp(conf, STR_BOARD_DEV) == 0) {
-			_board_type = BOARD_DEV;
-		} else if (conf && strcmp(conf, STR_BOARD_EVB) == 0) {
-			_board_type = BOARD_EVB;
-		} else if (conf && strcmp(conf, STR_BOARD_EVB_D2D) == 0) {
-			_board_type = BOARD_EVB_D2D;
-		} else {
-			_board_type = BOARD_UNKNOWN;
+	if (name) {
+		if (strcmp(name, STR_BOARD_DEV) == 0) {
+			type = BOARD_DEV;
+		} else if (strcmp(name, STR_BOARD_EVB) == 0) {
+			type = BOARD_EVB;
+		} else if (strcmp(name, STR_BOARD_EVB_D2D) == 0) {
+			type = BOARD_EVB_D2D;
 		}
-	} else {
-		printf("%s(%d) get uboot fdt blob failed.\n", __func__, __LINE__);
 	}
 
-	printf("Board: %s(%d)\n", conf, _board_type);
-	gpio_pin_init(_board_type);
-
-	debug("%s(%d) uboot fdt blob 0x%p board-type: %s\n", __func__, __LINE__, fdt_uboot, conf);
+	printf("Board: %s(%d)\n", name, type);
+	gpio_pin_init(type);
 
 	clk_init();
 #ifdef CONFIG_ZHIHE_RAMBUS_ALGO

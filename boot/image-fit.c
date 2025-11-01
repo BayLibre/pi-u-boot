@@ -2046,6 +2046,13 @@ static const char *fit_get_image_type_property(int type)
 	return "unknown";
 }
 
+#ifndef USE_HOSTCC
+__weak int board_fit_each_image_post_load(const void *fit, int noffset, ulong loadaddr, ulong len)
+{
+	return 0;
+}
+#endif
+
 int fit_image_load(struct bootm_headers *images, ulong addr,
 		   const char **fit_unamep, const char **fit_uname_configp,
 		   int arch, int ph_type, int bootstage_id,
@@ -2303,6 +2310,9 @@ int fit_image_load(struct bootm_headers *images, ulong addr,
 		*fit_uname_configp = (char *)(fit_uname_config ? :
 					      fit_base_uname_config);
 
+#ifndef USE_HOSTCC
+	board_fit_each_image_post_load(fit, noffset, load, len);
+#endif
 	return noffset;
 }
 

@@ -97,6 +97,10 @@ do_fit() {
     WORK_PATH=$2
     OUT_BOOT_ITB=$3
 
+    # Save hash
+    cat $1 | grep "replace-path.*" | awk -v wp="${WORK_PATH}" -F'.gz|/|"' '{print wp"/"$5}' | xargs sha256sum > ${WORK_PATH}/riscv-boot.hash
+    sed -i "s|${WORK_PATH}/||g" ${WORK_PATH}/riscv-boot.hash
+
     # GZ file
     cat $1 | grep "replace-path.*gz" | awk -F'.gz|/' '{print $4}' | xargs -i gzip -kf ${WORK_PATH}/{}
 

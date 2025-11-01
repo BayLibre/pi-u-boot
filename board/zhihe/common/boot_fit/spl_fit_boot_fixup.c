@@ -4,9 +4,10 @@
  */
 
 //#define DEBUG
+#include <log.h>
 #include <errno.h>
 #include <image.h>
-#include <log.h>
+#include <memalign.h>
 #include <mapmem.h>
 #include <spl.h>
 #include <sysinfo.h>
@@ -271,3 +272,53 @@ int board_spl_fit_is_verify(void)
     return 1;
 }
 #endif
+
+int board_fit_each_image_post_load(const void *fit, int noffset, ulong loadaddr, ulong len)
+{
+    ALLOC_CACHE_ALIGN_BUFFER(uint8_t, hash_value, FIT_MAX_HASH_LEN);
+    int hash_value_len;
+    const char *algo;
+
+    uint8_t *fit_hash_value;
+    int fit_hash_value_len;
+    int noffset_hash;
+
+    //printf("fit %p, noffset %d\n", fit, noffset);
+    noffset_hash = fdt_subnode_offset(fit, noffset, "hash");
+    if (noffset_hash < 0) {
+        printf("spl: Can't get hash property\n");
+        return -1;
+    }
+
+    if (fit_image_hash_get_algo(fit, noffset_hash, &algo)) {
+        printf("spl: Can't get hash algo property\n");
+        return -1;
+    }
+
+    //printf("fit %p, noffset_hash %d\n", fit, noffset_hash);
+    if (fit_image_hash_get_value(fit, noffset_hash, &fit_hash_value, &fit_hash_value_len)) {
+        printf("spl: Can't get hash value property\n");
+        return -1;
+    }
+
+    if (calculate_hash((void *)loadaddr, len, algo, hash_value, &hash_value_len)) {
+        printf("spl: Unsupported hash algorithm\n");
+        return -1;
+    }
+
+    printf("     Uncompress size: %ld\n", len);
+    printf("     Hash:            ");
+    for (int i = 0; i < hash_value_len; i++) {
+        printf("%02x", hash_value[i]);
+    }
+    printf("\n");
+
+    // if (hash_value_len != fit_hash_value_len) {
+    //     printf("spl: Bad hash value len\n");
+    //     return -1;
+    // } else if (memcmp(hash_value, fit_hash_value, hash_value_len) != 0) {
+    //     printf("spl: Bad hash value\n");
+    //     return -1;
+    // }
+    return 0;
+}

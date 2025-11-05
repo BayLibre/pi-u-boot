@@ -536,6 +536,12 @@ void spl_board_init(void)
 #endif
 }
 
+/*****************************
+ * Adaptor boot_fixup
+ ****************************/
+ /*
+  * Override weak imp at spl_fit_boot_fixup.c
+  */
 int board_get_ddr_info(u64 *start, u64 *size)
 {
 	*start = 0x0;
@@ -543,13 +549,18 @@ int board_get_ddr_info(u64 *start, u64 *size)
 	return 0;
 }
 
+/*****************************
+ * Adaptor board_check
+ ****************************/
 /*
  * Get Board info
  */
 const char * board_get_fit_dtb_name(int do_multi_check)
 {
+	/* set default dtb */
 	return "th1520-lichee-pi-4a";
 }
+
 /* Override weak imp at common/spl/spl_fit.c */
 const char * board_get_fit_config(void)
 {

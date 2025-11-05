@@ -10,15 +10,16 @@
 #include <cli.h>
 #include <search.h>
 #include <env_internal.h>
+#include <u-boot/crc.h>
 
-#define FNV_DATA_LEN CONFIG_ENV_SIZE
+#define FNV_TOTAL_LEN CONFIG_ENV_SIZE
 #define FNV_CMD_LEN 2048
 
 static struct _s_fnv_priv {
     char runcmd_buf[FNV_CMD_LEN];
     char export_names[FNV_CMD_LEN];
-    char export_buf[FNV_DATA_LEN];
-    char read_buf[FNV_DATA_LEN];
+    char export_buf[FNV_TOTAL_LEN];
+    char read_buf[FNV_TOTAL_LEN];
 } fnv_priv = { "", "", "", "" };
 
 /* 
@@ -33,44 +34,23 @@ static int get_fnv_count(char *nv_buf, int size)
         return 0;
     }
 
-    if (nv_buf[0] == '\0') {
+    env_t *env_out = (env_t *)nv_buf;
+
+    if (env_out->data[0] == '\0') {
         return 0;
     }
 
     for (int i = 0; i < size; i++) {
-        if (nv_buf[i] == '\0') {
+        if (env_out->data[i] == '\0') {
             nv_count++;
             // check end
-            if (nv_buf[i + 1] == '\0') {
+            if (env_out->data[i + 1] == '\0') {
                 break;
             }
         }
     }
 
     return nv_count;
-}
-
-/* 
- * Get fnv real size
- * binary format ('\0' separated, "\0\0" terminated)
- */
-static int get_fnv_real_size(char *nv_buf, int size)
-{
-    if (nv_buf == NULL) {
-        return 0;
-    }
-
-    if (nv_buf[0] == '\0') {
-        return 0;
-    }
-
-    for (int i = 0; i < size; i++) {
-        if (nv_buf[i] == '\0' && nv_buf[i + 1] == '\0') {
-            return i + 2;
-        }
-    }
-
-    return size;
 }
 
 /* 
@@ -98,7 +78,7 @@ static int load_fnv_to_mem(void)
 
     /* load data */
     snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "mmc read 0x%lx $factoryoff 0x%x",
-             (unsigned long)fnv_priv.read_buf, (FNV_DATA_LEN / 512));
+             (unsigned long)fnv_priv.read_buf, (FNV_TOTAL_LEN / 512));
     debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
     ret = run_command(fnv_priv.runcmd_buf, 0);
 
@@ -108,13 +88,14 @@ static int load_fnv_to_mem(void)
 
     /* Get nv name to export_names */
     int fnv_len = 0;
-    char *item_ptr = fnv_priv.read_buf;
+    char *data_buf = &fnv_priv.read_buf[ENV_HEADER_SIZE];
+    char *item_ptr = data_buf;
     char name[64];
 
     fnv_priv.export_names[0] = '\0';
-    for (int i = 0; i < FNV_DATA_LEN; i++) {
-        char *ch1 = &fnv_priv.read_buf[i];
-        char *ch2 = &fnv_priv.read_buf[i + 1];
+    for (int i = 0; i < FNV_TOTAL_LEN; i++) {
+        char *ch1 = &data_buf[i];
+        char *ch2 = &data_buf[i + 1];
         if (*ch1 == '\0') {
             // get name from item
             strcpy(name, item_ptr);
@@ -145,11 +126,14 @@ static int do_fnv_print(struct cmd_tbl *cmdtp, int flag, int argc, char *const a
 {
     int ret = CMD_RET_SUCCESS;
 
+    /* load export_names from factory */
+    load_fnv_to_mem();
+
     if (strlen(fnv_priv.export_names) > 0) {
         snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "env print %s", fnv_priv.export_names);
         ret = run_command(fnv_priv.runcmd_buf, 0);
     } else {
-        printf("[NV] The list is empty, please run 'fnv load' first\n");
+        printf("[NV] The list is empty\n");
     }
 
     return ret;
@@ -174,8 +158,13 @@ static int do_fnv_save(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
     }
 
     /* Export fnv@export_names to export_buf */
-    res = fnv_priv.export_buf;
+    env_t *env_out = (env_t *)fnv_priv.export_buf;
+    res = (char *)env_out->data;
     len = hexport_r(&env_htab, '\0', H_MATCH_KEY | H_MATCH_IDENT, &res, ENV_SIZE, argc, argv);
+    env_out->crc = crc32(0, env_out->data, ENV_SIZE);
+#ifdef CONFIG_ENV_ADDR_REDUND
+	env_out->flags = ENV_REDUND_ACTIVE;
+#endif
     debug("[DBG] export buffer 0x%p(%ld)\n", fnv_priv.export_buf, len);
 
     if (len <= 0) {
@@ -196,17 +185,19 @@ static int do_fnv_save(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
     }
 
     /* Write export_buf to emmc@FNV_OFFSET */
-    printf("[NV] %d item saved\n", argc);
-    int fnv_size = get_fnv_real_size(fnv_priv.export_buf, len);
+    printf("[NV] %d item will be saved\n", argc);
 
-    if (fnv_size > 0) {
-        snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "mmc write 0x%lx $factoryoff 0x%x",
-                 (unsigned long)fnv_priv.export_buf, DIV_ROUND_UP(fnv_size, 512));
-        debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
-        ret = run_command(fnv_priv.runcmd_buf, 0);
+    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "mmc write 0x%lx $factoryoff 0x%x",
+                (unsigned long)fnv_priv.export_buf, DIV_ROUND_UP(FNV_TOTAL_LEN, 512));
+    debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
+    ret = run_command(fnv_priv.runcmd_buf, 0);
 
+    if (ret == CMD_RET_SUCCESS) {
         printf("[NV] Save fnv to uboot env\n");
+        run_command("env set first_boot_done yes", 0);
         env_save();
+    } else {
+        printf("[NV] Save write factory fail\n");
     }
 
     return ret;
@@ -223,25 +214,38 @@ static int do_fnv_load(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
     int fnv_len = load_fnv_to_mem();
     printf("[NV] Load fnv(%d): %s\n", fnv_len, fnv_priv.export_names);
 
-    /* Export fnv@export_names to export_buf */
-    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "env export -b 0x%lx -s 0x%x %s",
-             (unsigned long)fnv_priv.export_buf, FNV_DATA_LEN, fnv_priv.export_names);
-    debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
-    ret = run_command(fnv_priv.runcmd_buf, 0);
 
     /* Force import fnv to uboot env */
-    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "env import -b 0x%lx",
-             (unsigned long)fnv_priv.read_buf);
+    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "env import -c 0x%lx 0x%lx",
+             (unsigned long)fnv_priv.read_buf, FNV_TOTAL_LEN);
     debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
     ret = run_command(fnv_priv.runcmd_buf, 0);
-
-    /* Compare export_buf(from uboot evn) & read_buf(from emmc) */
-    if (memcmp(fnv_priv.export_buf, fnv_priv.read_buf, fnv_len) != 0) {
+    if (ret == CMD_RET_SUCCESS) {
         printf("[NV] Sync fnv to uboot env\n");
         env_save();
     }
 
-    return CMD_RET_SUCCESS;
+    return ret;
+}
+
+/* 
+ * Erase fnv
+ */
+static int do_fnv_erase(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret;
+
+    ret = get_factory_offset();
+
+    if (ret != CMD_RET_SUCCESS) {
+        return ret;
+    }
+
+    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "mmc erase $factoryoff 0x%x", DIV_ROUND_UP(FNV_TOTAL_LEN, 512));
+    debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
+    ret = run_command(fnv_priv.runcmd_buf, 0);
+
+    return ret;
 }
 
 /* 
@@ -251,6 +255,7 @@ static struct cmd_tbl cmd_env_sub[] = {
     U_BOOT_CMD_MKENT(print, 1, 0, do_fnv_print, "", ""),
     U_BOOT_CMD_MKENT(save, 1, 0, do_fnv_save, "", ""),
     U_BOOT_CMD_MKENT(load, 1, 0, do_fnv_load, "", ""),
+    U_BOOT_CMD_MKENT(erase, 1, 0, do_fnv_erase, "", ""),
 };
 
 static int do_fnv(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])

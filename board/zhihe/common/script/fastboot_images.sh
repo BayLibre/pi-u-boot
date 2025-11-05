@@ -25,6 +25,8 @@ echo "###### Flash gpt"
 fastboot ${device} flash gpt emmc-gpt_primary.img || { echo $FAIL; exit 1; }
 echo "###### Flash loader"
 fastboot ${device} flash mmc0boot0 emmc_boot-loader.img || { echo $FAIL; exit 1; }
+echo "###### Flash partition uboot_env"
+fastboot ${device} flash uboot_env emmc-uboot_env.img || { echo $FAIL; exit 1; }
 echo "###### Flash partition boot"
 fastboot ${device} flash boot emmc-boot_a.img || { echo $FAIL; exit 1; }
 echo "###### Flash partition system"

@@ -5,14 +5,26 @@
 	#address-cells = <1>;
  
 	images {
-		fdt-1 {
-			description = "Device Tree";
+		fdt-licheepi {
+			description = "LicheePi Device Tree";
 			data = /incbin/("replace-path/th1520-lichee-pi-4a.dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
 			load = <0x0c000000>;
-			invalid_hash {
+			hash {
+				algo = "sha256";
+			};
+		};
+
+		fdt-dev {
+			description = "DEV Device Tree";
+			data = /incbin/("replace-path/a200-dev.dtb");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "none";
+			load = <0x0c000000>;
+			hash {
 				algo = "sha256";
 			};
 		};
@@ -26,7 +38,7 @@
 			compression = "gzip";
 			load = <0x00000000>;
 			entry = <0x00000000>;
-			invalid_hash {
+			hash {
 				algo = "sha256";
 			};
 		};
@@ -40,7 +52,7 @@
 			compression = "gzip";
 			load = <0x10000000>;
 			entry = <0x10000000>;
-			invalid_hash {
+			hash {
 				algo = "sha256";
 			};
 		};
@@ -53,7 +65,7 @@
 			compression = "none";
 			load = <0xff 0xffef8000>;
 			entry = <0xff 0xffef8000>;
-			invalid_hash {
+			hash {
 				algo = "sha256";
 			};
 		};
@@ -63,7 +75,19 @@
 		default = "th1520-lichee-pi-4a";
 		th1520-lichee-pi-4a {
 			description = "Default Configuration";
-			fdt = "fdt-1";
+			fdt = "fdt-licheepi";
+			firmware = "opensbi-1";
+			loadables = "u-boot-1", "aon-1";
+			invalid_signature {
+				algo = "sha256,rsa2048";
+				key-name-hint = "signature_key_name";
+				sign-images = "fdt", "firmware";
+			};
+		};
+
+		a200-dev {
+			description = "Default Configuration";
+			fdt = "fdt-dev";
 			firmware = "opensbi-1";
 			loadables = "u-boot-1", "aon-1";
 			invalid_signature {

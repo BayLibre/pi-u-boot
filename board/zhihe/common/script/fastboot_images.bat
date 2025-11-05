@@ -21,6 +21,8 @@ echo ###### Flash gpt
 fastboot flash gpt emmc-gpt_primary.img || goto :error
 echo ###### Flash loader
 fastboot flash mmc0boot0 emmc_boot-loader.img || goto :error
+echo ###### Flash uboot_env
+fastboot flash uboot_env emmc-uboot_env.img || goto :error
 echo ###### Flash partition boot
 fastboot flash boot emmc-boot_a.img || goto :error
 echo ###### Flash partition system

@@ -283,10 +283,14 @@ int board_fit_each_image_post_load(const void *fit, int noffset, ulong loadaddr,
     int fit_hash_value_len;
     int noffset_hash;
 
+    if (loadaddr == 0) {
+        return -1;
+    }
+
     //printf("fit %p, noffset %d\n", fit, noffset);
     noffset_hash = fdt_subnode_offset(fit, noffset, "hash");
     if (noffset_hash < 0) {
-        printf("spl: Can't get hash property\n");
+        //printf("spl: Can't get hash property\n");
         return -1;
     }
 

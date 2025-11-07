@@ -132,7 +132,15 @@ static void ddr_low_power_init(void)
 		lp_ddr_ss_pctrl_init();
 }
 
-static int init_chip(int chip_id)
+static void ss_sam_en(void)
+{
+	chip_wr(AP_PCIE_DFMU_SAM_BADDR + 0x10, 1);
+	chip_wr(AP_PERI1_DFMU_SAM_BADDR + 0x10, 1);
+	chip_wr(AP_NPU_DFMU_SAM_BADDR + 0x10, 1);
+	chip_wr(AP_VO_DFMU_SAM_BADDR + 0x10, 1);
+}
+
+static int init_chip(int chip_id, int num_chips)
 {
 	int ret;
 	chip_set(chip_id);
@@ -145,7 +153,10 @@ static int init_chip(int chip_id)
 	ret = ddr_init(board_get_ddrtype());
 
 	/* CPR init */
-	ss_cpr_init(SS_CFG_DEFAULT);
+	ss_cpr_init(SS_CFG_DEFAULT, chip_id);
+
+	if (num_chips > 1)
+		ss_sam_en();
 
 	chip_set(0);
 	return ret;
@@ -167,7 +178,7 @@ static void init_all_chips(void)
 
 	for (int i = 0; i < die_count; i++) {
 		printf("Chip: init chip-%d\n", i);
-		ret = init_chip(i);
+		ret = init_chip(i, die_count);
 		if (ret) {
 			printf("spl: init chip-%d fail\n", i);
 			while(1);

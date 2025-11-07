@@ -955,9 +955,8 @@ void aon_cpr_init(void)
 				 iopmp_permission, 0); //AON
 }
 
-void ss_cpr_init(unsigned int ss_cfg)
+void ss_cpr_init(unsigned int ss_cfg, int chip_id)
 {
-	u32 chip_id = get_chip_id();
 	debug("%s(%d) ss_cfg:%x chip_id:%d", __func__, __LINE__, ss_cfg, chip_id);
 
 #ifdef D2D_DEBUG_SS_MT
@@ -1099,8 +1098,4 @@ void ss_cpr_init(unsigned int ss_cfg)
 #endif
 
 	chip_wr(SAM_INDICATOR,0xdeadbeee);
-
-	/* dwdma clk & rst */
-	extern void ss_dwdma_config(void);
-	ss_dwdma_config();
 }

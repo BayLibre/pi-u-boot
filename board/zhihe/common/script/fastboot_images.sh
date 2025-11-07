@@ -33,7 +33,7 @@ echo "###### Flash partition system"
 fastboot ${device} flash system emmc-system_a.img || { echo $FAIL; exit 1; }
 echo "###### Flash partition app"
 fastboot ${device} flash app emmc-app_a.img || { echo $FAIL; exit 1; }
-echo "###### Flash partition home"
-fastboot ${device} flash home emmc-home.img || { echo $FAIL; exit 1; }
+echo "###### Flash partition data"
+fastboot ${device} flash data emmc-data.img || { echo $FAIL; exit 1; }
 
 echo "###### Images flashed success"

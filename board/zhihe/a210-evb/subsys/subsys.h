@@ -8,6 +8,6 @@
 
  void lp_ddr_ss_ccu_init(void);
  void lp_ddr_ss_pctrl_init(void);
- void ss_cpr_init(unsigned int ss_cfg);
+ void ss_cpr_init(unsigned int ss_cfg, int chip_id);
 
  #endif

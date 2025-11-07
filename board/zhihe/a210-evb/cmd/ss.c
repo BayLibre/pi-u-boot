@@ -8,6 +8,7 @@
 #include <command.h>
 #include "../subsys/subsys.h"
 #include "ss.h"
+#include "../include/utils/io.h"
 
 /* Enabled PERI and USB by default. */
 static unsigned int ss_cfg = SS_CFG_DEFAULT;
@@ -74,10 +75,30 @@ static int do_ss_control(int argc, char *const argv[])
 	return 0;
 }
 
+static int strtou32(const char *str, unsigned int base, u32 *result)
+{
+	char *ep;
+
+	*result = simple_strtoul(str, &ep, base);
+	if (ep == str || *ep != '\0')
+		return CMD_RET_USAGE;
+
+	return 0;
+}
+
 static int do_ss_enable(int argc, char *const argv[])
 {
-	ss_cpr_init(ss_cfg);
+	int chip_id;
+
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	if (strtou32(argv[2], 0, &chip_id))
+		return CMD_RET_USAGE;
+	chip_set(chip_id);
+	ss_cpr_init(ss_cfg, chip_id);
 	ss_dump_status(ss_cfg);
+	chip_set(0);
 
 	return 0;
 }
@@ -111,9 +132,11 @@ U_BOOT_LONGHELP(ss,
 	"status                  - dump current subsystem status flags.\n"
 	"ss set ss_name             - set the specified subsystem to enable flag.\n"
 	"ss unset ss_name           - unset the specified subsystem to disable flag.\n"
-	"ss enable                  - enable all subsystems using the current status flags.\n"
+	"ss enable chip_id                 - enable all subsystems using the current status flags.\n"
 	"\nss_name:\n"
 	"  VP, VI, NPU, VO, PERI, PCIE_SATA, USB, TEE, GPU, D2D, D2D_CPU\n"
+	"\nchi_ip:\n"
+	" chip_id: [0-3]"
 	"\neg:\n"
 	"  ss set ss_name0 + ss set ss_name1 + ss enable\n"
 	);

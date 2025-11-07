@@ -21,7 +21,6 @@ obj-$(CONFIG_USB_GADGET_DWC2_OTG) += board_dwc2_otg.o
 endif
 
 obj-y += subsys/ss_config.o
-obj-y += subsys/ss_dwdma.o
 obj-y += board_common.o
 obj-y += adc/adc.o
 

@@ -29,8 +29,8 @@ echo ###### Flash partition system
 fastboot flash system emmc-system_a.img || goto :error
 echo ###### Flash partition app
 fastboot flash app emmc-app_a.img || goto :error
-echo ###### Flash partition home
-fastboot flash home emmc-home.img || goto :error
+echo ###### Flash partition data
+fastboot flash data emmc-data.img || goto :error
 
 echo ###### Images flashed success
 pause

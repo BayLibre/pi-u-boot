@@ -5,11 +5,11 @@ ifdef CONFIG_SPL_BUILD
 obj-$(CONFIG_FIT) += boot_fit/spl_with_fit.o
 obj-$(CONFIG_FIT) += boot_fit/spl_fit_boot_fixup.o
 obj-$(CONFIG_FIT) += boot_fit/spl_ram_fit.o
-obj-$(CONFIG_FIT) += boot_fit/spl_switch_boot.o
 obj-y += boot_mmode/spl_rvbl_payload.o
 obj-y += boot_mmode/spl_boot_fixup.o
 obj-y += boot/boot_method.o
 obj-y += boot/boot_image.o
+obj-y += boot/boot_info.o
 else
 # U-Boot
 obj-$(CONFIG_ZHIHE_EFUSE_CMD_SUPPORT) += efuse/efuse_cmd.o

@@ -14,8 +14,9 @@
 
 #include "include/addr_defines.h"
 #include "include/board.h"
-#include "rambus/soc_parameter.h"
+#include "../common/include/board_porting.h"
 #include "../common/include/boot.h"
+#include "rambus/soc_parameter.h"
 
 /*
  * static functions

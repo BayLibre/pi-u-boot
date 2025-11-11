@@ -22,10 +22,11 @@
 #include "d2d/d2d.h"
 #endif
 #include "include/board.h"
-#include "adc/adc.h"
 #include "../common/include/boot.h"
+#include "../common/include/board_porting.h"
 #include "rambus/soc_parameter.h"
 #include "include/utils/utils.h"
+#include "adc/adc.h"
 
 //#define DDR_CHECK 1
 
@@ -249,6 +250,13 @@ void *board_spl_fit_buffer_addr(ulong fit_size, int sectors, int bl_len)
 	return map_sysmem(CONFIG_SYS_LOAD_ADDR, 0);
 }
 
+/*****************************
+ * Board Porting
+ ****************************/
+ /*
+ * Get ddr base addr & size 
+ * call at spl_fit_boot_fixup.c
+ */
 int board_get_ddr_info(u64 *start, u64 *size)
 {
 	*start = CFG_SYS_SDRAM_BASE;
@@ -275,11 +283,8 @@ const char * board_get_fit_dtb_name(int do_multi_check)
 		name = STR_BOARD_DEV;
 		break;
 	case BOARD_EVB_D2D:
-		if (board_bootrom_fastboot()) {
-			name = STR_BOARD_EVB;  /* Fixme: D2D use EVB dtb */
-		} else {
-			name = STR_BOARD_EVB_D2D;
-		}
+
+		name = STR_BOARD_EVB_D2D;
 		break;
 	default:
 		name = STR_BOARD_EVB;
@@ -296,10 +301,32 @@ const char * board_get_fit_dtb_name(int do_multi_check)
 	return dtb_name_buf;
 }
 
-/* Override weak imp at common/spl/spl_fit.c */
-const char * board_get_fit_config(void)
+/* 
+ * Board user-define fdt fixup
+ */
+int board_fixup_os_fdt(void *fdt)
 {
-	return board_get_fit_dtb_name(1);
+	if (board_bootrom_fastboot() && board_get_die_count() > 1) {
+		/* For a multi-DIE SoC, only the CPU on DIE0 is booted in fastboot mode. */
+		int node_offset;
+		uint32_t entry_cnt[2] = { cpu_to_fdt32(4), cpu_to_fdt32(4) };
+		uint32_t control_val[2] = { cpu_to_fdt32(0x1f), cpu_to_fdt32(0x1f) };
+
+		node_offset = fdt_path_offset(fdt, "/soc/reset-sample");
+		if (node_offset < 0) {
+			return -1;
+		}
+
+		int ret = fdt_setprop(fdt, node_offset, "entry-cnt", entry_cnt, sizeof(entry_cnt));
+		if (ret < 0) {
+			return -1;
+		}
+		ret = fdt_setprop(fdt, node_offset, "control-val", control_val, sizeof(control_val));
+		if (ret < 0) {
+			return -1;
+		}
+	}
+	return 0;
 }
 
 /*

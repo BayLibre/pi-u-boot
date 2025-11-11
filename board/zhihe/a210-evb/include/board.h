@@ -97,7 +97,6 @@ enum ddr_type {
  */
 int board_get_boot_sel(void);
 int board_get_die_count(void);
-int board_bootrom_fastboot(void);
 void gpio_pin_init(enum board_type board);
 void board_type_check(void);
 enum board_type board_get_type(void);

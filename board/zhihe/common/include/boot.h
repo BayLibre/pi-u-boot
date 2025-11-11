@@ -9,17 +9,17 @@
 u32 spl_boot_get_device(void);
 u32 spl_boot_device(void);
 
-/* boot info */
-char *spl_get_osfdt_info(ulong *paddr);
-int spl_get_mmc_bootfs_partition(void);
+/* boot_image */
+int spl_load_dtb_from_bootfs(void);
 void *spl_find_uboot_fdt_blob(void);
+
+/* boot info */
+char *spl_env_get_os_dtb(ulong *paddr);
+int spl_env_get_mmc_bootfs_partid(void);
 
 /* board check */
 const char *board_get_binfo_from_fdt(void *fdt_uboot);
 int board_set_binfo_to_fdt(void *fdt_uboot);
 const char *board_multi_fit_check(const char *suffix);
 
-/* weak functions */
-const char * board_get_fit_config(void);
-const char * board_get_fit_dtb_name(int do_multi_check);
 #endif

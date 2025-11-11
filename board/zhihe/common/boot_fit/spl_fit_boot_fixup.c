@@ -11,8 +11,9 @@
 #include <mapmem.h>
 #include <spl.h>
 #include <sysinfo.h>
-#include <ext4fs.h>
 #include "../include/boot.h"
+#include "../include/board_porting.h"
+
 #include "../include/pkg_header.h"
 
 /******************************
@@ -65,7 +66,7 @@ static int fit_image_check(const void *fit, const char *image_name, int image_no
 /* 
  * Parse fit fdt get uboot image info and write to OS fdt
  */
-static int spl_fdt_fixup(void *fit_header, void *os_fdt)
+static int fit_os_fdt_fixup(void *fit_header, void *os_fdt)
 {
     const char *fit_uname_config = NULL;
     const char *uname;
@@ -94,135 +95,16 @@ static int spl_fdt_fixup(void *fit_header, void *os_fdt)
     return 0;
 }
 
-/**********************************
- * Support dtb reload from BootFS
- **********************************/
- /* 
-  * Overlay boot mode, support boot from emmcboot only
-  * weak function u-boot/common/spl/spl_mmc.c
-  * riscv-boot.itb in EMMCBOOT
-  * kernel & dtb in BootFS 
-  */
-u32 spl_mmc_boot_mode(struct mmc *mmc, const u32 boot_device)
+/* Override weak imp at common/spl/spl_fit.c */
+const char * board_get_fit_config(void)
 {
-    return MMCSD_MODE_EMMCBOOT;
+	return board_get_fit_dtb_name(1);
 }
 
-static int spl_mmc_find_device(struct mmc **mmcp, int mmc_dev)
-{
-    int err;
-
-    if (mmc_dev < 0)
-        return mmc_dev;
-
-    err = mmc_init_device(mmc_dev);
-    if (err) {
-        return err;
-    }
-
-    *mmcp = find_mmc_device(mmc_dev);
-    err = *mmcp ? 0 : -ENODEV;
-    if (err) {
-        return err;
-    }
-
-    return 0;
-}
-
-static int reload_dtb_from_ext4fs(void)
-{
-    int err = 0;
-    ulong dtb_addr = 0;
-    char dtb_filename_buf[64];
-    char *dtb_file = NULL;
-    struct mmc *mmc = NULL;
-
-    /* Check dtb filename */
-    dtb_file = spl_get_osfdt_info(&dtb_addr);
-    if (dtb_file == NULL) {
-        sprintf(dtb_filename_buf, "%s.dtb", board_get_fit_dtb_name(1));
-        dtb_file = dtb_filename_buf;
-    }
-
-    if (dtb_addr == 0) {
-        printf("spl: dtb addr check fail, use default\n");
-        return -1;
-    }
-
-    /* MMC Init */
-    err = spl_mmc_find_device(&mmc, CONFIG_FASTBOOT_FLASH_MMC_DEV);
-    if (err) {
-        printf("spl: mmc %d not found\n", CONFIG_FASTBOOT_FLASH_MMC_DEV);
-        return err;
-    }
-
-    err = mmc_init(mmc);
-    if (err) {
-        printf("spl: mmc init error\n");
-        mmc = NULL;
-        return err;
-    }
-
-    /* Switch to User Data hwpart */
-    int hwpart = 0; /* 0:user data 1:boot0 2:boot1 */
-    err = blk_dselect_hwpart(mmc_get_blk_desc(mmc), hwpart);
-    if (err) {
-        printf("spl: swith to hwpart %d error\n", hwpart);
-        return err;
-    }
-
-    /* Mount ext4fs */
-    int partition = spl_get_mmc_bootfs_partition(); //get active slot
-    struct disk_partition part_info = {};
-
-    struct blk_desc *block_dev = mmc_get_blk_desc(mmc);
-    if (part_get_info(block_dev, partition, &part_info)) {
-        printf("spl: no partition table found\n");
-        return -1;
-    }
-
-    ext4fs_set_blk_dev(block_dev, &part_info);
-
-    err = ext4fs_mount();
-    if (!err) {
-        printf("spl: ext4fs_mount failed\n");
-        return -1;
-    }
-
-    /* Read dtb file */
-    loff_t filelen;
-    err = ext4fs_open(dtb_file, &filelen);
-    if (err < 0) {
-        printf("spl: ext4fs_open %s failed\n", dtb_file);
-        return -1;
-    }
-
-    loff_t actlen;
-    char *buf=(char*)dtb_addr;
-    err = ext4fs_read(buf, 0, filelen, &actlen);
-    if (err == 0) {
-        printf("## Load %s to 0x%lx(%lld)\n", dtb_file, dtb_addr, actlen);
-    } else {
-        printf("spl: ext4fs_read failed\n");
-    }
-    ext4fs_close();
-
-    return err;
-}
 
 /******************************
  * Main fixups
  ******************************/
-/*
- * Get ddr start addres & size
- * Please implement this function in the
- * board-level code to override the weak implementation.
- */
-__weak int board_get_ddr_info(u64 *start, u64 *size)
-{
-    return -1;
-}
-
 /*
  * Fix the issue where the full fit mode cannot access the next level of OS entry
  * spl_perform_fixups is weak imp at u-boot/common/spl/spl.c
@@ -233,27 +115,39 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     u64 size;
 
     /* reload dtb file */
-    reload_dtb_from_ext4fs();
+    if (!board_bootrom_fastboot()) {
+        spl_load_dtb_from_bootfs();
+    }
 
+    /*
+     * OS fdt fixup 
+     */
+    /* 1. Add u-boot info to kernel fdt for opensbi can boot to u-boot */
+    fit_os_fdt_fixup(map_sysmem(CONFIG_SYS_LOAD_ADDR, 0), spl_image->fdt_addr);
+
+    /* 2. Board user-define fdt fixup */
+    if (board_fixup_os_fdt(spl_image->fdt_addr) !=0 ) {
+        printf("spl: Warning, failed fixup os fdt\n");
+    }
+
+    /*
+     * U-Boot fdt fixup 
+     */
+    /* 1. Fixup DDR size, write to u-boot fdt */
     void *fdt_uboot = spl_find_uboot_fdt_blob();
     if (!fdt_uboot) {
         return;
     }
     debug("uboot fdt blob 0x%p\n", fdt_uboot);
-
-    /* 1. Add u-boot info to os fdt for opensbi can boot to u-boot */
-    spl_fdt_fixup(map_sysmem(CONFIG_SYS_LOAD_ADDR, 0), spl_image->fdt_addr);
-
-    /* 2. Fixup DDR size, write to u-boot fdt */
     if (board_get_ddr_info(&start, &size) == 0) {
         int ret = fdt_fixup_memory(fdt_uboot, start, size);
         debug("fixup mem ret %d\n", ret);
         if (ret) {
-            printf("Warning: failed fixup memeory\n");
+            printf("spl: Warning, failed fixup memeory\n");
         }
     }
 
-    /* 3. Set board type pass to u-boot */
+    /* 2. Set board type pass to u-boot */
     board_set_binfo_to_fdt(fdt_uboot);
 }
 

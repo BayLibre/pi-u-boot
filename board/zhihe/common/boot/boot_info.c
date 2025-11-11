@@ -11,7 +11,7 @@
  * This function is called before loading the FIT file to return the eMMC partition ID
  * For this function to take effect, CONFIG_SYS_MMCSD_FS_BOOT_PARTITION must not be defined as -1
  */
-int spl_get_mmc_bootfs_partition(void)
+int spl_env_get_mmc_bootfs_partid(void)
 {
     char *act_slot;
     char bootpart_name[]="x_bootpart";
@@ -30,7 +30,7 @@ int spl_get_mmc_bootfs_partition(void)
     return bootpart_id;
 }
 
-char *spl_get_osfdt_info(ulong *paddr)
+char *spl_env_get_os_dtb(ulong *paddr)
 {
     *paddr = env_get_hex("dtb_addr", 0);
     return env_get("dtb_file");

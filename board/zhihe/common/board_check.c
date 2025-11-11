@@ -7,6 +7,7 @@
 #ifdef CONFIG_SPL_BUILD
 #include <image.h>
 #include "include/boot.h"
+#include "include/board_porting.h"
 
 /*
  * This function is called in 'spl_perform_fixups'

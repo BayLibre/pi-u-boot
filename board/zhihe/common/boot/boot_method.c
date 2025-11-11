@@ -7,6 +7,7 @@
 #include <serial.h>
 #include <time.h>
 #include <spl.h>
+#include "../include/board_porting.h"
 
 /*
  * Save current boot device
@@ -52,7 +53,6 @@ static int uart_boot_check(void)
 /*
  * Get first boot device
  */
-extern int board_bootrom_fastboot(void);
 u32 spl_boot_device(void)
 {
 	if(uart_boot_check()) {

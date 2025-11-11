@@ -35,5 +35,5 @@
  * Board Common interface
  */
 int board_get_boot_sel(void);
-int board_bootrom_fastboot(void);
+
 #endif

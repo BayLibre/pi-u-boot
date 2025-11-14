@@ -175,9 +175,8 @@
 			clocks = <&clk PERI3_EMMC_SDIO_REF_CLK_CG_EN>;
 			clock-names = "core";
 			sdhci-caps-mask = <0x0 0x1000000>;
-			mmc-hs200-1_8v;
 			mmc-hs400-1_8v;
-			mmc-ddr-1_8v;
+			mmc-hs200-1_8v;
 			non-removable;
 			no-sdio;
 			no-sd;

@@ -12,12 +12,7 @@
 
 #define HS400_DELAY_LANE 24
 #define HS200_DELAY_LANE 60
-
-#ifdef CONFIG_TARGET_A210_EVB
-volatile int DELAY_LANE = 24;
-#elif defined(CONFIG_TARGET_A200_EVB)
 volatile int DELAY_LANE = 50;
-#endif
 
 /* flag for cmd manual setted DELAY_LANE,non-zero is setted. auto clear in cmd */
 volatile int manual_set_delay =	0; 
@@ -91,6 +86,10 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	//set driving force
 	sdhci_writel(host, (1 << PHY_RSTN) | (0xc << PAD_SP) | (0xc << PAD_SN), PHY_CNFG_R);
 
+	/* disable SD_CLK_EN */
+	val = sdhci_readb(host, SDHCI_CLOCK_CONTROL);
+	val &= ~SDHCI_CLOCK_CARD_EN;
+	sdhci_writeb(host, val, SDHCI_CLOCK_CONTROL);
 	//disable delay lane
 	sdhci_writeb(host, 1 << UPDATE_DC, PHY_SDCLKDL_CNFG_R);
 	//set delay lane
@@ -100,6 +99,10 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	val = sdhci_readb(host, PHY_SDCLKDL_CNFG_R);
 	val &= ~(1 << UPDATE_DC);
 	sdhci_writeb(host, val, PHY_SDCLKDL_CNFG_R);
+	/* enable SD_CLK_EN */
+	val = sdhci_readb(host, SDHCI_CLOCK_CONTROL);
+	val |= SDHCI_CLOCK_CARD_EN;
+	sdhci_writeb(host, val, SDHCI_CLOCK_CONTROL);
 
 	/* configure phy pads */
 	val = (1 << RXSEL) | (1 << WEAKPULL_EN) | (3 << TXSLEW_CTRL_P) | (3 << TXSLEW_CTRL_N);
@@ -113,36 +116,14 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	val = (1 << RXSEL) | (2 << WEAKPULL_EN) | (3 << TXSLEW_CTRL_P) | (3 << TXSLEW_CTRL_N);
 	sdhci_writew(host, val, PHY_STBPAD_CNFG_R);
 
-	if (CONFIG_IS_ENABLED(TARGET_A210_EVB) && mmc->selected_mode == MMC_DDR_52) {
-		/* enable extended delay */
-		val = sdhci_readb(host, PHY_SMPLDL_CNFG_R);
-		sdhci_writeb(host, val | (1 << EXTDLY_EN), PHY_SMPLDL_CNFG_R);
-
-		/* enable software tuning on */
-		val = sdhci_readl(host, AT_CTRL_R);
-		sdhci_writel(host, val | (1 << SW_TUNE_EN), AT_CTRL_R);
-
-		/* set rx phase value */
-		val = sdhci_readl(host, AT_STAT_R);
-		val &= (0xff << CENTER_PH_CODE);
-		val |= (0x48 << CENTER_PH_CODE);
-		sdhci_writel(host, val, AT_STAT_R);
-	}
-
 	/* enable data strobe mode */
-	if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
-		sdhci_writeb(host, 3 << SLV_INPSEL, PHY_DLLDL_CNFG_R);
-		sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
-		sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
-	} else if (CONFIG_IS_ENABLED(TARGET_A200_EVB)) {
-		sdhci_writeb(host, 0, PHY_DLL_CTRL_R);
-		sdhci_writew(host, 0, SDHCI_CLOCK_CONTROL);
-		sdhci_writew(host, 0x8000, PHY_DLLBT_CNFG_R);
-		sdhci_writeb(host, 3 << SLV_INPSEL, PHY_DLLDL_CNFG_R);
-		sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
-		sdhci_writew(host, 0x7, SDHCI_CLOCK_CONTROL);
-		sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
-	}
+	sdhci_writeb(host, 0, PHY_DLL_CTRL_R);
+	sdhci_writew(host, 0, SDHCI_CLOCK_CONTROL);
+	sdhci_writew(host, 0x8000, PHY_DLLBT_CNFG_R);
+	sdhci_writeb(host, 3 << SLV_INPSEL, PHY_DLLDL_CNFG_R);
+	sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
+	sdhci_writew(host, 0x7, SDHCI_CLOCK_CONTROL);
+	sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
 }
 
 static void sdhci_phy_3_3v_init(struct sdhci_host *host)
@@ -156,6 +137,10 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 	//set driving force
 	sdhci_writel(host, (1 << PHY_RSTN) | (0xc << PAD_SP) | (0xc << PAD_SN), PHY_CNFG_R);
 
+	/* disable SD_CLK_EN */
+	val = sdhci_readb(host, SDHCI_CLOCK_CONTROL);
+	val &= ~SDHCI_CLOCK_CARD_EN;
+	sdhci_writeb(host, val, SDHCI_CLOCK_CONTROL);
 	//disable delay lane
 	sdhci_writeb(host, 1 << UPDATE_DC, PHY_SDCLKDL_CNFG_R);
 	//set delay lane
@@ -165,6 +150,10 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 	val = sdhci_readb(host, PHY_SDCLKDL_CNFG_R);
 	val &= ~(1 << UPDATE_DC);
 	sdhci_writeb(host, val, PHY_SDCLKDL_CNFG_R);
+	/* enable SD_CLK_EN */
+	val = sdhci_readb(host, SDHCI_CLOCK_CONTROL);
+	val |= SDHCI_CLOCK_CARD_EN;
+	sdhci_writeb(host, val, SDHCI_CLOCK_CONTROL);
 
 	val = (2 << RXSEL) | (1 << WEAKPULL_EN) | (3 << TXSLEW_CTRL_P) | (3 << TXSLEW_CTRL_N);
 	sdhci_writew(host, val, PHY_CMDPAD_CNFG_R);
@@ -179,7 +168,7 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 
 	sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
 	/*set i wait*/
-	sdhci_writeb(host, 0x25, PHY_DLL_CNFG1_R);
+	sdhci_writeb(host, 0x5, PHY_DLL_CNFG1_R);
 }
 
 void snps_set_uhs_timing(struct sdhci_host *host)

@@ -10,7 +10,6 @@
 #include "../include/utils/utils.h"
 #include "../include/addr_defines.h"
 #include "ss_config.h"
-#include "../cmd/ss.h"
 
 #define BPC_SW_MODEL 1
 #define BPC_HW_MODEL 0
@@ -1092,10 +1091,6 @@ void ss_cpr_init(unsigned int ss_cfg, int chip_id)
 		config_iopmp(chip_id, AON_CPU_SS_IOPMP_BADDR, iopmp_mode, IOPMP_DEVICE_ID_REMOTE_CPU,
 					iopmp_permission, 0); //D2D ACE
 	}
-
-#ifdef CONFIG_SOC_ZHIHE_D2D
-	d2d_low_power_init();
-#endif
 
 	chip_wr(SAM_INDICATOR,0xdeadbeee);
 }

@@ -66,4 +66,21 @@ typedef enum {
 #define C920_CLUSTER_REG_PST_SWITCH_DLY_TIME_2  0xBB6
 #define CPUSS_CLUSTER_REG_PST_SWITCH_DLY_TIME_2 0xBB6
 
+typedef enum {
+    VP_CPR,
+    VI_CPR,
+    NPU_CPR,
+    VO_CPR,
+    PERI_CPR,
+    PCIE_SATA_CPR,
+    USB_CPR,
+    TEE_CPR,
+    GPU_CPR,
+    D2D_CPR,
+    D2D_CPU_CPR,
+    MAX_CPR,
+} ss_contrl;
+
+#define SS_CFG_DEFAULT (1 << PERI_CPR) | (1 << USB_CPR) | (1 << PCIE_SATA_CPR) | (1 << VP_CPR) | (1 << VI_CPR) | (1 << NPU_CPR) | (1 << VO_CPR) | (1 << GPU_CPR)| (1 << TEE_CPR)
+
 #endif /*_SS_CONFIG_H_*/

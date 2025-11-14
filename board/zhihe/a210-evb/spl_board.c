@@ -17,10 +17,6 @@
 #include "ddr/ddr_init.h"
 #include "cpusys/cpu_ss_init.h"
 #include "subsys/subsys.h"
-#include "cmd/ss.h"
-#ifdef CONFIG_SOC_ZHIHE_D2D
-#include "d2d/d2d.h"
-#endif
 #include "include/board.h"
 #include "../common/include/boot.h"
 #include "../common/include/board_porting.h"
@@ -172,11 +168,6 @@ static void init_all_chips(void)
 	if (board_bootrom_fastboot())
 		die_count = 1;
 
-	board_type_check();
-	/* Bram call init */
-	board_spl_prepare_bram_section();
-	invalidate_icache_all();
-
 	for (int i = 0; i < die_count; i++) {
 		printf("Chip: init chip-%d\n", i);
 		ret = init_chip(i, die_count);
@@ -195,6 +186,15 @@ int spl_board_init_f(void)
 	 * called during dm_init_and_scan
 	 */
 	cpu_probe_all();
+
+	/* Check board type by adc value */
+	board_type_check();
+
+	/* Bram call init */
+	board_spl_prepare_bram_section();
+	invalidate_icache_all();
+
+	/* Init chips */
 	init_all_chips();
 
 	/* DDR Debug */
@@ -202,6 +202,7 @@ int spl_board_init_f(void)
 	// ddr_dfmu_mt_test();
 	// ddr_dfmu_mt_test_single();
 
+	/* Reset pmp */
 	pmp_init_eanble_bram_ocram_ddr();
 
 	return 0;
@@ -220,11 +221,6 @@ void spl_board_init(void)
 
 	/* Boot serial check */
 	//g_boot_spl_with_fit = board_spl_boot_check();
-
-#ifdef CONFIG_SOC_ZHIHE_D2D
-	/* Note: After this call, all cores except die0 core0 will enter WFI state */
-	d2d_ss_init();
-#endif
 
 #ifdef CONFIG_ZHIHE_RAMBUS_ALGO
 	/* libsecurity.a.bin soc parameter init */

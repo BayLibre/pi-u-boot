@@ -30,10 +30,6 @@ config ZHP100EVB_DDR_INIT
 	bool "Configure the A210 evb DDR init"
 	default y
 
-config SOC_ZHIHE_D2D
-	bool "Configure d2d"
-
-
 config ZHP100EVB_AUXDISP_CMD_SUPPORT
         bool "Support configure auxdisp for zhihe a210-evb in uboot command line"
         default n

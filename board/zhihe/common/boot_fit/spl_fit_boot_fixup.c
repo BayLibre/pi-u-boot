@@ -115,7 +115,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     u64 size;
 
     /* reload dtb file */
-    if (!board_bootrom_fastboot()) {
+    if (spl_boot_get_device() != BOOT_DEVICE_BOOTROM) {
         spl_load_dtb_from_bootfs();
     }
 

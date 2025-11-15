@@ -165,7 +165,7 @@ static void init_all_chips(void)
 	int ret = 0;
 
 	/* fastboot mode, should not init other chips */
-	if (board_bootrom_fastboot())
+	if (spl_boot_get_device() == BOOT_DEVICE_BOOTROM)
 		die_count = 1;
 
 	for (int i = 0; i < die_count; i++) {
@@ -302,7 +302,7 @@ const char * board_get_fit_dtb_name(int do_multi_check)
  */
 int board_fixup_os_fdt(void *fdt)
 {
-	if (board_bootrom_fastboot() && board_get_die_count() > 1) {
+	if ((spl_boot_get_device() == BOOT_DEVICE_BOOTROM) && board_get_die_count() > 1) {
 		/* For a multi-DIE SoC, only the CPU on DIE0 is booted in fastboot mode. */
 		int node_offset;
 		uint32_t entry_cnt[2] = { cpu_to_fdt32(4), cpu_to_fdt32(4) };

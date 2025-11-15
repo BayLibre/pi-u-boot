@@ -81,6 +81,10 @@ static int spl_mmc_find_device(struct mmc **mmcp, int mmc_dev)
     return 0;
 }
 
+ /* 
+  * Reload the DTB file to override the content loaded by FIT.
+  * This function must be called before booting OpenSBI.
+  */
 int spl_load_dtb_from_bootfs(void)
 {
     int err = 0;

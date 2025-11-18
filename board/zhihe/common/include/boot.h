@@ -6,7 +6,6 @@
 #define __BOOT_IMAGE_H_
 
 /* boot_method */
-u32 spl_boot_get_device(void);
 u32 spl_boot_device(void);
 
 /* boot_image */

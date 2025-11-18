@@ -11,20 +11,6 @@
 #include "../include/board_porting.h"
 #include "../include/pkg_header.h"
 
-/*
- * Save current boot device
- */
-static u32 _first_boot_device = BOOT_DEVICE_MMC1;
-static void boot_set_device(u32 device)
-{
-	_first_boot_device = device;
-}
-
-u32 spl_boot_get_device(void)
-{
-	return _first_boot_device;
-}
-
 #if 0
 /*
  * Uart boot select
@@ -96,11 +82,9 @@ u32 spl_boot_device(void)
 {
 	if (spl_has_fit_payload()) {
 		/* cct or fastboot send spl-with-fit-rvbl.bin to boot sram */
-		boot_set_device(BOOT_DEVICE_BOOTROM);
+		return BOOT_DEVICE_BOOTROM;
 	} else {
 		/* Default boot device */
-		boot_set_device(BOOT_DEVICE_MMC1);
+		return BOOT_DEVICE_MMC1;
 	}
-
-	return _first_boot_device;
 }

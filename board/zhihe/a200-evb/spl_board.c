@@ -555,8 +555,11 @@ int board_get_ddr_info(u64 *start, u64 *size)
  */
 const char * board_get_fit_dtb_name(int do_multi_check)
 {
-	/* set default dtb */
+#ifdef CONFIG_SUB_BOARD_P1
 	return "th1520-lichee-pi-4a";
+#else
+	return "a200-evb";
+#endif
 }
 
 /* 

@@ -17,9 +17,9 @@
 			};
 		};
 
-		fdt-dev {
+		fdt-evb {
 			description = "DEV Device Tree";
-			data = /incbin/("replace-path/a200-dev.dtb");
+			data = /incbin/("replace-path/th1520-lichee-pi-4a.dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";
@@ -85,9 +85,9 @@
 			};
 		};
 
-		a200-dev {
+		a200-evb {
 			description = "Default Configuration";
-			fdt = "fdt-dev";
+			fdt = "fdt-evb";
 			firmware = "opensbi-1";
 			loadables = "u-boot-1", "aon-1";
 			invalid_signature {

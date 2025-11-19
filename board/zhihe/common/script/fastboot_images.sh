@@ -1,25 +1,27 @@
 #!/bin/sh
 
-FAIL="###### Images flashing failed"
-
-echo "###### Start the flashing tool"
+FAIL="###### Images flashing failed ######"
 
 if [ -n "$1" ]; then
     device="-s $1"
 fi
 
-if [ -e bootzero-rvbl.bin ]; then
-    fastboot ${device} flash ram bootzero-rvbl.bin || { echo $FAIL; exit 1; }
-    fastboot ${device} reboot
-    fastboot ${device} flash ram spl-with-fit-rvbl.bin || { echo $FAIL; exit 1; }
-    fastboot ${device} reboot
+if fastboot ${device} getvar product 2>&1 | grep -q "product: a2"; then
+    echo "###### Start flash images ######"
 else
-    fastboot ${device} flash ram spl-with-fit-rvbl.bin || { echo $FAIL; exit 1; }
-    fastboot ${device} reboot
+    echo "###### Start the flashing tool"
+    if [ -e bootzero-rvbl.bin ]; then
+        fastboot ${device} flash ram bootzero-rvbl.bin || { echo $FAIL; exit 1; }
+        fastboot ${device} reboot
+        fastboot ${device} flash ram spl-with-fit-rvbl.bin || { echo $FAIL; exit 1; }
+        fastboot ${device} reboot
+    else
+        fastboot ${device} flash ram spl-with-fit-rvbl.bin || { echo $FAIL; exit 1; }
+        fastboot ${device} reboot
+    fi
+    echo "###### Wait for the flashing tool to be ready"
+    sleep 5
 fi
-
-echo "###### Wait for the flashing tool to be ready"
-sleep 5
 
 echo "###### Flash gpt"
 fastboot ${device} flash gpt emmc-gpt_primary.img || { echo $FAIL; exit 1; }
@@ -36,4 +38,4 @@ fastboot ${device} flash app emmc-app_a.img || { echo $FAIL; exit 1; }
 echo "###### Flash partition data"
 fastboot ${device} flash data emmc-data.img || { echo $FAIL; exit 1; }
 
-echo "###### Images flashed success"
+echo "###### Images flashed success ######"

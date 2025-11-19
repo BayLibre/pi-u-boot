@@ -19,7 +19,7 @@
 
 		fdt-evb {
 			description = "DEV Device Tree";
-			data = /incbin/("replace-path/th1520-lichee-pi-4a.dtb");
+			data = /incbin/("replace-path/a200-evb.dtb");
 			type = "flat_dt";
 			arch = "riscv";
 			compression = "none";

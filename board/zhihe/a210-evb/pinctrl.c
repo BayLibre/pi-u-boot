@@ -402,29 +402,27 @@ int gpio_pin_cfg(pin_name_t pin_name, uint32_t slew_rate, uint32_t pullmode, uin
 	return ret;
 }
 
-#define AON_GPIO0_24		(0x1 << (AOGPIO0_24 - 1))	// PHY1_nRST
-#define AON_GPIO0_25		(0x1 << (AOGPIO0_25 - 1))	// PHY0_nRST
-
-static void gmac_phy_rst(void)
+static int gmac_phy_rst(const char *str_gpio)
 {
-	//GPIO reset
-	writel(readl((void *)(AP_AON_GPIO0_BADDR + 0x4)) | AON_GPIO0_24,
-	       (void *)(AP_AON_GPIO0_BADDR + 0x4));
-	writel(readl((void *)(AP_AON_GPIO0_BADDR + 0x4)) | AON_GPIO0_25,
-	       (void *)(AP_AON_GPIO0_BADDR + 0x4));
+	unsigned int gpio;
 
-	writel(readl((void *)AP_AON_GPIO0_BADDR) & ~AON_GPIO0_24,
-	       (void *)AP_AON_GPIO0_BADDR);
-	writel(readl((void *)AP_AON_GPIO0_BADDR) & ~AON_GPIO0_25,
-	       (void *)AP_AON_GPIO0_BADDR);
-	wmb();
-	/* At least 10ms */
-	mdelay(50);
-	writel(readl((void *)AP_AON_GPIO0_BADDR) | AON_GPIO0_24,
-	       (void *)AP_AON_GPIO0_BADDR);
-	writel(readl((void *)AP_AON_GPIO0_BADDR) | AON_GPIO0_25,
-	       (void *)AP_AON_GPIO0_BADDR);
-	wmb();
+	if (!str_gpio)
+		return -1;
+
+	int ret = gpio_lookup_name(str_gpio, NULL, NULL, &gpio);
+	if (!ret) {
+		ret = gpio_request(gpio, "phy_rst");
+		if (!ret) {
+			gpio_direction_output(gpio, 0);
+			/* At least 10ms in databook 6.5 Reset */
+			mdelay(50);
+			gpio_direction_output(gpio, 1);
+			gpio_free(gpio);
+			return 0;
+		}
+	}
+
+	return ret;
 }
 
 #define AP_GPIO0_27		(0x1 << 27)	// USBtypeC_PWREN
@@ -441,6 +439,9 @@ static void usbc_pwren(void)
 
 void gpio_pin_init(enum board_type board)
 {
+	unsigned int gpio;
+	int ret = 0;
+
 	/* aon-padmux config */
 
 	if (board == BOARD_UNKNOWN) {
@@ -507,9 +508,12 @@ void gpio_pin_init(enum board_type board)
 	gpio_pin_cfg(GPIO2_10, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 	gpio_pin_cfg(GPIO2_11, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
-	/* BOARD_DEV IO pamdmux */
-	if (board == BOARD_DEV || board == BOARD_EVB_D2D) {
-		gmac_phy_rst();
+	switch(board) {
+	case BOARD_DEV:
+		if(gmac_phy_rst("ao_gpio@0_24"))	// PHY1_nRST
+			pr_warn("gmac_phy_rst ao_gpio@0_24 failed\n");
+		if(gmac_phy_rst("ao_gpio@0_25"))	// PHY0_nRST
+			pr_warn("gmac_phy_rst ao_gpio@0_25 failed\n");
 		usbc_pwren();
 
 		// gmac1
@@ -552,11 +556,9 @@ void gpio_pin_init(enum board_type board)
 		gpio_pin_mux(GPIO2_9, 5);
 		gpio_pin_cfg(GPIO2_8, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 		gpio_pin_cfg(GPIO2_9, PIN_SPEED_NORMAL, PIN_PN, 0x4);
-
 		// SOM1: pci-e device reset, SOM2: Fan power
 		gpio_pin_mux(GPIO0_30, 0);
-		unsigned int gpio;
-		int ret = gpio_lookup_name("gpio@0_30", NULL, NULL, &gpio);
+		ret = gpio_lookup_name("gpio@0_30", NULL, NULL, &gpio);
 		if (ret == 0) {
 			ret = gpio_request(gpio, "cmd_gpio");
 			if (ret == 0) {
@@ -564,10 +566,28 @@ void gpio_pin_init(enum board_type board)
 				gpio_free(gpio);
 			}
 		}
-	}
+		break;
+	case BOARD_EVB_D2D:
+		if(gmac_phy_rst("gpio@1_15"))	// PHY0_nRST
+			pr_warn("gmac_phy_rst gpio@1_15 failed\n");
 
-	/* BOARD_EVB IO pamdmux */
-	if (board == BOARD_EVB) {
+		// pci-e device reset
+		gpio_pin_mux(GPIO0_30, 0);
+		ret = gpio_lookup_name("gpio@0_30", NULL, NULL, &gpio);
+		if (ret == 0) {
+			ret = gpio_request(gpio, "cmd_gpio");
+			if (ret == 0) {
+				gpio_direction_output(gpio, 1);
+				gpio_free(gpio);
+			}
+		}
+		break;
+	case BOARD_EVB:
+		if(gmac_phy_rst("ao_gpio@1_5"))	// PHY0_nRST
+			pr_warn("gmac_phy_rst ao_gpio@1_5 failed\n");
+		if(gmac_phy_rst("ao_gpio@1_6"))	// PHY1_nRST
+			pr_warn("gmac_phy_rst ao_gpio@1_6 failed\n");
+
 		// chip debug
 		gpio_pin_mux(GPIO1_6, 4);
 		gpio_pin_mux(GPIO1_7, 4);
@@ -643,5 +663,8 @@ void gpio_pin_init(enum board_type board)
 		gpio_pin_mux(GPIO2_5, 5);
 		gpio_pin_cfg(GPIO2_4, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 		gpio_pin_cfg(GPIO2_5, PIN_SPEED_NORMAL, PIN_PN, 0x4);
+		break;
+	default:
+		break;
 	}
 }

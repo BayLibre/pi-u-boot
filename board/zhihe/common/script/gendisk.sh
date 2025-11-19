@@ -110,7 +110,7 @@ do_fit() {
     cat ${ITS_FILE}
 
     # Generate itb
-    mkimage -f ${ITS_FILE} ${OUT_BOOT_ITB}
+    mkimage -f ${ITS_FILE} ${OUT_BOOT_ITB} || exit 1
 
     # Cleanup tmp files
     cat ${ITS_FILE_ORG} | grep "replace-path.*gz" | awk -F'.gz|/' '{print $4}' | xargs -i rm ${WORK_PATH}/{}.gz

@@ -351,8 +351,8 @@ void board_type_check(void)
 	u64 adc_ch2_mv = adc_read(2, 16);
 	printf("Board check: ch0=%llumV ch2=%llumV\n", adc_ch0_mv, adc_ch2_mv);
 
-	/* BOARD_EVB ch2 (800mv ~ 100mv) */
-	if (adc_ch2_mv >= 800 && adc_ch2_mv <= 1000) {
+	/* BOARD_EVB ch2 (800mv ~ 1300mv) */
+	if (adc_ch2_mv >= 800 && adc_ch2_mv <= 1300) {
 		_board_type = BOARD_EVB;
 	} else {
 		_board_type = BOARD_DEV;

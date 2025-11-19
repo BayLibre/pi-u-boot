@@ -108,7 +108,7 @@ static int eqos_stop_clks_zhihe(struct udevice *dev)
 
 	return 0;
 }
-
+#if 0
 static int parse_speed_from_device_tree(const void *fdt, int node_offset)
 {
 	int speed;
@@ -124,7 +124,7 @@ static int parse_speed_from_device_tree(const void *fdt, int node_offset)
 
 	return speed;
 }
-
+#endif
 static int eqos_set_tx_clk_speed_zhihe(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
@@ -220,7 +220,8 @@ static int eqos_start_resets_zhihe(struct udevice *dev)
 
 	if (dm_gpio_is_valid(&eqos->phy_reset_gpio)) {
 		dm_gpio_set_value(&eqos->phy_reset_gpio, 1);
-		udelay(2);
+		/* At least 10ms in databook 6.5 Reset */
+		mdelay(20);
 		dm_gpio_set_value(&eqos->phy_reset_gpio, 0);
 	}
 
@@ -229,7 +230,12 @@ static int eqos_start_resets_zhihe(struct udevice *dev)
 
 static int eqos_remove_resources_zhihe(struct udevice *dev)
 {
+	struct eqos_priv *eqos = dev_get_priv(dev);
+
 	dev_dbg(dev, "%s:\n", __func__);
+
+	if (dm_gpio_is_valid(&eqos->phy_reset_gpio))
+		dm_gpio_free(dev, &eqos->phy_reset_gpio);
 
 	return 0;
 }

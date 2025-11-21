@@ -8,10 +8,6 @@ if TARGET_A200_EVB
 
 source board/zhihe/common/Kconfig
 
-config SUB_BOARD_P1
-    bool "select sub board p1"
-    default n
-
 config LIGHT_AON_CONF
 	bool "Light aon config support"
 	depends on MISC

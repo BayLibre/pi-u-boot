@@ -555,11 +555,15 @@ int board_get_ddr_info(u64 *start, u64 *size)
  */
 const char * board_get_fit_dtb_name(int do_multi_check)
 {
-#ifdef CONFIG_SUB_BOARD_P1
-	return "th1520-lichee-pi-4a";
-#else
-	return "a200-evb";
-#endif
+	/* Use the U-Boot device tree name to 
+	 *   match the device tree used by the kernel.
+	 */
+	if (strcmp("p1", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+		return "th1520-lichee-pi-4a";
+	} else if (strcmp("a200-evb", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+		return "a200-evb";
+	}
+	return CONFIG_DEFAULT_DEVICE_TREE;
 }
 
 /* 

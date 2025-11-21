@@ -9,7 +9,7 @@ IF %errorlevel% equ 0 (
     echo ###### Start flash images ######
 ) ELSE (
 	IF EXIST "bootzero-rvbl.bin" (
-		echo ###### Load flashing tool bootzero & uboot
+		echo ###### Load flashing tool bootzero and uboot
 		fastboot flash ram bootzero-rvbl.bin || goto :error
 		fastboot reboot
 		fastboot flash ram spl-with-fit-rvbl.bin || goto :error
@@ -38,11 +38,11 @@ fastboot flash app emmc-app_a.img || goto :error
 echo ###### Flash partition data
 fastboot flash data emmc-data.img || goto :error
 
-echo ###### Images flashed success
+echo ###### Images flashed success ######
 pause
 exit /b 0
 
 :error
-echo ###### Images flashing failed
+echo ###### Images flashing failed ######
 pause
 exit /b 1

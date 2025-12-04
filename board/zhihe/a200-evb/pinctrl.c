@@ -1289,7 +1289,7 @@ static void light_wdt0_rst_req(void)
 	writel(data, REG_RST_REQ_EN_0);
 }
 
-int board_init(void)
+int gpio_pin_init(const char *board_name)
 {
 #ifdef CONFIG_ZHIHE_RAMBUS_ALGO
 	/* libsecurity.a.bin soc parameter init */
@@ -1309,11 +1309,12 @@ int board_init(void)
 #endif
 
 	light_iopmp_config();
-	if (strcmp("p1", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+	if (strcmp("th1520-lichee-pi-4a", board_name) == 0) {
 		light_iopin_init();
-	} else if (strcmp("a200-evb", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+	} else if (strcmp("a200-evb", board_name) == 0) {
 		a200_evb_iopin_init();
 	} else {
+		printf("uboot: unkown board name %s\n", board_name);
 		light_default_iopin_init();
 	}
 	clk_config();

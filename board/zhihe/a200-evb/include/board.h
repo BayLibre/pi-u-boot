@@ -35,5 +35,6 @@
  * Board Common interface
  */
 int board_get_boot_sel(void);
+int gpio_pin_init(const char *board_name);
 
 #endif

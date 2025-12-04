@@ -17,8 +17,10 @@ char *spl_env_get_os_dtb(ulong *paddr);
 int spl_env_get_mmc_bootfs_partid(void);
 
 /* board check */
-const char *board_get_binfo_from_fdt(void *fdt_uboot);
-int board_set_binfo_to_fdt(void *fdt_uboot);
-const char *board_multi_fit_check(const char *suffix);
+#define MAX_DTB_FILENAME_LEN 64
+const char *uboot_get_binfo_from_fdt(void *fdt_uboot);
+const char *uboot_sync_fdt_binfo_to_env(void *fdt_uboot);
+int spl_set_binfo_to_uboot_fdt(void *fdt_uboot);
+const char *spl_multi_fit_check(const char *suffix);
 
 #endif

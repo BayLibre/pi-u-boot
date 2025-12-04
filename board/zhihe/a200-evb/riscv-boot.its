@@ -74,7 +74,7 @@
 	configurations {
 		default = "th1520-lichee-pi-4a";
 		th1520-lichee-pi-4a {
-			description = "Default Configuration";
+			description = "TH1520 Configuration";
 			fdt = "fdt-licheepi";
 			firmware = "opensbi-1";
 			loadables = "u-boot-1", "aon-1";
@@ -86,7 +86,7 @@
 		};
 
 		a200-evb {
-			description = "Default Configuration";
+			description = "A200 EVB Configuration";
 			fdt = "fdt-evb";
 			firmware = "opensbi-1";
 			loadables = "u-boot-1", "aon-1";

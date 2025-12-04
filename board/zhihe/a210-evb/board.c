@@ -37,7 +37,7 @@ static void clk_init(void)
 int board_init(void)
 {
 	enum board_type type = BOARD_UNKNOWN;
-	const char * name = board_get_binfo_from_fdt((void *)gd->fdt_blob);
+	const char * name = uboot_get_binfo_from_fdt((void *)gd->fdt_blob);
 
 	if (name) {
 		if (strcmp(name, STR_BOARD_DEV) == 0) {
@@ -75,6 +75,9 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	/* After env are loaded, sync board info*/
+	uboot_sync_fdt_binfo_to_env((void *)gd->fdt_blob);
+
 	/* If it is in fastboot mode, the function does not return */
 	if (board_bootrom_fastboot()) {
 		run_command("env default -fa", 0);

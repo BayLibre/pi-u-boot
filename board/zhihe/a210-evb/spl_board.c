@@ -262,7 +262,7 @@ int board_get_ddr_info(u64 *start, u64 *size)
  */
 const char * board_get_fit_dtb_name(int do_multi_check)
 {
-	static char dtb_name_buf[64];
+	static char dtb_name_buf[MAX_DTB_FILENAME_LEN];
 
 	const char * name;
 	enum board_type type = board_get_type();
@@ -286,7 +286,7 @@ const char * board_get_fit_dtb_name(int do_multi_check)
 
 	/* Convert to string type */
 	if (do_multi_check) {
-		if (board_multi_fit_check("-sec")) {
+		if (spl_multi_fit_check("-sec")) {
 			strcat(dtb_name_buf, "-sec");
 		}
 	}

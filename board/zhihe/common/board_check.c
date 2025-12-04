@@ -1,12 +1,14 @@
 #include <log.h>
 #include <fdt_support.h>
+#include <env.h>
+
+#include "include/boot.h"
 
 /*****************
  * SPL Build
  *****************/
 #ifdef CONFIG_SPL_BUILD
 #include <image.h>
-#include "include/boot.h"
 #include "include/board_porting.h"
 
 /*
@@ -15,7 +17,7 @@
  * Depends on the board_get_fit_config function
  *     to convert the type ID into a type string.
  */
-int board_set_binfo_to_fdt(void *fdt_uboot)
+int spl_set_binfo_to_uboot_fdt(void *fdt_uboot)
 {
     int chosen;
     const char *board_name;
@@ -31,7 +33,7 @@ int board_set_binfo_to_fdt(void *fdt_uboot)
     return 0;
 }
 
-const char *board_multi_fit_check(const char *suffix)
+const char *spl_multi_fit_check(const char *suffix)
 {
     int noffset;
     const char *defconf;
@@ -73,7 +75,7 @@ const char *board_multi_fit_check(const char *suffix)
  *     to obtain the current hardware type and
  *     address differences in hardware initialization.
  */
-const char *board_get_binfo_from_fdt(void *fdt_uboot)
+const char *uboot_get_binfo_from_fdt(void *fdt_uboot)
 {
     const char *name = NULL;
     int chosen_node = 0;
@@ -83,6 +85,26 @@ const char *board_get_binfo_from_fdt(void *fdt_uboot)
         name = fdt_getprop(fdt_uboot, chosen_node, "board", NULL);
     } else {
         printf("%s(%d) get uboot fdt blob failed.\n", __func__, __LINE__);
+    }
+    return name;
+}
+
+const char *uboot_sync_fdt_binfo_to_env(void *fdt_uboot)
+{
+    const char *name = NULL;
+    char *value;
+    char dtb_file[MAX_DTB_FILENAME_LEN];
+
+    if (fdt_uboot) {
+        name = uboot_get_binfo_from_fdt(fdt_uboot);
+        value = env_get("dtb_file");
+        if (value && (value[0] == '\0')) {
+            value = NULL;
+        }
+        if (name && (value == NULL)) {
+            sprintf(dtb_file, "%s.dtb", name);
+            env_set("dtb_file", dtb_file);
+        }
     }
     return name;
 }

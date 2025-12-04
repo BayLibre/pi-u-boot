@@ -16,6 +16,7 @@
 
 #include "include/board.h"
 #include "../common/include/board_porting.h"
+#include "../common/include/boot.h"
 #include "include/peri_clk.h"
 
 #ifdef CONFIG_LIGHT_AON_CONF
@@ -25,11 +26,24 @@
 #endif
 
 /*
+ * U-Boot Board init hooks
+ */
+int board_init(void)
+{
+	const char * name = uboot_get_binfo_from_fdt((void *)gd->fdt_blob);
+	gpio_pin_init(name);
+	return 0;
+}
+
+/*
  * Board Late Init Hook
  */
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	/* After env are loaded, sync board info*/
+	uboot_sync_fdt_binfo_to_env((void *)gd->fdt_blob);
+
 	/* If it is in fastboot mode, the function does not return */
 	if (board_bootrom_fastboot()) {
 		run_command("env default -fa", 0);

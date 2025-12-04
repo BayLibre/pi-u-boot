@@ -148,7 +148,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
     }
 
     /* 2. Set board type pass to u-boot */
-    board_set_binfo_to_fdt(fdt_uboot);
+    spl_set_binfo_to_uboot_fdt(fdt_uboot);
 }
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE

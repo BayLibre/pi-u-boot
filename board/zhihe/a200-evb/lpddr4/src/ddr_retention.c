@@ -1001,7 +1001,7 @@ void dwc_ddr_misc_regu_save(void)
     }
 }
 
-int dwc_ddrphy_phyinit_regInterface(regInstr myRegInstr) {
+int dwc_ddrphy_phyinit_regInterface(regInstr myRegInstr,int rank_num) {
     int regIndx=0;
     uint16_t data;
     ddr_phy_reg_wr(0xd0000, 0x0);
@@ -1009,11 +1009,8 @@ int dwc_ddrphy_phyinit_regInterface(regInstr myRegInstr) {
 
     uint32_t phy_reg_num = ARRAY_SIZE(RetRegList_addr);
     ddr_Regu_Config->phy_reg_num = phy_reg_num;
-#ifdef CONFIG_DDR_DUAL_RANK
-    ddr_Regu_Config->ddr_rank   =  2;
-#else
-    ddr_Regu_Config->ddr_rank   =  1;
-#endif
+    ddr_Regu_Config->ddr_rank   =  rank_num;
+
     Reg_Phy_Addr_Val_t* phy_addr_t = (Reg_Phy_Addr_Val_t*)((char*)ddr_Regu_Config +  64 +  sizeof(Reg_Misc_Addr_Val_t) *  ARRAY_SIZE(MiscRegList));
 
 #ifdef CONFIG_DDR_MSG

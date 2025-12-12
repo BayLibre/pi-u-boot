@@ -7,7 +7,16 @@
 #ifndef _A200_DDR_H_
 #define _A200_DDR_H_
 
-void init_ddr(void);
+#include "ddr_common_func.h"
+
+struct ddr_config {
+    enum DDR_PINMUX pinmux;
+    enum DDR_TYPE type;
+    int rank_num;
+    int freq;
+};
+
+int init_ddr(struct ddr_config *ddrcfg);
 int fixup_ddr_addrmap(unsigned long size);
 int query_ddr_boundary(unsigned long size);
 unsigned long get_ddr_density(void);

@@ -12,7 +12,7 @@ dtb-$(CONFIG_TARGET_STARFIVE_VISIONFIVE2) += jh7110-starfive-visionfive-2.dtb
 dtb-$(CONFIG_TARGET_TH1520_LPI4A) += th1520-lichee-pi-4a.dtb
 dtb-$(CONFIG_TARGET_XILINX_MBV) += xilinx-mbv32.dtb
 dtb-$(CONFIG_TARGET_A210_EVB) += a210-virt.dtb a210-evb.dtb
-dtb-$(CONFIG_TARGET_A200_EVB) += a200-evb.dtb p1.dtb
+dtb-$(CONFIG_TARGET_A200_EVB) += a200-evb.dtb
 
 include $(srctree)/scripts/Makefile.dts
 

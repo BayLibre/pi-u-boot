@@ -31,7 +31,8 @@
 int board_init(void)
 {
 	const char * name = uboot_get_binfo_from_fdt((void *)gd->fdt_blob);
-	gpio_pin_init(name);
+	printf("Board: %s\n", name);
+	uboot_gpio_pin_init(name);
 	return 0;
 }
 
@@ -45,11 +46,12 @@ int board_late_init(void)
 	uboot_sync_fdt_binfo_to_env((void *)gd->fdt_blob);
 
 	/* If it is in fastboot mode, the function does not return */
-	if (board_bootrom_fastboot()) {
+	if (uboot_bootrom_fastboot()) {
 		run_command("env default -fa", 0);
 		/* Config eMMC BOOT_PARTITION_ENABLE, fix qspiboot access emmcboot fail */
 		run_command("mmc partconf 0 0 1 0", 0);
-		run_command("echo fastboot check success", 0);
+		/* Wait a moment, confirm that all content has been output. */
+		run_command("echo fastboot check success; sleep 1", 0);
 		run_command("fastboot usb 0", 0);
 	} else {
 		/* if first boot, load factory env to uboot evn */

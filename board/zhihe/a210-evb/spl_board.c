@@ -250,7 +250,7 @@ void *board_spl_fit_buffer_addr(ulong fit_size, int sectors, int bl_len)
  * Get ddr base addr & size 
  * call at spl_fit_boot_fixup.c
  */
-int board_get_ddr_info(u64 *start, u64 *size)
+int spl_get_ddr_info(u64 *start, u64 *size)
 {
 	*start = CFG_SYS_SDRAM_BASE;
 	*size = ddr_determine_size(board_get_ddrtype());
@@ -260,7 +260,7 @@ int board_get_ddr_info(u64 *start, u64 *size)
 /*
  * Get Board info
  */
-const char * board_get_fit_dtb_name(int do_multi_check)
+const char * spl_get_fit_dtb_name(int do_multi_check)
 {
 	static char dtb_name_buf[MAX_DTB_FILENAME_LEN];
 
@@ -270,17 +270,16 @@ const char * board_get_fit_dtb_name(int do_multi_check)
 	/* Convert to string type */
 	switch(type) {
 	case BOARD_EVB:
-		name = STR_BOARD_EVB;
+		name = "a210-evb";
 		break;
 	case BOARD_DEV:
-		name = STR_BOARD_DEV;
+		name = "a210-dev";
 		break;
 	case BOARD_EVB_D2D:
-
-		name = STR_BOARD_EVB_D2D;
+		name = "a210-evb-d2d";
 		break;
 	default:
-		name = STR_BOARD_EVB;
+		name = "a210-evb";
 	}
 	strcpy(dtb_name_buf, name);
 
@@ -297,7 +296,7 @@ const char * board_get_fit_dtb_name(int do_multi_check)
 /* 
  * Board user-define fdt fixup
  */
-int board_fixup_os_fdt(void *fdt)
+int spl_fixup_os_fdt(void *fdt)
 {
 	if ((spl_boot_device() == BOOT_DEVICE_BOOTROM) && board_get_die_count() > 1) {
 		/* For a multi-DIE SoC, only the CPU on DIE0 is booted in fastboot mode. */
@@ -334,13 +333,13 @@ If it is initialized to zero and becomes a BSS variable,
 it will be re-zeroed upon entering the 'r' stage, causing data loss.
 */
 static enum board_type _board_type = BOARD_UNKNOWN;
-static enum ddr_type _ddr_type = DDR_UNKNOWN;
+static enum ddr_type _ddr_type = DDR_TYPE_UNKNOWN;
 
 void board_type_check(void)
 {
 	if (board_get_die_count() > 1) {
 		_board_type = BOARD_EVB_D2D;
-		_ddr_type = DDR_4266_1Rank_4GB;
+		_ddr_type = DDR_LP4X_4266_1Rank_4GBx2;
 
 		return;
 	}
@@ -351,39 +350,39 @@ void board_type_check(void)
 	u64 adc_ch2_mv = adc_read(2, 16);
 	printf("Board check: ch0=%llumV ch2=%llumV\n", adc_ch0_mv, adc_ch2_mv);
 
-	/* BOARD_EVB ch2 (800mv ~ 1300mv) */
+	/* Board check */
 	if (adc_ch2_mv >= 800 && adc_ch2_mv <= 1300) {
+		/* BOARD_EVB ch2 (800mv ~ 1300mv) */
 		_board_type = BOARD_EVB;
-	} else {
+	} else if (adc_ch2_mv >= 1400 && adc_ch2_mv <= 1900) {
+		/* BOARD_DEV ch2 (1400mv ~ 1900mv) */
 		_board_type = BOARD_DEV;
+	} else {
+		printf("Board info: Unknown\n");
+		while(1);
 	}
 
+	/* DDR check */
 	if (_board_type == BOARD_EVB) {
 		if (adc_ch0_mv >= 0 && adc_ch0_mv <= 100) {
-			printf("Board info: bid=%d, DDR_4266_1Rank_2GB * 2\n", _board_type);
-			_ddr_type = DDR_4266_1Rank_2GB;
+			_ddr_type = DDR_LP4X_4266_1Rank_2GBx2;
 		} else if (adc_ch0_mv >= 500 && adc_ch0_mv <= 700) {
-			printf("Board info: bid=%d, DDR_4266_1Rank_4GB * 2\n", _board_type);
-			_ddr_type = DDR_4266_1Rank_4GB;
+			_ddr_type = DDR_LP4X_4266_1Rank_4GBx2;
 		} else if (adc_ch0_mv >= 1100 && adc_ch0_mv <= 1300) {
-			printf("Board info: bid=%d, DDR_4266_2Rank_8GB * 2\n", _board_type);
-			_ddr_type = DDR_4266_2Rank_8GB;
-		}else {
-			printf("Board info: bid=%d, ch0 value is not supported, set default DDR_4266_1Rank_2GB)\n", _board_type);
-			_ddr_type = DDR_4266_1Rank_2GB;
+			_ddr_type = DDR_LP4X_4266_2Rank_8GBx2;
 		}
 	} else if (_board_type == BOARD_DEV) {
 		if (adc_ch2_mv >= 1700 && adc_ch2_mv <= 1900) {
-			printf("Board info: bid=%d, DDR_4266_1Rank_4GB * 2\n", _board_type);
-			_ddr_type = DDR_4266_1Rank_4GB;
-		} else {
-			printf("Board info: bid=%d, DDR_4266_1Rank_2GB * 2\n", _board_type);
-			_ddr_type = DDR_4266_1Rank_2GB;
+			_ddr_type = DDR_LP4X_4266_1Rank_4GBx2;
 		}
-	} else {
-		printf("Board info: bid=%d, ch2 value is not supported, set default DDR_4266_1Rank_2GB)\n", _board_type);
-		_ddr_type = DDR_4266_1Rank_2GB;
 	}
+
+	if (_ddr_type == DDR_TYPE_UNKNOWN) {
+		printf("Board info: Unknown DDR type\n");
+		while(1);
+	}
+
+	printf("Board info: bid=%d did=%d\n", _board_type, _ddr_type);
 }
 
 enum board_type board_get_type(void)

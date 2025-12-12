@@ -213,6 +213,7 @@
 			reg = <0x00 0x00305000 0x0 0x1000>;
 			interrupts = <331>;
 			clocks = <&clk PERI0_WDT0_PCLK_EN>;
+			u-boot,noautostart;
 			status = "okay";
 		};
 

@@ -13,7 +13,7 @@
 #define EVN_COMMON \
 	"tty_dev=ttyS4\0" \
 	"kernel_loglevel=4\0" \
-	"tmp_addr=0x8c200000\0" \
+	"tmp_addr=0x8d000000\0" \
 	"opensbi_addr=0x80000000\0" \
 	"kernel_addr=0x80200000\0" \
 	"dtb_addr=0x8c000000\0" \
@@ -52,8 +52,8 @@
 #define BOOT_FIT \
 	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}; md5sum ${kernel_addr} $filesize\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
-	"load_image= run loadkernel; run loadinitrd\0" \
-	"bootcmd=run select_slot; run load_image; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
+	"load_image=run loadkernel; run loadinitrd\0" \
+	"bootcmd=run select_slot; run load_image; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
 	"altbootcmd=run rollback; run rollback_finish; reset;\0"
 #else
 #define BOOT_FIT
@@ -65,9 +65,8 @@
 	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}\0" \
 	"loadsbi=ext4load    ${boot_device} ${opensbi_addr} ${opensbi_file}\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
-	"loadaon=ext4load    ${boot_device} ${tmp_addr}     ${aon_file}; cp.b ${tmp_addr} ${aon_addr} $filesize\0" \
-	"load_image=run loadfdt; run loadsbi; run loadkernel; run loadinitrd; run loadaon\0" \
-	"bootcmd=run select_slot; run load_image; boot_aon; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr $opensbi_addr;\0"
+	"load_image=run loadfdt; run loadsbi; run loadkernel; run loadinitrd;\0" \
+	"bootcmd=run select_slot; run load_image; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr $opensbi_addr;\0"
 #else
 #define BOOT_XT
 #endif
@@ -75,7 +74,7 @@
 #define BOOT_NFS \
 	"nfsroot=10.0.11.6:/mnt/ssd/rootfs\0" \
 	"set_nfsbootargs=setenv bootargs ip=${ipaddr}::${gatewayip}:${netmask}:myhostname:eth0:off nfsroot=${nfsroot},proto=tcp,nfsvers=4,rw ${barg_pre}\0" \
-	"boot_nfs=setenv autoload no; dhcp; run select_slot; boot_aon; setenv root_device /dev/nfs; run set_bargs_pre; run set_nfsbootargs; booti $kernel_addr - $dtb_addr\0"
+	"boot_nfs=setenv autoload no; dhcp; run select_slot; setenv root_device /dev/nfs; run set_bargs_pre; run set_nfsbootargs; booti $kernel_addr - $dtb_addr\0"
 
 #define CFG_EXTRA_ENV_SETTINGS \
 	EVN_COMMON \

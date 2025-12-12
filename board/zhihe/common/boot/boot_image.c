@@ -96,7 +96,7 @@ int spl_load_dtb_from_bootfs(void)
     /* Check dtb filename */
     dtb_file = spl_env_get_os_dtb(&dtb_addr);
     if (dtb_file == NULL) {
-        sprintf(dtb_filename_buf, "%s.dtb", board_get_fit_dtb_name(1));
+        sprintf(dtb_filename_buf, "%s.dtb", spl_get_fit_dtb_name(1));
         dtb_file = dtb_filename_buf;
     }
 

@@ -45,7 +45,7 @@
 
 	memory@80000000  {
 		device_type = "memory";
-		reg = <0x00 0x80000000  0x01 0x00000000>; /* 2G */
+		reg = <0x00 0x80000000  0x00 0x80000000>; /* default 2G, SPL auto check size */
 	};
 
 	cpus: cpus {

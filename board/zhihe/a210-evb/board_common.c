@@ -17,7 +17,7 @@ int board_get_boot_sel(void)
     return boot_sel;
 }
 
-int board_bootrom_fastboot(void)
+int uboot_bootrom_fastboot(void)
 {
 	int boot_sel = board_get_boot_sel();
 

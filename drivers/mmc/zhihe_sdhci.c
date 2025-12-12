@@ -76,7 +76,6 @@ static void sdhci_phy_3_3v_init_no_pull(struct sdhci_host *host)
 static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 {
 	uint32_t val;
-	struct mmc *mmc = (struct mmc *)host->mmc;
 
 	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
 	if (plat->pull_up_en == false) {

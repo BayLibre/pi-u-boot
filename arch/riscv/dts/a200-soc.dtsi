@@ -106,6 +106,7 @@
 			reg = <0xff 0xefc30000 0x0 0x1000>;
 			interrupts = <24>;
 			clocks = <&dummy_apb>;
+			u-boot,noautostart;
 			status = "okay";
 		};
 

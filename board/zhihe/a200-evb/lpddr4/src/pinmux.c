@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "../include/ddr_common_func.h"
-#include "../include/pinmux.h"
 
 static void dq_pinmux_p1 (enum DDR_BITWIDTH bits) {
 ddr_phy_broadcast_en(0);    
@@ -168,12 +167,16 @@ ddr_phy_broadcast_en(1);
 }
 
 void dq_pinmux (enum DDR_BITWIDTH bits) {
-	if (strcmp("p1", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+	enum DDR_PINMUX pinmux = get_ddr_pinmux();
+	switch(pinmux) {
+	case DDR_PINMUX_TH1520:
 		dq_pinmux_p1(bits);
-	} else if (strcmp("a200-evb", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+		break;
+	case DDR_PINMUX_A200:
 		dq_pinmux_a200(bits);
-	} else {
-        printf("Error: unknown dts name");
+		break;
+	default:
+		printf("Error: unknown ddr pinmux");
 		while(1);
 	}
 }

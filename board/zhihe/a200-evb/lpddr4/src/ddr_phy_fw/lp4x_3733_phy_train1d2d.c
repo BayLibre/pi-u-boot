@@ -3,17 +3,17 @@
 #include "../../include/lp4x_3733_phy_train1d2d.h" 
 #include "../../include/waitfwdone.h" 
 
-void lp4_phy_train1d2d(enum DDR_TYPE type, int speed, enum DDR_BITWIDTH bits) {
-    if(type != DDR_TYPE_LPDDR4X || speed != 3733)
-    {
-        printf("unsupport ddr type<lpddr4%c>, speed<%d>\n", (type==DDR_TYPE_LPDDR4X?'x':' '), speed);
-        return;
-    }
+// void lp4_phy_train1d2d(enum DDR_TYPE type, int speed, enum DDR_BITWIDTH bits) {
+//     if(type != DDR_TYPE_LPDDR4X || speed != 3733)
+//     {
+//         printf("unsupport ddr type<lpddr4%c>, speed<%d>\n", (type==DDR_TYPE_LPDDR4X?'x':' '), speed);
+//         return;
+//     }
     
-    lp4x_3733_phy_train1d2d();
-}
+//     lp4x_3733_phy_train1d2d();
+// }
 
-const short int iccm_array[16384] = {
+static const short int iccm_array[16384] = {
 0x114,
 0x0,
 0x50,
@@ -16399,7 +16399,7 @@ const short int iccm_array[16384] = {
 0x0,
 0x0,
 };
-const short int dccm_array[830] = {
+static const short int dccm_array[830] = {
 0x60,
 0x0,
 0x0,
@@ -17231,7 +17231,7 @@ const short int dccm_array[830] = {
 0x0,
 0x0,
 };
-const short int iccm_array1[16384] = {
+static const short int iccm_array1[16384] = {
 0x204,
 0x0,
 0x50,
@@ -33617,7 +33617,7 @@ const short int iccm_array1[16384] = {
 0x0,
 0x0,
 };
-const short int dccm_array1[702] = {
+static const short int dccm_array1[702] = {
 0x60,
 0x0,
 0x0,
@@ -34321,7 +34321,7 @@ const short int dccm_array1[702] = {
 0x0,
 0x0,
 };
-void lp4x_3733_phy_train1d2d() {
+void lp4x_3733_phy_train1d2d_1rank(void) {
 int i;
 #ifdef CONFIG_DDR_MSG
 printf("entered lp4x_3733_phy_train1d2d \n");

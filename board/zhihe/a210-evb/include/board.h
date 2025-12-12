@@ -81,23 +81,14 @@ enum board_type {
     BOARD_UNKNOWN,
 };
 
-#define STR_BOARD_EVB "a210-evb"
-#define STR_BOARD_DEV "a210-dev"
-#define STR_BOARD_EVB_D2D "a210-evb-d2d"
-
-enum ddr_type {
-    DDR_4266_1Rank_2GB,
-    DDR_4266_1Rank_4GB,
-    DDR_4266_2Rank_8GB,
-    DDR_UNKNOWN,
-};
-
 /*
  * Board Common interface
  */
 int board_get_boot_sel(void);
 int board_get_die_count(void);
-void gpio_pin_init(enum board_type board);
+int uboot_gpio_pin_init(const char *board_name);
+int uboot_bootrom_fastboot(void);
+
 void board_type_check(void);
 enum board_type board_get_type(void);
 enum ddr_type board_get_ddrtype(void);

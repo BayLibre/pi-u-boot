@@ -1,10 +1,14 @@
 #include "../include/common_lib.h"
-#include "../include/pinmux.h"
 #include "../include/ddr_common_func.h"
 #include "../include/ddr_retention.h"
 #include "../include/lpddr4_init.h"
 
-extern void lp4_phy_train1d2d(enum DDR_TYPE type, int speed, enum DDR_BITWIDTH bits);
+extern void lp4x_4266_phy_train1d2d_1rank(void);
+extern void lp4x_4266_phy_train1d2d_2rank(void);
+extern void lp4x_3733_phy_train1d2d_1rank(void);
+extern void lp4x_3733_phy_train1d2d_2rank(void);
+extern void lp4x_3200_phy_train1d2d_1rank(void);
+extern void lp4x_3200_phy_train1d2d_2rank(void);
 
 void lpddr4_init(enum DDR_TYPE type, int rank_num, int speed, enum DDR_BITWIDTH bits)
 { 
@@ -25,9 +29,36 @@ void lpddr4_init(enum DDR_TYPE type, int rank_num, int speed, enum DDR_BITWIDTH 
 
   dq_pinmux(bits); // pinmux config before training
 
-  lp4_phy_train1d2d(type, speed, bits);
+  if (type == DDR_TYPE_LPDDR4X && rank_num == 1 && speed == 4266) {
+#ifdef CONFIG_DDR_LP4X_4266_SINGLERANK
+    lp4x_4266_phy_train1d2d_1rank();
+#endif
+  } else if(type == DDR_TYPE_LPDDR4X && rank_num == 2 && speed == 4266) {
+#ifdef CONFIG_DDR_LP4X_4266_DUALRANK
+    lp4x_4266_phy_train1d2d_2rank();
+#endif
+  } else if (type == DDR_TYPE_LPDDR4X && rank_num == 1 && speed == 3733) {
+#ifdef CONFIG_DDR_LP4X_3733_SINGLERANK
+    lp4x_3733_phy_train1d2d_1rank();
+#endif
+  } else if(type == DDR_TYPE_LPDDR4X && rank_num == 2 && speed == 3733) {
+#ifdef CONFIG_DDR_LP4X_3733_DUALRANK
+    lp4x_3733_phy_train1d2d_2rank();
+#endif
+  } else if (type == DDR_TYPE_LPDDR4X && rank_num == 1 && speed == 3200) {
+#ifdef CONFIG_DDR_LP4X_3200_SINGLERANK
+    lp4x_3200_phy_train1d2d_1rank();
+#endif
+  } else if(type == DDR_TYPE_LPDDR4X && rank_num == 2 && speed == 3200) {
+#ifdef CONFIG_DDR_LP4X_3200_DUALRANK
+    lp4x_3200_phy_train1d2d_2rank();
+#endif
+  } else {
+    printf("ERROR: unsupport ddr config\n");
+    while(1);
+  }
 
-  dwc_ddrphy_phyinit_regInterface(saveRegs);
+  dwc_ddrphy_phyinit_regInterface(saveRegs, rank_num);
 
   ctrl_en(bits);
 

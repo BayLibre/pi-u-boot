@@ -275,21 +275,120 @@ static int do_mmc_set_clk_freq(struct cmd_tbl *cmdtp, int flag,
 	return ret;
 }
 
+/*
+ * Perform a single round of MMC write-read-compare test.
+ *
+ * @mem_start: base memory address for buffers
+ * @start_blk: start block address on eMMC
+ * @num_blks:  number of blocks to test (each block = 512 bytes)
+ *
+ * Write buffer: mem_start
+ * Read buffer:  mem_start + num_blks * 512
+ *
+ * Returns: 0 on success, non-zero on failure
+ */
+static int mmc_rw_test_single(ulong mem_start, ulong start_blk, ulong num_blks)
+{
+	ulong byte_size = num_blks * 512ULL;
+	ulong write_addr = mem_start;
+	ulong read_addr = mem_start + byte_size;
+	char cmd_buf[256];
+	int ret;
+
+	/* Step 1: Generate random data */
+	snprintf(cmd_buf, sizeof(cmd_buf), "random 0x%lx 0x%lx", write_addr, byte_size);
+	ret = run_command(cmd_buf, 0);
+	if (ret != 0) {
+		printf("random failed\n");
+		return ret;
+	}
+
+	/* Step 2: Write to eMMC */
+	snprintf(cmd_buf, sizeof(cmd_buf),
+				"mmc write 0x%lx 0x%lx 0x%lx", write_addr, start_blk, num_blks);
+	ret = run_command(cmd_buf, 0);
+	if (ret != 0) {
+		printf("mmc write failed\n");
+		return ret;
+	}
+
+	/* Step 3: Read back */
+	snprintf(cmd_buf, sizeof(cmd_buf),
+				"mmc read 0x%lx 0x%lx 0x%lx", read_addr, start_blk, num_blks);
+	ret = run_command(cmd_buf, 0);
+	if (ret != 0) {
+		printf("mmc read failed\n");
+		return ret;
+	}
+
+	/* Step 4: Compare */
+	#ifdef CMP_VALIDITY_CHECK
+	// Optional debug corruption (e.g., for testing cmp failure)
+	static int first_call = 1;
+	if (first_call && num_blks > 0) {
+		first_call = 0;
+		printf("read_addr[0x5] = 0x%02x\n", *((uint8_t *)(read_addr + 0x5)));
+		*((uint8_t *)(read_addr + 0x5)) = 0xA5;
+		printf("read_addr[0x5] = 0x%02x (corrupted)\n", *((uint8_t *)(read_addr + 0x5)));
+	}
+	#endif
+
+	snprintf(cmd_buf, sizeof(cmd_buf),
+				"cmp.b 0x%lx 0x%lx 0x%lx", write_addr, read_addr, byte_size);
+	ret = run_command(cmd_buf, 0);
+	if (ret != 0) {
+		printf("data compare mismatch\n");
+		return ret;
+	}
+
+	return 0;
+}
+
+#define TEST_LBA      (0x1400000)   // 10GB / 512 = 0x1400000
+#define TEST_BLK_CNT  0x10
 static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 	       int argc, char * const argv[])
 {
 	struct mmc *mmc;
 	int i = 0, n;
 	int stop_on_ok = 1;
+	int multiple = 0;
+	int err_count = 0, ret;
+	int start_tx_delay = 0;
+	int end_tx_delay = 128;
+	char temp_buf[512];
+	ulong j, loop_count = 5;
 
-	if(argc > 1 && (!strncmp(argv[1],"cont",4))){
+	if(argc > 1 && (!strncmp(argv[1], "cont", 4))) {
 		stop_on_ok = 0;
 	}
 
+	if(argc > 3) {
+		start_tx_delay = dectoul(argv[2], NULL);
+		end_tx_delay = dectoul(argv[3], NULL);
+		if (start_tx_delay >= end_tx_delay || start_tx_delay < 0 || start_tx_delay > 128
+			|| end_tx_delay < 0 || end_tx_delay > 128) {
+			printf("Error: start_tx_delay and end_tx_delay must be between 0 and 128!\n");
+			return CMD_RET_FAILURE;
+		}
+	}
+	if(argc > 4 && (!strncmp(argv[4], "mult", 4))) {
+		multiple = 1;
+	}
+	if(argc > 5) {
+		loop_count = dectoul(argv[5], NULL);
+	}
+
+	printf("MMC turning Test:\n");
+	printf("  stop_on_ok: 0x%x multiple: 0x%x\n", stop_on_ok, multiple);
+	printf("  test tx delay start:%d end:%d \n", start_tx_delay, end_tx_delay);
+	if (multiple) {
+		printf("  multiple Loops       : %lu\n", loop_count);
+	}
 	if (mmc_dev_init() != 0)
 		return CMD_RET_FAILURE;
 
-	for(i = 0; i < 128; i++) {
+	for(i = start_tx_delay; i < end_tx_delay; i++) {
 		DELAY_LANE = i;
 		printf("Set DELAY_LANE = %d\n", DELAY_LANE);
 
@@ -314,18 +413,37 @@ static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 
 		if (mmc_getwp(mmc) == 1) {
 			printf("Error: card is write protected!\n");
-			manual_set_delay = 0;
-			return CMD_RET_FAILURE;
+			goto FAILED;
 		}
+		if (multiple) {
+			for (j = 0; j < loop_count; j++) {
+				ret = mmc_rw_test_single(0x82000000, TEST_LBA, TEST_BLK_CNT);
+				if (ret != 0) {
+					printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "ERROR");
+					err_count++;
+					break;
+				}
+				printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "OK" );
+			}
+			if (err_count >= 5)
+				goto FAILED;
 
-		n = blk_dwrite(mmc_get_blk_desc(mmc), 0, 1, 0);
-		if (n == 1) {
-			printf("Turning blocks written: %s\n", "OK" );
 			manual_set_delay = 0;
 			if(stop_on_ok)
 				return CMD_RET_SUCCESS;
 		} else {
-			printf("Turning blocks written: %s\n", "ERROR");
+			memset(temp_buf, 0xa5, sizeof(temp_buf));
+			n = blk_dwrite(mmc_get_blk_desc(mmc), TEST_LBA, 1, temp_buf);
+			if (n == 1) {
+				printf("Testing blocks written: %s\n", "OK" );
+				manual_set_delay = 0;
+				if(stop_on_ok)
+					return CMD_RET_SUCCESS;
+			} else {
+				printf("Testing blocks written: %s\n", "ERROR");
+				if (err_count++ >= 5)
+					goto FAILED;
+			}
 		}
 	}
 
@@ -334,6 +452,75 @@ static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
+	return CMD_RET_SUCCESS;
+
+FAILED:
+	manual_set_delay = 0;
+	return CMD_RET_FAILURE;
+}
+
+/*
+ * Usage: mmcz rw_test <mem_start> <start_blk> <num_blks> [loop_count]
+ */
+static int do_mmc_rw_test(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
+{
+	unsigned long start_blk = 0x8000;	// default start from block 0x8000
+	unsigned long num_blks = 0x40000;	// default 128MB
+	ulong mem_start = 0x82000000;
+	ulong loop_count = 1;
+	ulong byte_size;
+	unsigned long i;
+	int ret;
+
+	if (argc < 4 || argc > 5) {
+		printf("Usage: %s <mem_start> <start_blk> <num_blks> [loop_count]\n", argv[0]);
+		return CMD_RET_USAGE;
+	}
+
+	mem_start  = simple_strtoul(argv[1], NULL, 16);
+	start_blk  = simple_strtoul(argv[2], NULL, 16);
+	num_blks   = simple_strtoul(argv[3], NULL, 16);
+
+	if (num_blks == 0) {
+		printf("Error: num_blks must be > 0\n");
+		return CMD_RET_FAILURE;
+	}
+
+	if (argc == 5) {
+		loop_count = simple_strtoul(argv[4], NULL, 16);
+		if (loop_count <= 0) {
+			printf("Warning: loop_count=0, setting to 1\n");
+			loop_count = 1;
+		}
+	}
+
+	/* Check address overflow */
+	byte_size = num_blks * 512ULL;
+	if (byte_size > (0xFFFFFFFFUL - mem_start)) {
+		printf("Error: memory range exceeds 32-bit address space!\n");
+		return CMD_RET_FAILURE;
+	}
+
+	printf("MMC RW Test:\n");
+	printf("  Write buffer: 0x%08lx\n", mem_start);
+	printf("  Read buffer : 0x%08lx\n", mem_start + byte_size);
+	printf("  Block range : 0x%lx ~ 0x%lx (size=%lu MiB)\n",
+			start_blk, start_blk + num_blks - 1, byte_size / (1024 * 1024));
+	printf("  Loops       : %lu\n", loop_count);
+
+	for (i = 0; i < loop_count; i++) {
+		printf("Loop %lu/%lu Start.\n", i + 1, loop_count);
+
+		ret = mmc_rw_test_single(mem_start, start_blk, num_blks);
+		if (ret != 0) {
+			printf("Test FAILED at loop %lu!\n", i + 1);
+			return CMD_RET_FAILURE;
+		}
+
+		printf("Loop %lu/%lu Passed.\n", i + 1, loop_count);
+	}
+
+	printf("All %lu loop(s) PASSED.\n", loop_count);
 	return CMD_RET_SUCCESS;
 }
 
@@ -459,8 +646,9 @@ static struct cmd_tbl cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(dev, 4, 0, do_mmc_dev, "", ""),
 	U_BOOT_CMD_MKENT(set_clk, 4, 1, do_mmc_set_clk_freq, "", ""),
 	U_BOOT_CMD_MKENT(set_delay, 4, 1, do_mmc_set_delay_lane, "", ""),
-	U_BOOT_CMD_MKENT(turning, 4, 1, do_mmc_turning, "", ""),
+	U_BOOT_CMD_MKENT(turning, 6, 1, do_mmc_turning, "", ""),
 	U_BOOT_CMD_MKENT(set_mode, 4, 1, do_mmc_set_mode, "", ""),
+	U_BOOT_CMD_MKENT(rw_test, 5, 1, do_mmc_rw_test, "", ""),
 };
 
 static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -497,8 +685,12 @@ U_BOOT_CMD(
 	"mmcz dev [dev] - show or set current mmc device\n"
 	"mmcz set_clk # freq - set mmc clock frequency\n"
 	"mmcz set_delay # val - set clk out delay mannaul,reinit host and rescan dev\n"
-	"mmcz turning [continue] - loop test for clk delay form 0 to 128, reinit host and rescan dev\n"
-	"	- without arg [continue] exit once init and write ok\n"
+	"mmcz turning [continue start end] [multiple loop_count] - loop test for clk delay form start to end (default 0 to 128), reinit host and rescan dev\n"
+	"	- without arg [continue start end] exit once init and write ok\n"
+	"	- with arg [multiple loop_count] loop write-read-compare multiple blocks for tx clk delay\n"
+    "mmcz rw_test <mem_start> <start_blk> <num_blks> [loop_count] - perform MMC R/W test\n"
+    "    loop_count defaults to 1 if omitted\n"
+    "    (block size = 512 bytes)\n"
 	"mmcz set_mode speed_mode bus_width - set mmc speed mode and bus_width\n"
 	"  speed_mode:\n"
     "    - 0: MMC_LEGACY(emmc supported),\n"

@@ -24,8 +24,17 @@ int spl_set_binfo_to_uboot_fdt(void *fdt_uboot)
 
     chosen = fdt_find_or_add_subnode(fdt_uboot, 0, "chosen");
     if (chosen >= 0) {
-        board_name = board_get_fit_dtb_name(0);
-        fdt_setprop_string(fdt_uboot, chosen, "board", board_name);
+        /* baord name */
+        board_name = spl_get_fit_dtb_name(0);
+        if (board_name) {
+            fdt_setprop_string(fdt_uboot, chosen, "board", board_name);
+        }
+
+        /* real dtb name */
+        board_name = spl_get_fit_dtb_name(1);
+        if (board_name) {
+            fdt_setprop_string(fdt_uboot, chosen, "board-dtb", board_name);
+        }
     } else {
         printf("spl: could not find '/chosen'\n");
         return -1;
@@ -92,11 +101,13 @@ const char *uboot_get_binfo_from_fdt(void *fdt_uboot)
 const char *uboot_sync_fdt_binfo_to_env(void *fdt_uboot)
 {
     const char *name = NULL;
+    int chosen_node = 0;
     char *value;
     char dtb_file[MAX_DTB_FILENAME_LEN];
 
     if (fdt_uboot) {
-        name = uboot_get_binfo_from_fdt(fdt_uboot);
+        chosen_node = fdt_path_offset(fdt_uboot, "/chosen");
+        name = fdt_getprop(fdt_uboot, chosen_node, "board-dtb", NULL);
         value = env_get("dtb_file");
         if (value && (value[0] == '\0')) {
             value = NULL;

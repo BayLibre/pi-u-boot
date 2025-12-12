@@ -252,7 +252,7 @@ config FIXUP_MEMORY_REGION
 	bool "self-adapt to query and fixup memory region"
 	help
 	  Enabling this will support self-adapt to query and fixup memory region
-
+      
 config DDR_H32_MODE
         bool "LPDDR4/4X 32bit mode configuration"
         help
@@ -267,15 +267,6 @@ config LPDDR4
 
 config LPDDR
         def_bool y if LPDDR4X || LPDDR4
-
-config DDR_4266
-        def_bool y if DDR_LP4X_4266_DUALRANK || DDR_LP4X_4266_SINGLERANK || DDR_LP4_4266_DUALRANK || DDR_LP4_4266_SINGLERANK
-config DDR_3733
-        def_bool y if DDR_LP4X_3733_DUALRANK || DDR_LP4X_3733_SINGLERANK || DDR_LP4_3733_DUALRANK || DDR_LP4_3733_SINGLERANK
-config DDR_3200
-        def_bool y if DDR_LP4X_3200_DUALRANK || DDR_LP4X_3200_SINGLERANK || DDR_LP4_3200_DUALRANK || DDR_LP4_3200_SINGLERANK
-config DDR_2133
-        def_bool y if DDR_LP4X_2133_DUALRANK || DDR_LP4X_2133_SINGLERANK || DDR_LP4_2133_DUALRANK || DDR_LP4_2133_SINGLERANK
 
 config FW_MSG_L3
         bool "DDR firmware message L3"
@@ -294,10 +285,6 @@ config DDR_MSG
 
 config DDR_HARD_2D
 	def_bool n
-
-config DDR_DUAL_RANK
-	def_bool y if DDR_LP4X_4266_DUALRANK || DDR_LP4X_3733_DUALRANK || DDR_LP4X_3200_DUALRANK || DDR_LP4X_2133_DUALRANK \
-			|| DDR_LP4_4266_DUALRANK || DDR_LP4_3733_DUALRANK || DDR_LP4_3200_DUALRANK || DDR_LP4_2133_DUALRANK
 
 config DDR_CHBIT_256B
         def_bool y if !DDR_H32_MODE

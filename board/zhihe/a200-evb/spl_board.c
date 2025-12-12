@@ -26,10 +26,12 @@
 
 #include <asm/arch-zhxtc9/cpu_ext.h>
 
-#include "lpddr-regu/ddr_regu.h"
 #include "include/board.h"
+#include "../common/include/boot.h"
+
+#include "lpddr-regu/ddr_regu.h"
 #include "include/sys_clk.h"
-#include "include/ddr.h"
+#include "lpddr4/include/ddr_init.h"
 #include "rambus/soc_parameter.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -440,6 +442,9 @@ int spl_board_init_f(void)
 	 */
 	cpu_probe_all();
 
+	/* Check and svae board type info */
+	board_type_check();
+
 	light_pre_reset_config();
 	sys_clk_config();
 
@@ -471,7 +476,36 @@ int spl_board_init_f(void)
 	cpu_clk_config(0);
 #endif
 
-	init_ddr();
+	/* DDR config */
+	struct ddr_config ddrcfg;
+	ddrcfg.type = DDR_TYPE_LPDDR4X;
+
+	if (board_get_type() == BOARD_TH1520) {
+		ddrcfg.pinmux = DDR_PINMUX_TH1520;
+	} else if (board_get_type() == BOARD_A200EVB) {
+		ddrcfg.pinmux = DDR_PINMUX_A200;
+	} else {
+		printf("ERROR: unknown ddr pinmux\n");
+		while(1);
+	}
+	
+	if (board_get_ddrtype() == DDR_LP4X_3200_1Rank) {
+		ddrcfg.rank_num = 1;
+		ddrcfg.freq = 3200;
+	} else if (board_get_ddrtype() == DDR_LP4X_3733_1Rank) {
+		ddrcfg.rank_num = 1;
+		ddrcfg.freq = 3733;
+	} else if(board_get_ddrtype() == DDR_LP4X_3733_2Rank) {
+		ddrcfg.rank_num = 2;
+		ddrcfg.freq = 3733;
+	} else {
+		printf("ERROR: unsupport ddr type\n");
+		while(1);
+	}
+
+	/* DDR init */
+	init_ddr(&ddrcfg);
+
 	setup_ddr_scramble();
 	setup_ddr_parity();
 	setup_ddr_pmp();
@@ -543,7 +577,7 @@ void spl_board_init(void)
  * Get ddr base addr & size 
  * call at spl_fit_boot_fixup.c
  */
-int board_get_ddr_info(u64 *start, u64 *size)
+int spl_get_ddr_info(u64 *start, u64 *size)
 {
 	*start = 0x0;
 	*size = get_ddr_density();
@@ -553,23 +587,102 @@ int board_get_ddr_info(u64 *start, u64 *size)
 /*
  * Get Board info
  */
-const char * board_get_fit_dtb_name(int do_multi_check)
+const char * spl_get_fit_dtb_name(int do_multi_check)
 {
 	/* Use the U-Boot device tree name to 
 	 *   match the device tree used by the kernel.
 	 */
-	if (strcmp("p1", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+	
+	enum board_type type = board_get_type();
+
+	switch(type) {
+	case BOARD_TH1520:
 		return "th1520-lichee-pi-4a";
-	} else if (strcmp("a200-evb", CONFIG_DEFAULT_DEVICE_TREE) == 0) {
+	case BOARD_A200EVB:
+		return "a200-evb";
+	default:
 		return "a200-evb";
 	}
-	return CONFIG_DEFAULT_DEVICE_TREE;
+
+	return "a200-evb";
 }
 
 /* 
  * Board user-define fdt fixup
  */
-int board_fixup_os_fdt(void *fdt)
+int spl_fixup_os_fdt(void *fdt)
 {
 	return 0;
+}
+
+/*
+ * Do board type check
+ */
+/*
+Attention:
+The following variable must not be initialized to zero.
+This global variable is assigned in the 'f' stage and
+must persist into the 'r' stage of the SPL.
+If it is initialized to zero and becomes a BSS variable,
+it will be re-zeroed upon entering the 'r' stage, causing data loss.
+*/
+static enum board_type _board_type = BOARD_UNKNOWN;
+static enum ddr_type _ddr_type = DDR_TYPE_UNKNOWN;
+
+void board_type_check(void)
+{
+	unsigned int tmp;
+	unsigned int val;
+
+	// init
+	writel(0xA4C8C6DE, (void *)(EFUSE_BASE + 0x50));
+	writel(0xF4D7FB08, (void *)(EFUSE_BASE + 0x54));
+	writel(0xC3F981D0, (void *)(EFUSE_BASE + 0x58));
+	writel(0x32224E05, (void *)(EFUSE_BASE + 0x5c));
+
+	writel(0x07, (void *)(EFUSE_BASE + 0x40));
+
+	tmp = readl((void *)(EFUSE_BASE + 0x00));
+	tmp &= 0xFFFFDFFC;
+	tmp |= 0x00000101;
+	writel(tmp, (void *)(EFUSE_BASE + 0x00));
+	udelay(1000);
+
+	// read
+	val = readl((void *)(EFUSE_BASE + 0x80));
+	val &= 0xFFFF;
+
+	// clear
+	tmp = readl((void *)(EFUSE_BASE + 0x00));
+	tmp |= 0x00000002;
+	writel(tmp, (void *)(EFUSE_BASE + 0x00));
+
+	printf("Board check: val=0x%x\n", val);
+
+	switch(val) {
+	case 0x0a01:
+	case 0x0000:
+		_board_type = BOARD_TH1520;
+		_ddr_type = DDR_LP4X_3733_2Rank;
+		break;
+	case 0x0201:
+		_board_type = BOARD_A200EVB;
+		_ddr_type = DDR_LP4X_3200_1Rank;
+		break;
+	default:
+		printf("Board info: Unknown\n");
+		while(1);
+	}
+
+	printf("Board info: bid=%d did=%d\n", _board_type, _ddr_type);
+}
+
+enum board_type board_get_type(void)
+{
+	return _board_type;
+}
+
+enum ddr_type board_get_ddrtype(void)
+{
+	return _ddr_type;
 }

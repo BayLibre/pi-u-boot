@@ -1,20 +1,31 @@
 #include "../include/common_lib.h"
-#include "../include/ddr_common_func.h"
+#include "../include/ddr_init.h"
 #include "../include/lpddr4_init.h"
 
-const char board_name[] = "FM";
+/*
+Attention:
+The following variable must not be initialized to zero.
+This global variable is assigned in the 'f' stage and
+must persist into the 'r' stage of the SPL.
+If it is initialized to zero and becomes a BSS variable,
+it will be re-zeroed upon entering the 'r' stage, causing data loss.
+*/
+static struct ddr_config _ddr_cfg = {
+    DDR_PINMUX_MAX,
+    DDR_TYPE_MAX,
+    1,
+    3733,
+};
 
-void init_ddr(void)
+int init_ddr(struct ddr_config *ddrcfg)
 {
-    enum DDR_TYPE type = DDR_TYPE_LPDDR4X;
-    int freq = 3733;
-    int rank_num = 1;
-    enum DDR_BITWIDTH bits = DDR_BITWIDTH_64;
     bool dbi_off = false;
-    int board_ver = 1;
+    enum DDR_BITWIDTH bits = DDR_BITWIDTH_64;
+
 #ifdef CONFIG_DDR_MSG
     printf("enter init_ddr\n");
 #endif
+
 #ifdef CONFIG_DDR_H32_MODE
     bits = DDR_BITWIDTH_32;
 #elif CONFIG_DDR_H16_MODE
@@ -23,45 +34,64 @@ void init_ddr(void)
     bits = DDR_BITWIDTH_64;
 #endif
 
-#ifdef CONFIG_DDR_DUAL_RANK
-    rank_num = 2;
-#endif
+    if (ddrcfg->rank_num != 1 && ddrcfg->rank_num != 2) {
+        printf("unsupport ddr rank_num config!!!\n");
+        return -1;
+    }
 
-#ifdef CONFIG_LPDDR4X
-    type = DDR_TYPE_LPDDR4X;
-#elif defined CONFIG_LPDDR4
-    type = DDR_TYPE_LPDDR4;
-#else
-    printf("unsupport lpddr4 type!!!\n");
-    return;
-#endif // #ifdef CONFIG_LPDDR4X
+    if (ddrcfg->freq != 4266 && ddrcfg->freq != 3733 && ddrcfg->freq != 3200 && ddrcfg->freq != 2133) {
+        printf("unsupport ddr freq config!!!\n");
+        return -1;
+    }
 
-#ifdef CONFIG_DDR_4266
-    freq = 4266;
-#elif defined CONFIG_DDR_3733
-    freq = 3733;
-#elif defined CONFIG_DDR_3200
-    freq = 3200;
-#elif defined CONFIG_DDR_2133
-    freq = 2133;
-#else
-    printf("unsupport ddr freq config!!!\n");
-    return;
-#endif // #ifdef CONFIG_DDR4_4266
+    _ddr_cfg = *ddrcfg;
 
 #ifdef CONFIG_DDR_DBI_OFF
     dbi_off = true;
 #endif
 
-    printf("%s[%d] lpddr4%c %s freq=%d %dbit dbi_off=%c sdram init\n", board_name, board_ver, (type==DDR_TYPE_LPDDR4X?'x':' '), (rank_num==1?"singlerank":"dualrank"), freq, bits, (dbi_off==true?'y':'n'));
+    printf("DDR info: lpddr4%c %s freq=%d %dbits dbi_off=%c\n",
+            (_ddr_cfg.type == DDR_TYPE_LPDDR4X?'x':' '),
+            (_ddr_cfg.rank_num == 1 ? "singlerank" : "dualrank"),
+            _ddr_cfg.freq, bits,
+            (dbi_off ? 'y' : 'n'));
+
 #ifdef CONFIG_LPDDR_EYE
     printf("lpddr diag eye test\n");
-    lp4_diag_eye(type, rank_num, freq, bits);
+    lp4_diag_eye(_ddr_cfg.type, _ddr_cfg.rank_num, _ddr_cfg.freq, bits);
 #else
-    lpddr4_init(type, rank_num, freq, bits);
+    lpddr4_init(_ddr_cfg.type, _ddr_cfg.rank_num, _ddr_cfg.freq, bits);
 #endif
 
 #ifdef CONFIG_DDR_MSG
     printf("exit init_ddr\n");
+#endif
+    return 0;
+}
+
+enum DDR_PINMUX get_ddr_pinmux(void)
+{
+    return _ddr_cfg.pinmux;
+}
+
+enum DDR_TYPE get_ddr_type() {
+    return _ddr_cfg.type;
+}
+
+int get_ddr_rank_number() {
+    return _ddr_cfg.rank_num;
+}
+
+int get_ddr_freq() {
+    return _ddr_cfg.freq;
+}
+
+enum DDR_BITWIDTH get_ddr_bitwidth() {
+#ifdef CONFIG_DDR_H32_MODE
+    return DDR_BITWIDTH_32;
+#elif CONFIG_DDR_H16_MODE
+    return DDR_BITWIDTH_16;
+#else
+    return DDR_BITWIDTH_64;
 #endif
 }

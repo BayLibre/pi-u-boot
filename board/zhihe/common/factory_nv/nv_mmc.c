@@ -216,7 +216,7 @@ static int do_fnv_load(struct cmd_tbl *cmdtp, int flag, int argc, char *const ar
 
 
     /* Force import fnv to uboot env */
-    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "env import -c 0x%lx 0x%lx",
+    snprintf(fnv_priv.runcmd_buf, FNV_CMD_LEN, "env import -c 0x%lx 0x%x",
              (unsigned long)fnv_priv.read_buf, FNV_TOTAL_LEN);
     debug("[DBG] run %s\n", fnv_priv.runcmd_buf);
     ret = run_command(fnv_priv.runcmd_buf, 0);

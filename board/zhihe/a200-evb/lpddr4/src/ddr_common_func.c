@@ -12,77 +12,30 @@ DDR_SYSREG_REG_SW_REG_S ddr_sysreg;
 
 unsigned long get_ddr_density() {
     int div =1, mul=1;
-#ifdef CONFIG_DDR_DUAL_RANK
-	mul = 2;
-#endif
+
+    if (get_ddr_rank_number() == 2) {
+        mul = 2;
+    }
+
 #ifdef CONFIG_DDR_DDP
-	mul *= 2;
+    mul *= 2;
 #endif
+
 #ifdef CONFIG_DDR_H32_MODE
     div = 2;
 #endif
-	return CONFIG_DDR_RANK_SIZE*mul/div;
-}
-
-enum DDR_TYPE get_ddr_type() {
-#ifdef CONFIG_LPDDR4X
-    return DDR_TYPE_LPDDR4X;
-#elif defined CONFIG_LPDDR4
-    return DDR_TYPE_LPDDR4;
-#else
-    printf("unsupport lpddr4 type!!!\n");
-    return NULL;
-#endif // #ifdef CONFIG_LPDDR4X
-}
-
-int get_ddr_rank_number() {
-#ifdef CONFIG_DDR_SINGLE_RANK
-	return 1;
-#elif defined CONFIG_DDR_DUAL_RANK
-	return 2;
-#else
-#ifdef CONFIG_DDR_MSG
-	DDR_DEBUG("unsupported ddr rank type!!!\n");
-#endif
-    return NULL;
-#endif
-}
-
-int get_ddr_freq() {
-#ifdef CONFIG_DDR_4266
-    return 4266;
-#elif CONFIG_DDR_3733
-    return 3733;
-#elif CONFIG_DDR_3200
-    return 3200;
-#elif CONFIG_DDR_2133
-	return 2133;
-#else
-    printf("unsupport lpddr4 freq!!!\n");
-    return -1;
-#endif
-}
-
-enum DDR_BITWIDTH get_ddr_bitwidth() {
-#ifdef CONFIG_DDR_H32_MODE
-    return DDR_BITWIDTH_32;
-#elif CONFIG_DDR_H16_MODE
-    return DDR_BITWIDTH_16;
-#else
-    return DDR_BITWIDTH_64;
-#endif
+    return CONFIG_DDR_RANK_SIZE * mul / div;
 }
 
 void ddr_sysreg_wr(unsigned long int addr,unsigned int wr_data) {
-  wr(addr+DDR_SYSREG_BADDR,wr_data);
+    wr(addr+DDR_SYSREG_BADDR,wr_data);
 }
 
 unsigned int ddr_sysreg_rd(unsigned long int addr) {
-  int rdata;
-  rdata = rd(addr+DDR_SYSREG_BADDR);
-  return rdata;
+    int rdata;
+    rdata = rd(addr+DDR_SYSREG_BADDR);
+    return rdata;
 }
-
 
 void ddr_phy_reg_wr(unsigned long int addr,unsigned int wr_data) {
     //unsigned long int ddr_phy_sel,addr_low;
@@ -1542,7 +1495,7 @@ int lpddr4_reinit_ctrl(enum DDR_TYPE type, int rank_num, int speed,
     dq_pinmux(bits);
 
     //u.phy restor
-	  dwc_ddrphy_phyinit_regInterface(restoreRegs);
+    dwc_ddrphy_phyinit_regInterface(restoreRegs, rank_num);
 
     //v.ctrl en ,hs
     ctrl_en_lp3_exit(bits);

@@ -10,6 +10,7 @@
 #include "../include/utils/utils.h"
 #include "../include/addr_defines.h"
 #include "../include/board.h"
+#include "../../common/include/boot.h"
 
 // #define UTILS_TEST
 #ifdef UTILS_TEST
@@ -278,12 +279,12 @@ int ddr_init(enum ddr_type type)
     emu_init_ddr();
 #else
     switch(type) {
-        case DDR_4266_1Rank_2GB:
-        case DDR_4266_1Rank_4GB:
+        case DDR_LP4X_4266_1Rank_2GBx2:
+        case DDR_LP4X_4266_1Rank_4GBx2:
             dram_timing = &dram_timing_4266_1r;
             ddr_phy_training = &ddr_phy_training_4266_1r;
             break;
-        case DDR_4266_2Rank_8GB:
+        case DDR_LP4X_4266_2Rank_8GBx2:
             dram_timing = &dram_timing_4266_2r;
             ddr_phy_training = &ddr_phy_training_4266_2r;
             break;
@@ -713,11 +714,11 @@ void ddr_registers_dump(void)
 u64 ddr_determine_size(enum ddr_type type)
 {
     switch(type) {
-        case DDR_4266_1Rank_2GB:
+        case DDR_LP4X_4266_1Rank_2GBx2:
             return 0x100000000; // 4GB
-        case DDR_4266_1Rank_4GB:
+        case DDR_LP4X_4266_1Rank_4GBx2:
             return 0x200000000; // 8GB
-        case DDR_4266_2Rank_8GB:
+        case DDR_LP4X_4266_2Rank_8GBx2:
             return 0x400000000; // 16GB
         default:
             printf("unsupported type:%d\n", type);

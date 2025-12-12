@@ -1289,7 +1289,7 @@ static void light_wdt0_rst_req(void)
 	writel(data, REG_RST_REQ_EN_0);
 }
 
-int gpio_pin_init(const char *board_name)
+int uboot_gpio_pin_init(const char *board_name)
 {
 #ifdef CONFIG_ZHIHE_RAMBUS_ALGO
 	/* libsecurity.a.bin soc parameter init */

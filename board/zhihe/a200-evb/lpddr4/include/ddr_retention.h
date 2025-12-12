@@ -32,7 +32,7 @@ typedef struct Ddr_Reg_Config {
     uint8_t  reserve[55];
 } Ddr_Reg_Config_t;
 
-int dwc_ddrphy_phyinit_regInterface(regInstr myRegInstr);
+int dwc_ddrphy_phyinit_regInterface(regInstr myRegInstr, int rank_num);
 void dwc_ddr_misc_regu_save(void);
 
 #endif

@@ -13,7 +13,8 @@
 #define EVN_COMMON \
 	"tty_dev=ttyS0\0" \
 	"kernel_loglevel=4\0" \
-	"opensbi_addr=0x0\0" \
+	"tmp_addr=0x0d000000\0" \
+	"opensbi_addr=0x00000000\0" \
 	"kernel_addr=0x00200000\0" \
 	"dtb_addr=0x0c000000\0" \
 	"initrd_addr=0x1e000000\0" \
@@ -32,7 +33,6 @@
 	"fdt_high=0xffffffffffffffff\0" \
 	"splashimage=0x30000000\0" \
 	"splashpos=m,m\0" \
-	"fwaddr=0xc000000\0" \
 	"rdsize=200M\0" \
 	"ramdisk_size=204800\0" \
 	"set_bargs_pre=setenv barg_pre console=${tty_dev},${baudrate} root=${root_device} init=${init_file} rootwait rw earlycon clk_ignore_unused loglevel=${kernel_loglevel} crashkernel=${kdump_buf}\0"
@@ -53,8 +53,7 @@
 
 #ifdef CONFIG_RISCV_SMODE
 #define BOOT_FIT \
-	"loadfdt=ext4load    ${boot_device} ${dtb_addr}     ${fdt_file}\0" \
-	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}\0" \
+	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}; md5sum ${kernel_addr} $filesize\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
 	"load_image=run loadkernel; run loadinitrd\0" \
 	"bootcmd=run select_slot; run load_image; bootaon; bootslave; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
@@ -69,9 +68,9 @@
 	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}\0" \
 	"loadsbi=ext4load    ${boot_device} ${opensbi_addr} ${opensbi_file}\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
-	"load_aon=ext4load   ${boot_device} ${fwaddr}       ${aon_file};   cp.b $fwaddr $aon_ram_addr $filesize; bootaon\0" \
-	"load_audio=ext4load ${boot_device} ${fwaddr}       ${audio_file}; cp.b $fwaddr $audio_ram_addr $filesize\0" \
-	"load_str=ext4load   ${boot_device} ${fwaddr}       ${str_file};   cp.b $fwaddr $str_ram_addr $filesize\0" \
+	"load_aon=ext4load   ${boot_device} ${tmp_addr}       ${aon_file};   cp.b $tmp_addr $aon_ram_addr $filesize; bootaon\0" \
+	"load_audio=ext4load ${boot_device} ${tmp_addr}       ${audio_file}; cp.b $tmp_addr $audio_ram_addr $filesize\0" \
+	"load_str=ext4load   ${boot_device} ${tmp_addr}       ${str_file};   cp.b $tmp_addr $str_ram_addr $filesize\0" \
 	"load_image=run loadfdt; run loadsbi; run loadkernel; run loadinitrd; run load_aon; run load_audio; run load_str;\0" \
 	"boot_xt=run select_slot; run load_image; bootaon; bootslave; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr $opensbi_addr;\0"
 #else
@@ -96,7 +95,7 @@
 	"a_system_partuuid=ff2a7ab6-5290-4d1c-bcb4-2b60f62ea961\0" \
 	"a_apppart=7\0" \
 	"a_app_partuuid=c2d963d5-5601-4f0b-9959-c6b543b40a41\0" \
-	"a_version=0.0.2\0" \
+	"a_version=0.0.1\0" \
 	"a_boot_success=1\0" \
 	"b_loaderpart=0\0" \
 	"b_bootpart=4\0" \

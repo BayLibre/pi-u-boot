@@ -1,11 +1,18 @@
 #ifndef DDR_COMMON_FUNC_H
 #define DDR_COMMON_FUNC_H
 
+enum DDR_PINMUX {
+    DDR_PINMUX_TH1520 = 0,
+    DDR_PINMUX_A200,
+    DDR_PINMUX_MAX,
+};
+
 enum DDR_TYPE {
     DDR_TYPE_LPDDR4X = 0,
     DDR_TYPE_LPDDR4,
     DDR_TYPE_MAX,
 };
+
 enum DDR_BITWIDTH {
     DDR_BITWIDTH_16 = 16,
     DDR_BITWIDTH_32 = 32,
@@ -13,14 +20,16 @@ enum DDR_BITWIDTH {
     DDR_BITWIDTH_MAX = DDR_BITWIDTH_64,
 };
 
-unsigned long get_ddr_density(void);
+enum DDR_PINMUX get_ddr_pinmux(void);
 enum DDR_TYPE get_ddr_type(void);
 int get_ddr_rank_number(void);
 int get_ddr_freq(void);
 enum DDR_BITWIDTH get_ddr_bitwidth(void);
+unsigned long get_ddr_density(void);
+
+void dq_pinmux (enum DDR_BITWIDTH bits);
 void ddr_sysreg_wr(unsigned long int addr,unsigned int wr_data);
 unsigned int ddr_sysreg_rd(unsigned long int addr);
-
 void ddr_phy_reg_wr(unsigned long int addr,unsigned int wr_data);
 void ddr_phy0_reg_wr(unsigned long int addr,unsigned int wr_data);
 void ddr_phy1_reg_wr(unsigned long int addr,unsigned int wr_data);

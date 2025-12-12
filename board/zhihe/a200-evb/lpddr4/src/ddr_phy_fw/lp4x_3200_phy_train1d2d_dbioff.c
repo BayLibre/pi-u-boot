@@ -13,7 +13,7 @@ void lp4_phy_train1d2d (enum DDR_TYPE type, int speed, enum DDR_BITWIDTH bits) {
     lp4x_3200_phy_train1d2d();
 }
 
-const short int iccm_array[16384] = {
+static const short int iccm_array[16384] = {
 0x114,
 0x0,
 0x50,
@@ -16399,7 +16399,7 @@ const short int iccm_array[16384] = {
 0x0,
 0x0,
 };
-const short int dccm_array[830] = {
+static const short int dccm_array[830] = {
 0x60,
 0x0,
 0x0,
@@ -17231,7 +17231,7 @@ const short int dccm_array[830] = {
 0x0,
 0x0,
 };
-const short int iccm_array1[16384] = {
+static const short int iccm_array1[16384] = {
 0x204,
 0x0,
 0x50,
@@ -33617,7 +33617,7 @@ const short int iccm_array1[16384] = {
 0x0,
 0x0,
 };
-const short int dccm_array1[702] = {
+static const short int dccm_array1[702] = {
 0x60,
 0x0,
 0x0,

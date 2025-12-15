@@ -8,7 +8,7 @@
 #include <mapmem.h>
 #include <spl.h>
 #include <spl_load.h>
-#include "../include/pkg_header.h"
+#include "../include/board_boot.h"
 
 static ulong spl_ram_load_read(struct spl_load_info *load, ulong sector, ulong count, void *buf)
 {

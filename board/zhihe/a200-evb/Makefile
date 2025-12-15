@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: GPL-2.0+
 #
+
+ccflags-y += -I$(srctree)/board/$(CONFIG_SYS_VENDOR)/common/include
+
 DDR_SRC_PATH=lpddr4/src
 DDR_REGU_SRC=lpddr-regu
 DDR_FW_PATH=$(DDR_SRC_PATH)/ddr_phy_fw

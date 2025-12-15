@@ -15,8 +15,9 @@
 #include <fdt_support.h>
 
 #include "include/board.h"
-#include "../common/include/board_porting.h"
-#include "../common/include/boot.h"
+#include "board_porting.h"
+#include "board_boot.h"
+#include "board_check.h"
 #include "include/peri_clk.h"
 
 #ifdef CONFIG_LIGHT_AON_CONF

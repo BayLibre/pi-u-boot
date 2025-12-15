@@ -34,21 +34,11 @@
 /*
  * Board Common interface
  */
-int board_get_boot_sel(void);
+int loader_get_boot_sel(void);
+
 int uboot_gpio_pin_init(const char *board_name);
 int uboot_bootrom_fastboot(void);
 
-/*
- * Board check
- */
-enum board_type {
-    BOARD_A200EVB,
-    BOARD_TH1520,
-    BOARD_UNKNOWN,
-};
-
-void board_type_check(void);
-enum board_type board_get_type(void);
-enum ddr_type board_get_ddrtype(void);
+void spl_board_check(void);
 
 #endif

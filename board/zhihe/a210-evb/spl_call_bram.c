@@ -247,7 +247,7 @@ int spl_call_opensbi(void * entry, ulong hartid, ulong dtb, ulong info, ulong sl
     entry_info.dtb = dtb;
     entry_info.opensbi_info = *((struct fw_dynamic_info *)info);
 
-    ulong die_count = board_get_die_count();
+    ulong die_count = loader_get_die_count();
     
     /* high32: die_count, low32: slc_en */
     ulong param = die_count << 32;
@@ -340,7 +340,7 @@ ATT_BRAM_TEXT static void bram_switch_ddrpll(ulong speed)
     udelay(1000);
 }
 
-void board_spl_switch_ddrpll(int speed)
+void spl_switch_ddrpll(int speed)
 {
     bram_entry(bram_switch_ddrpll, speed);
 }

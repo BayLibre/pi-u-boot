@@ -8,7 +8,7 @@
 #include "include/addr_defines.h"
 #include "include/board.h"
 
-int board_get_boot_sel(void)
+int loader_get_boot_sel(void)
 {
     uint32_t mcm_en = (*(volatile uint32_t *) (BOOTSEL_MCM_REG_ADDR)) & 0x01; // mcm_en:bit 0
     uint32_t boot_sel = (*(volatile uint32_t *) (BOOTSEL_REG_ADDR)) & 0x07; // bool_sel:bit 0~2
@@ -17,27 +17,15 @@ int board_get_boot_sel(void)
     return boot_sel;
 }
 
-int uboot_bootrom_fastboot(void)
-{
-	int boot_sel = board_get_boot_sel();
-
-	if (boot_sel == BOOT_SEL_FASTBOOT ||
-		boot_sel == BOOT_SEL_MCM_FASTBOOT) {
-		return 1;
-	}
-
-	return 0;
-}
-
 #define MCM_OFFSET	(3)
 #define MCM_MASK	(1 << MCM_OFFSET)
 
 #define MDIE_OFFSET	(0)
 #define MDIE_MASK	(1 << MDIE_OFFSET)
-int board_get_die_count(void)
+int loader_get_die_count(void)
 {
 	/* mcm bootsel[2] bootsel[1:0] */
-	uint32_t boot_sel_raw = board_get_boot_sel();
+	uint32_t boot_sel_raw = loader_get_boot_sel();
 	if (!(boot_sel_raw & MCM_MASK))
 		return 1;
 
@@ -49,4 +37,19 @@ int board_get_die_count(void)
 		return 2;
 	else
 		return 4;
+}
+
+/*
+ * Check whether the system is in flashing mode.
+ */
+int uboot_bootrom_fastboot(void)
+{
+	int boot_sel = loader_get_boot_sel();
+
+	if (boot_sel == BOOT_SEL_FASTBOOT ||
+		boot_sel == BOOT_SEL_MCM_FASTBOOT) {
+		return 1;
+	}
+
+	return 0;
 }

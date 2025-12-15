@@ -8,7 +8,7 @@
 #include <string.h>
 #include <linux/types.h>
 #include <cpu_func.h>
-#include "../common/include/board_porting.h"
+#include "board_porting.h"
 
 /* 
  * The weak implementation of this function is in the u-boot/common/spl/spl_opensbi.c file.

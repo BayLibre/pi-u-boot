@@ -7,10 +7,11 @@
 #include "ddr_init.h"
 #include "include/ddrphy.h"
 
+#include "board_boot.h"
+
 #include "../include/utils/utils.h"
 #include "../include/addr_defines.h"
 #include "../include/board.h"
-#include "../../common/include/boot.h"
 
 // #define UTILS_TEST
 #ifdef UTILS_TEST
@@ -308,7 +309,7 @@ int ddr_init(enum ddr_type type)
 
     /* Step1: Follow the crg up procedure */
     // default to the frequency point 0 clock
-    board_spl_switch_ddrpll(initial_drate);
+    spl_switch_ddrpll(initial_drate);
 
     //ddr top crg release
     ddr_ss_crg_release();

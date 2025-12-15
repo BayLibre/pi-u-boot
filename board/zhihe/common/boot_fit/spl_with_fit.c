@@ -8,7 +8,7 @@
 #include <mapmem.h>
 #include <spl.h>
 #include <spl_load.h>
-#include "../include/pkg_header.h"
+#include "../include/board_boot.h"
 
 static struct payload_info {
     ulong payload_addr;

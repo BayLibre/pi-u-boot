@@ -2,8 +2,23 @@
  * Copyright(C) 2025 Zhihe Computing Technology (Shenzhen) Co., Ltd.
  */
 
-#ifndef __BOOT_IMAGE_H_
-#define __BOOT_IMAGE_H_
+#ifndef _BOARD_CHECK_
+#define _BOARD_CHECK_
+
+#define MAX_DTB_FILENAME_LEN 64
+
+enum board_type {
+    /* A200 */
+    BOARD_A200_EVB,
+    BOARD_TH1520,
+
+    /* A210 */
+    BOARD_A210_EVB,
+    BOARD_A210_DEV,
+    BOARD_A210_D2D,
+
+    BOARD_UNKNOWN,
+};
 
 enum ddr_type {
     /* Auto size check */
@@ -22,19 +37,12 @@ enum ddr_type {
     DDR_TYPE_UNKNOWN,
 };
 
-/* boot_method */
-u32 spl_boot_device(void);
-
-/* boot_image */
-int spl_load_dtb_from_bootfs(void);
-void *spl_find_uboot_fdt_blob(void);
-
-/* boot info */
-char *spl_env_get_os_dtb(ulong *paddr);
-int spl_env_get_mmc_bootfs_partid(void);
-
 /* board check */
-#define MAX_DTB_FILENAME_LEN 64
+int spl_set_board_info(enum board_type typeboard, enum ddr_type typeddr);
+enum board_type spl_get_board_type(void);
+enum ddr_type spl_get_ddr_type(void);
+
+/* board info convert */
 const char *uboot_get_binfo_from_fdt(void *fdt_uboot);
 const char *uboot_sync_fdt_binfo_to_env(void *fdt_uboot);
 int spl_set_binfo_to_uboot_fdt(void *fdt_uboot);

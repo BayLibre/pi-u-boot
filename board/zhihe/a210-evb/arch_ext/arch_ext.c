@@ -19,7 +19,7 @@ ulong *board_spl_get_separate_bss_binary_end(void)
 	return (ulong *)((uchar*)&_image_binary_end + BRAM_SECTION_SIZE);
 }
 
-void board_spl_prepare_bram_section(void)
+void spl_prepare_bram_section(void)
 {
 	memcpy(&__bram_text_start__, &_image_binary_end, BRAM_SECTION_SIZE);
 }

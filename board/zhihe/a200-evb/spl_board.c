@@ -27,7 +27,8 @@
 #include <asm/arch-zhxtc9/cpu_ext.h>
 
 #include "include/board.h"
-#include "../common/include/boot.h"
+#include "board_boot.h"
+#include "board_check.h"
 
 #include "lpddr-regu/ddr_regu.h"
 #include "include/sys_clk.h"
@@ -443,7 +444,7 @@ int spl_board_init_f(void)
 	cpu_probe_all();
 
 	/* Check and svae board type info */
-	board_type_check();
+	spl_board_check();
 
 	light_pre_reset_config();
 	sys_clk_config();
@@ -480,22 +481,22 @@ int spl_board_init_f(void)
 	struct ddr_config ddrcfg;
 	ddrcfg.type = DDR_TYPE_LPDDR4X;
 
-	if (board_get_type() == BOARD_TH1520) {
+	if (spl_get_board_type() == BOARD_TH1520) {
 		ddrcfg.pinmux = DDR_PINMUX_TH1520;
-	} else if (board_get_type() == BOARD_A200EVB) {
+	} else if (spl_get_board_type() == BOARD_A200_EVB) {
 		ddrcfg.pinmux = DDR_PINMUX_A200;
 	} else {
 		printf("ERROR: unknown ddr pinmux\n");
 		while(1);
 	}
 	
-	if (board_get_ddrtype() == DDR_LP4X_3200_1Rank) {
+	if (spl_get_ddr_type() == DDR_LP4X_3200_1Rank) {
 		ddrcfg.rank_num = 1;
 		ddrcfg.freq = 3200;
-	} else if (board_get_ddrtype() == DDR_LP4X_3733_1Rank) {
+	} else if (spl_get_ddr_type() == DDR_LP4X_3733_1Rank) {
 		ddrcfg.rank_num = 1;
 		ddrcfg.freq = 3733;
-	} else if(board_get_ddrtype() == DDR_LP4X_3733_2Rank) {
+	} else if(spl_get_ddr_type() == DDR_LP4X_3733_2Rank) {
 		ddrcfg.rank_num = 2;
 		ddrcfg.freq = 3733;
 	} else {
@@ -593,12 +594,12 @@ const char * spl_get_fit_dtb_name(int do_multi_check)
 	 *   match the device tree used by the kernel.
 	 */
 	
-	enum board_type type = board_get_type();
+	enum board_type type = spl_get_board_type();
 
 	switch(type) {
 	case BOARD_TH1520:
 		return "th1520-lichee-pi-4a";
-	case BOARD_A200EVB:
+	case BOARD_A200_EVB:
 		return "a200-evb";
 	default:
 		return "a200-evb";
@@ -618,19 +619,11 @@ int spl_fixup_os_fdt(void *fdt)
 /*
  * Do board type check
  */
-/*
-Attention:
-The following variable must not be initialized to zero.
-This global variable is assigned in the 'f' stage and
-must persist into the 'r' stage of the SPL.
-If it is initialized to zero and becomes a BSS variable,
-it will be re-zeroed upon entering the 'r' stage, causing data loss.
-*/
-static enum board_type _board_type = BOARD_UNKNOWN;
-static enum ddr_type _ddr_type = DDR_TYPE_UNKNOWN;
-
-void board_type_check(void)
+void spl_board_check(void)
 {
+	enum board_type _board_type;
+	enum ddr_type _ddr_type;
+
 	unsigned int tmp;
 	unsigned int val;
 
@@ -666,7 +659,7 @@ void board_type_check(void)
 		_ddr_type = DDR_LP4X_3733_2Rank;
 		break;
 	case 0x0201:
-		_board_type = BOARD_A200EVB;
+		_board_type = BOARD_A200_EVB;
 		_ddr_type = DDR_LP4X_3200_1Rank;
 		break;
 	default:
@@ -674,15 +667,6 @@ void board_type_check(void)
 		while(1);
 	}
 
+	spl_set_board_info(_board_type, _ddr_type);
 	printf("Board info: bid=%d did=%d\n", _board_type, _ddr_type);
-}
-
-enum board_type board_get_type(void)
-{
-	return _board_type;
-}
-
-enum ddr_type board_get_ddrtype(void)
-{
-	return _ddr_type;
 }

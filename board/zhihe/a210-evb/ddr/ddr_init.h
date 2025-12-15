@@ -8,7 +8,7 @@
 
 // #define DEBUG
 #include <log.h>
-#include "../include/board.h"
+#include "board_check.h"
 
 /* ddr timing info struct define */
 struct dram_cfg_param {

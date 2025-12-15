@@ -72,35 +72,24 @@
 #endif
 
 /*
- * Board check
- */
-enum board_type {
-    BOARD_EVB,
-    BOARD_DEV,
-    BOARD_EVB_D2D,
-    BOARD_UNKNOWN,
-};
-
-/*
  * Board Common interface
  */
-int board_get_boot_sel(void);
-int board_get_die_count(void);
+int loader_get_boot_sel(void);
+int loader_get_die_count(void);
+
 int uboot_gpio_pin_init(const char *board_name);
 int uboot_bootrom_fastboot(void);
 
-void board_type_check(void);
-enum board_type board_get_type(void);
-enum ddr_type board_get_ddrtype(void);
+void spl_board_check(void);
 
 /*
  * arch ext bram call
  */
-void board_spl_prepare_bram_section(void);
+void spl_prepare_bram_section(void);
 
 /*
  * Bram call user interface
  */
-void board_spl_switch_ddrpll(int speed);
+void spl_switch_ddrpll(int speed);
 
 #endif

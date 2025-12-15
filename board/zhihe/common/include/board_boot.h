@@ -1,10 +1,9 @@
-// SPDX-License-Identifier: GPL-2.0+
 /*
- * (C) Copyright 2024-2025 Zhihe Computing Technology (Shenzhen) Co., Ltd.
+ * Copyright(C) 2025 Zhihe Computing Technology (Shenzhen) Co., Ltd.
  */
 
-#ifndef __PKG_HEADER_H
-#define __PKG_HEADER_H
+#ifndef __BOOT_IMAGE_H_
+#define __BOOT_IMAGE_H_
 
 #include <linux/types.h>
 
@@ -29,5 +28,12 @@ struct __attribute__((packed)) zhihe_image_header {
     uint8_t  reserved[11];
     uint8_t  verify_next;
 };
+
+/* boot_method */
+u32 spl_boot_device(void);
+
+/* boot_image */
+int spl_load_dtb_from_bootfs(void);
+void *spl_find_uboot_fdt_blob(void);
 
 #endif

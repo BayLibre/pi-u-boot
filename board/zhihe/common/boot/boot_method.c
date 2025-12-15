@@ -9,7 +9,7 @@
 #include <spl.h>
 #include <spl_load.h>
 #include "../include/board_porting.h"
-#include "../include/pkg_header.h"
+#include "../include/board_boot.h"
 
 #if 0
 /*

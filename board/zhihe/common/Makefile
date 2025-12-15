@@ -9,7 +9,6 @@ obj-y += boot_mmode/spl_rvbl_payload.o
 obj-y += boot_mmode/spl_boot_fixup.o
 obj-y += boot/boot_method.o
 obj-y += boot/boot_image.o
-obj-y += boot/boot_info.o
 else
 # U-Boot
 obj-$(CONFIG_ZHIHE_EFUSE_CMD_SUPPORT) += efuse/efuse_cmd.o

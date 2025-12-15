@@ -11,10 +11,9 @@
 #include <mapmem.h>
 #include <spl.h>
 #include <sysinfo.h>
-#include "../include/boot.h"
+#include "../include/board_boot.h"
+#include "../include/board_check.h"
 #include "../include/board_porting.h"
-
-#include "../include/pkg_header.h"
 
 /******************************
  * Fixup Kernel boot

@@ -2,7 +2,8 @@
 #include <fdt_support.h>
 #include <env.h>
 
-#include "include/boot.h"
+#include "include/board_boot.h"
+#include "include/board_check.h"
 
 /*****************
  * SPL Build
@@ -10,6 +11,38 @@
 #ifdef CONFIG_SPL_BUILD
 #include <image.h>
 #include "include/board_porting.h"
+
+/*
+ * board type check
+ */
+/*
+Attention:
+The following variable must not be initialized to zero.
+This global variable is assigned in the 'f' stage and
+must persist into the 'r' stage of the SPL.
+If it is initialized to zero and becomes a BSS variable,
+it will be re-zeroed upon entering the 'r' stage, causing data loss.
+*/
+static enum board_type _board_type = BOARD_UNKNOWN;
+static enum ddr_type _ddr_type = DDR_TYPE_UNKNOWN;
+
+int spl_set_board_info(enum board_type typeboard, enum ddr_type typeddr)
+{
+    _board_type = typeboard;
+    _ddr_type = typeddr;
+
+    return 0;
+}
+
+enum board_type spl_get_board_type(void)
+{
+	return _board_type;
+}
+
+enum ddr_type spl_get_ddr_type(void)
+{
+	return _ddr_type;
+}
 
 /*
  * This function is called in 'spl_perform_fixups'

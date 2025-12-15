@@ -1,5 +1,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 
+ccflags-y += -I$(srctree)/board/$(CONFIG_SYS_VENDOR)/common/include
+
 ifdef CONFIG_SPL_BUILD
 obj-y += spl_board.o
 obj-y += spl_call_bram.o

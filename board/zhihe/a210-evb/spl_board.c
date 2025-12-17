@@ -152,10 +152,16 @@ static int init_chip(int chip_id, int num_chips)
 	ret = ddr_init(spl_get_ddr_type());
 
 	/* CPR init */
-	ss_cpr_init(SS_CFG_DEFAULT, chip_id);
+	if (num_chips > 1) {
+		ss_cpr_init(SS_CFG_D2D, chip_id);
+	} else {
+		ss_cpr_init(SS_CFG_DEFAULT, chip_id);
+	}
 
-	if (num_chips > 1)
+	/* Sam enable */
+	if (num_chips > 1) {
 		ss_sam_en();
+	}
 
 	chip_set(0);
 	return ret;
@@ -334,7 +340,8 @@ void spl_board_check(void)
 	if (loader_get_die_count() > 1) {
 		_board_type = BOARD_A210_D2D;
 		_ddr_type = DDR_LP4X_4266_1Rank_4GBx2;
-
+		spl_set_board_info(_board_type, _ddr_type);
+		printf("Board info: bid=%d did=%d\n", _board_type, _ddr_type);
 		return;
 	}
 

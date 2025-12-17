@@ -501,7 +501,7 @@ int uboot_gpio_pin_init(const char *board_name)
 	gpio_pin_cfg(GPIO2_10, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 	gpio_pin_cfg(GPIO2_11, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 
-	if (strcmp("a210-evb", board_name) == 0) {
+	if (strcmp("a210-dev", board_name) == 0) {
 		if(gmac_phy_rst("ao_gpio@0_24"))	// PHY1_nRST
 			pr_warn("gmac_phy_rst ao_gpio@0_24 failed\n");
 		if(gmac_phy_rst("ao_gpio@0_25"))	// PHY0_nRST
@@ -572,7 +572,7 @@ int uboot_gpio_pin_init(const char *board_name)
 				gpio_free(gpio);
 			}
 		}
-	} else if (strcmp("a210-deb", board_name) == 0) {
+	} else if (strcmp("a210-evb", board_name) == 0) {
 		if(gmac_phy_rst("ao_gpio@1_5"))	// PHY0_nRST
 			pr_warn("gmac_phy_rst ao_gpio@1_5 failed\n");
 		if(gmac_phy_rst("ao_gpio@1_6"))	// PHY1_nRST
@@ -655,6 +655,7 @@ int uboot_gpio_pin_init(const char *board_name)
 		gpio_pin_cfg(GPIO2_5, PIN_SPEED_NORMAL, PIN_PN, 0x4);
 	} else {
 		printf("Unknown board name %s\n", board_name);
+		while(1);
 		return -1;
 	}
 	return 0;

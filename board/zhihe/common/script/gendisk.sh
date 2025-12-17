@@ -7,8 +7,9 @@ RVBL_HEAD_SZIE=2048
 do_help=0
 do_fit=0
 do_image=0
+do_sec_image=0
 
-TEMP=$(getopt -o h --long help,fit,image -n "$0" -- "$@")
+TEMP=$(getopt -o h --long help,fit,image,sec-image -n "$0" -- "$@")
 if [ $? != 0 ]; then
     echo "Error: parameter parsing failed" >&2
     exit 1
@@ -27,6 +28,10 @@ while true; do
             ;;
         --image)
             do_image=1
+            shift
+            ;;
+        --sec-image)
+            do_sec_image=1
             shift
             ;;
         --)
@@ -127,7 +132,7 @@ do_image() {
     FILE_SPL=$2
     FILE_ITB=$3
     OUT_PATH=$4
-    
+
     echo "Generate boot firmware: btz-with-uboot-rvbl.bin"
     BTZ_SPL_FILE=${OUT_PATH}/btz-with-spl-rvbl.bin
     BTZ_UBOOT_FILE=${OUT_PATH}/btz-with-uboot-rvbl.bin
@@ -153,6 +158,39 @@ do_image() {
     generate_rvbl ${FILE_SPL} ${FILE_ITB} ${SPL_FIT_FILE}
 }
 
+# Gen sec Images
+# $1 - Bootzero sec bin filename
+# $2 - SPL sec bin filename
+# $3 - boot sec itb
+# $4 - output path
+do_sec_image() {
+    FILE_BTZ=$1
+    FILE_SPL=$2
+    FILE_ITB=$3
+    OUT_PATH=$4
+
+    echo "Generate boot firmware: btz-with-uboot-rvbl.bin"
+    BTZ_SPL_FILE=${OUT_PATH}/btz-with-spl-rvbl.bin
+    BTZ_UBOOT_FILE=${OUT_PATH}/btz-with-uboot-rvbl.bin
+
+    if [ "$1" = "none" ]; then
+         cp ${FILE_SPL} ${BTZ_SPL_FILE}
+    else
+        # bootzero2-sec.bin
+        cp $1 ${BTZ_SPL_FILE}
+        cat ${FILE_SPL} >> ${BTZ_SPL_FILE}
+    fi
+    cp ${BTZ_SPL_FILE} ${BTZ_UBOOT_FILE}
+    fallocate -l 0xD0000 ${BTZ_UBOOT_FILE}
+    cat $3 >> ${BTZ_UBOOT_FILE}
+
+    echo "Generate programming firmware: spl-with-fit-rvbl.bin"
+    SPL_FIT_FILE=${OUT_PATH}/spl-with-fit-rvbl.bin
+    rm -f ${SPL_FIT_FILE}
+    cat ${FILE_SPL} >> ${SPL_FIT_FILE}
+    cat ${FILE_ITB} >> ${SPL_FIT_FILE}
+}
+
 #################
 # main
 #################
@@ -162,6 +200,8 @@ elif [ $do_fit -eq 1 ]; then
     do_fit $@
 elif [ $do_image -eq 1 ]; then
     do_image $@
+elif [ $do_sec_image -eq 1 ]; then
+    do_sec_image $@
 else
     echo "v20251022"
     exit 1

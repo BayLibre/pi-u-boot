@@ -2,6 +2,7 @@
 
 @echo off
 
+echo ^< waiting for any device ^>
 fastboot getvar product 2> getvar.tmp
 find "product: a2" "getvar.tmp" >nul
 

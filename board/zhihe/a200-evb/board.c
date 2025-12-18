@@ -55,8 +55,18 @@ int board_late_init(void)
 		run_command("echo fastboot check success; sleep 1", 0);
 		run_command("fastboot usb 0", 0);
 	} else {
-		/* if first boot, load factory env to uboot evn */
-		run_command("if test -z \"$first_boot_done\"; then fnv load; env set first_boot_done yes; env save; fi", 0);
+		/* If the system boots for the first time.
+		 *   1. Load factory env to uboot evn
+		 *   2. Read gpt to env partitions
+		 *   3. Write backup gpt
+		 *   4. Set first_boot_done flag
+		 */
+		run_command("if test -z \"$first_boot_done\"; then \
+			fnv load; \
+			gpt read ${devtype} ${devnum} partitions; \
+			gpt write ${devtype} ${devnum} $partitions; \
+			env set first_boot_done yes; env save; \
+			fi", 0);
 	}
 
 	ap_peri_clk_disable();

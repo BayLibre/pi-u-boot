@@ -464,10 +464,13 @@ int spl_board_init_f(void)
 		hang();
 	}
 
-	ret = pmic_reset_apcpu_voltage();
-	if (ret) {
-		printf("%s set apcpu voltage failed \n",__func__);
-		hang();
+	if (spl_get_board_type() == BOARD_TH1520 || 
+			spl_get_board_type() == BOARD_A200_EVB) {
+		ret = pmic_reset_apcpu_voltage();
+		if (ret) {
+			printf("%s set apcpu voltage failed \n",__func__);
+			hang();
+		}
 	}
 #endif
 
@@ -483,7 +486,8 @@ int spl_board_init_f(void)
 
 	if (spl_get_board_type() == BOARD_TH1520) {
 		ddrcfg.pinmux = DDR_PINMUX_TH1520;
-	} else if (spl_get_board_type() == BOARD_A200_EVB) {
+	} else if (spl_get_board_type() == BOARD_A200_EVB || 
+				spl_get_board_type() == BOARD_A200_DEV ) {
 		ddrcfg.pinmux = DDR_PINMUX_A200;
 	} else {
 		printf("ERROR: unknown ddr pinmux\n");
@@ -601,8 +605,10 @@ const char * spl_get_fit_dtb_name(int do_multi_check)
 		return "th1520-lichee-pi-4a";
 	case BOARD_A200_EVB:
 		return "a200-evb";
+	case BOARD_A200_DEV:
+		return "a200-dev";
 	default:
-		return "a200-evb";
+		;
 	}
 
 	return "a200-evb";
@@ -625,7 +631,8 @@ void spl_board_check(void)
 	enum ddr_type _ddr_type;
 
 	unsigned int tmp;
-	unsigned int val;
+	unsigned int cpu_type;
+	unsigned int gpio_board_type;
 
 	// init
 	writel(0xA4C8C6DE, (void *)(EFUSE_BASE + 0x50));
@@ -642,24 +649,31 @@ void spl_board_check(void)
 	udelay(1000);
 
 	// read
-	val = readl((void *)(EFUSE_BASE + 0x80));
-	val &= 0xFFFF;
+	cpu_type = readl((void *)(EFUSE_BASE + 0x80));
+	cpu_type &= 0xFFFF;
 
 	// clear
 	tmp = readl((void *)(EFUSE_BASE + 0x00));
 	tmp |= 0x00000002;
 	writel(tmp, (void *)(EFUSE_BASE + 0x00));
 
-	printf("Board check: val=0x%x\n", val);
+	// Read GPIO0_30 0: DEV 1: EVB
+	gpio_board_type = ((readl((void *)0xffec005050) & 0x40000000) >> 30);
 
-	switch(val) {
+	printf("Board check: cputype=0x%x iotype=0x%x\n", cpu_type, gpio_board_type);
+
+	switch(cpu_type) {
 	case 0x0a01:
 	case 0x0000:
 		_board_type = BOARD_TH1520;
 		_ddr_type = DDR_LP4X_3733_2Rank;
 		break;
 	case 0x0201:
-		_board_type = BOARD_A200_EVB;
+		if (gpio_board_type == 0) {
+			_board_type = BOARD_A200_DEV;
+		} else {
+			_board_type = BOARD_A200_EVB;
+		}
 		_ddr_type = DDR_LP4X_3200_1Rank;
 		break;
 	default:

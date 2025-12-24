@@ -10,6 +10,7 @@
 enum board_type {
     /* A200 */
     BOARD_A200_EVB,
+    BOARD_A200_DEV,
     BOARD_TH1520,
 
     /* A210 */

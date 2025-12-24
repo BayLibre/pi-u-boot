@@ -470,45 +470,6 @@
 			};
 		};
 
-		dsi_bridge: dsi-bridge {
-			compatible = "thead,light-dsi-bridge";
-			clocks = <&dummy_dpu_pixclk>;
-			clock-names = "pix-clk";
-			phys = <&dsi_dphy>;
-			phy-names = "dphy";
-		};
-
-		dsi_host: dsi-host {
-			compatible = "synopsys,dw-mipi-dsi";
-			regmap = <&dsi_regs>;
-			status = "okay";
-		};
-
-		dsi_dphy: dsi-dphy {
-			compatible = "synopsys,dw-dphy";
-			regmap = <&dsi_regs>;
-			vosys-regmap = <&vosys_regs>;
-			clocks = <&dummy_dpu_pixclk>, <&dummy_dphy_refclk>;
-			clock-names = "pix-clk", "ref-clk";
-			#phy-cells = <0>;
-			status = "okay";
-		};
-
-		lcd_backlight: pwm-backlight {
-			compatible = "pwm-backlight";
-			pwms = <&pwm 0 5000000>;
-			brightness-levels = <0 4 8 16 32 64 128 255>;
-			default-brightness-level = <7>;
-		};
-
-		jadard_jd9365da {
-			compatible   = "jadard,jd9365da-h3";
-			backlight    = <&lcd_backlight>;
-			reset-gpio   = <&pcal6408ahk_d 7 0>;
-			hsvcc-gpio   = <&pcal6408ahk_d 6 1>;
-			vspn3v3-gpio = <&pcal6408ahk_d 5 1>;
-		};
-
 		aon {
 			compatible = "thead,light-aon";
 			status = "okay";

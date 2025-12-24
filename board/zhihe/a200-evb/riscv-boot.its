@@ -7,10 +7,10 @@
 	images {
 		fdt-licheepi {
 			description = "LicheePi Device Tree";
-			data = /incbin/("replace-path/th1520-lichee-pi-4a.dtb");
+			data = /incbin/("replace-path/th1520-lichee-pi-4a.dtb.gz");
 			type = "flat_dt";
 			arch = "riscv";
-			compression = "none";
+			compression = "gzip";
 			load = <0x0c000000>;
 			hash {
 				algo = "sha256";
@@ -18,11 +18,23 @@
 		};
 
 		fdt-evb {
-			description = "DEV Device Tree";
-			data = /incbin/("replace-path/a200-evb.dtb");
+			description = "EVB Device Tree";
+			data = /incbin/("replace-path/a200-evb.dtb.gz");
 			type = "flat_dt";
 			arch = "riscv";
-			compression = "none";
+			compression = "gzip";
+			load = <0x0c000000>;
+			hash {
+				algo = "sha256";
+			};
+		};
+
+		fdt-dev {
+			description = "DEV Device Tree";
+			data = /incbin/("replace-path/a200-dev.dtb.gz");
+			type = "flat_dt";
+			arch = "riscv";
+			compression = "gzip";
 			load = <0x0c000000>;
 			hash {
 				algo = "sha256";
@@ -88,6 +100,18 @@
 		a200-evb {
 			description = "A200 EVB Configuration";
 			fdt = "fdt-evb";
+			firmware = "opensbi-1";
+			loadables = "u-boot-1", "aon-1";
+			invalid_signature {
+				algo = "sha256,rsa2048";
+				key-name-hint = "signature_key_name";
+				sign-images = "fdt", "firmware";
+			};
+		};
+
+		a200-dev {
+			description = "A200 DEV Configuration";
+			fdt = "fdt-dev";
 			firmware = "opensbi-1";
 			loadables = "u-boot-1", "aon-1";
 			invalid_signature {

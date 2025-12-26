@@ -12,6 +12,7 @@
 
 #define HS400_DELAY_LANE 24
 #define HS200_DELAY_LANE 60
+#define SDR104_DELAY_LANE 46
 volatile int DELAY_LANE = 50;
 
 /* flag for cmd manual setted DELAY_LANE,non-zero is setted. auto clear in cmd */
@@ -194,6 +195,19 @@ void snps_set_uhs_timing(struct sdhci_host *host)
 		reg |= SDHCI_CTRL_UHS_DDR50;
 		break;
 	case UHS_SDR104:
+		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
+			restore_delay = DELAY_LANE;
+			/* default not set manual in cmd, when set in cmd, use DELAY_LANE set in cmd */
+			if (!manual_set_delay) {
+				DELAY_LANE = SDR104_DELAY_LANE;
+			}
+		}
+		sdhci_phy_1_8v_init(host);
+		reg |= SDHCI_CTRL_UHS_SDR104;
+		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
+			DELAY_LANE = restore_delay; /*restore for other modes*/
+		}
+		break;
 	case MMC_HS_200:
 		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
 			restore_delay = DELAY_LANE;

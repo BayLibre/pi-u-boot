@@ -205,13 +205,13 @@ int spl_board_init_f(void)
 	/* Init chips */
 	init_all_chips();
 
+	/* Reset pmp */
+	pmp_init_eanble_bram_ocram_ddr();
+
 	/* DDR Debug */
 	// ddr_registers_dump();
 	// ddr_dfmu_mt_test();
 	// ddr_dfmu_mt_test_single();
-
-	/* Reset pmp */
-	pmp_init_eanble_bram_ocram_ddr();
 
 	return 0;
 }

@@ -329,9 +329,9 @@ int ddr_init(enum ddr_type type)
     ddr_ctrl_reset_deassert();
 
     /*
-	 * Step4: Start PHY initialization and training by
-	 * accessing relevant PUB registers
-	 */
+     * Step4: Start PHY initialization and training by
+     * accessing relevant PUB registers
+     */
     debug("DDRINFO:ddrphy config start\n");
 
     ddr_phy_dqmux();
@@ -374,7 +374,7 @@ int ddr_init(enum ddr_type type)
 void ddr_mt_ocd_sel(u32 ch)
 {
     u32 rdata;
-	if (ch == 0) {
+    if (ch == 0) {
         rdata = chip_rd(DDR0_SLC_SYSREG+0x4);
         rdata |= (0x1<<2); 
         chip_wr(DDR0_SLC_SYSREG + 0x4, rdata);
@@ -389,7 +389,7 @@ void ddr_mt_ocd_sel(u32 ch)
 
 void ddr_mt_cfg(u32 ch, u32 offset, u32 v)
 {
-	if (ch == 0) {
+    if (ch == 0) {
         chip_wr(DDR0_MT_BADDR + offset, v);
     } else
     {
@@ -400,60 +400,60 @@ void ddr_mt_cfg(u32 ch, u32 offset, u32 v)
 
 int ddr_mt_rd(u32 ch, u32 offset)
 {
-	u32 rdata=0;
-	if (ch == 0) {
+    u32 rdata=0;
+    if (ch == 0) {
         rdata=chip_rd(DDR0_MT_BADDR + offset);
     } else
     {
         rdata=chip_rd(DDR1_MT_BADDR + offset);
     }
-	return rdata;
+    return rdata;
 }
 
 static void ddr_mt_single(u32 ch) {
-	ddr_mt_ocd_sel(ch);
-	ddr_mt_cfg(ch,0x08, 0x02008000);//start adddr left shift 8bit,fix id
+    ddr_mt_ocd_sel(ch);
+    ddr_mt_cfg(ch,0x08, 0x02008000);//start adddr left shift 8bit,fix id
 
     ddr_mt_cfg(ch,0x0c, 0x1b11f100);
-	ddr_mt_cfg(ch,0x10, 0x07fd07fd);    //[2:0]:awsize=5; [7:3]:aw ostd; [15:8]:awlen=7;
+    ddr_mt_cfg(ch,0x10, 0x07fd07fd);    //[2:0]:awsize=5; [7:3]:aw ostd; [15:8]:awlen=7;
                                         //[18:16]:arsize;[23:19]:ar ostd;[31:24]:arlen
-										//32B*8LEN, unlimt OSTD
-	// ddr_mt_cfg(ch,0x14, 0x01400000);    //[23:0]:xact_num;[31:24]:loop num(4M*256B=1GB)
+                                        //32B*8LEN, unlimt OSTD
+    // ddr_mt_cfg(ch,0x14, 0x01400000);    //[23:0]:xact_num;[31:24]:loop num(4M*256B=1GB)
     ddr_mt_cfg(ch,0x14, 0x01000fff);    //[23:0]:xact_num;[31:24]:loop num(4M*256B=1GB)
 
-	// ddr_mt_cfg(ch,0x18, 0x12153524);//prbs seed
+    // ddr_mt_cfg(ch,0x18, 0x12153524);//prbs seed
     ddr_mt_cfg(ch,0x18, rand());//prbs seed
-	ddr_mt_cfg(ch,0x1c, 0x00400000); // 0x00002000 -> 0x4000_0000
-	ddr_mt_cfg(ch,0x2c, 0xffffffff); // msk
-	ddr_mt_cfg(ch,0x00, 0x9956000e);//user pattern, prbs_23
+    ddr_mt_cfg(ch,0x1c, 0x00400000); // 0x00002000 -> 0x4000_0000
+    ddr_mt_cfg(ch,0x2c, 0xffffffff); // msk
+    ddr_mt_cfg(ch,0x00, 0x9956000e);//user pattern, prbs_23
 }
 
 static void ddr_mt_infinite(u32 ch)
 {
-	ddr_mt_ocd_sel(ch);
-	ddr_mt_cfg(ch,0x08, 0x02008000);//start adddr left shift 8bit,fix id
+    ddr_mt_ocd_sel(ch);
+    ddr_mt_cfg(ch,0x08, 0x02008000);//start adddr left shift 8bit,fix id
 
-	ddr_mt_cfg(ch,0x0c, 0x1b11f100);
-	ddr_mt_cfg(ch,0x10, 0x07fd07fd);//[2:0]:awsize; [7:3]:aw ostd; [15:8]:awlen;[18:16]:arsize;[23:19]:ar ostd;[31:24]:arlen
-										//32B*8LEN, unlimt OSTD
-	ddr_mt_cfg(ch,0x14, 0xff000FFF);//[23:0]:xact_num;[31:24]:loop num
-										//4096, inifinite loop
+    ddr_mt_cfg(ch,0x0c, 0x1b11f100);
+    ddr_mt_cfg(ch,0x10, 0x07fd07fd);//[2:0]:awsize; [7:3]:aw ostd; [15:8]:awlen;[18:16]:arsize;[23:19]:ar ostd;[31:24]:arlen
+                                        //32B*8LEN, unlimt OSTD
+    ddr_mt_cfg(ch,0x14, 0xff000FFF);//[23:0]:xact_num;[31:24]:loop num
+                                        //4096, inifinite loop
 
-	ddr_mt_cfg(ch,0x18, 0x12153524);//prbs seed
+    ddr_mt_cfg(ch,0x18, rand());//prbs seed
 
 
-	ddr_mt_cfg(ch,0x1c, 0x00400000); // 0x00002000 -> 0x4000_0000
-	ddr_mt_cfg(ch,0x2c, 0x005fffff); // 0x00002fff
+    ddr_mt_cfg(ch,0x1c, 0x00400000); // 0x00002000 -> 0x4000_0000
+    ddr_mt_cfg(ch,0x2c, 0x005fffff); // 0x00002fff
 
-	ddr_mt_cfg(ch,0x00, 0x2a50000e);//user pattern, 0x5a
-	ddr_mt_cfg(ch,0x00, 0x2a50000f);//mt en 
+    ddr_mt_cfg(ch,0x00, 0x2A56000E);//user pattern, 0x5a 0x2a50000e
+    ddr_mt_cfg(ch,0x00, 0x2A56000F);//mt en 
 }
 
 uint64_t times;
 
 static void  ddr_mt_result_check_single(u32 ch)
 {
-	chip_wr(0xC0000000, 0xbeefbeef);
+    chip_wr(0xC0000000, 0xbeefbeef);
     chip_wr(0xCF000000, 0xdeaddead);
 
     //flush cache
@@ -484,54 +484,55 @@ static void  ddr_mt_result_check_single(u32 ch)
             }
         }
     }
-	
-	// /* wait & poll */
-	// rdata = chip_rd(DDR1_MT_BADDR + 0x04);
-	// if((rdata & 0x1) == 0) {
+    
+    // /* wait & poll */
+    // rdata = chip_rd(DDR1_MT_BADDR + 0x04);
+    // if((rdata & 0x1) == 0) {
     //     if (times % 100 == 0)
-	// 	    printf("CH1 DDR MT is Runing, everything ok,status is:0x%x ! addr=0x%x size=512M\n",rdata, ddr_mt_rd(1, 0x1c) << 8);
-	// } else {
-	// 	printf("CH1 DDR MT MT has Error, status is:0x%x !\n",rdata);
+    //         printf("CH1 DDR MT is Runing, everything ok,status is:0x%x ! addr=0x%x size=512M\n",rdata, ddr_mt_rd(1, 0x1c) << 8);
+    // } else {
+    //     printf("CH1 DDR MT MT has Error, status is:0x%x !\n",rdata);
     //     while(1) {;}
-	// }
+    // }
     // if (times % 100 == 0)
-	//     printf("CH1 DDR  MT  AXI status:0x%x !\n",chip_rd(DDR1_MT_BADDR + 0x40));
+    //     printf("CH1 DDR  MT  AXI status:0x%x !\n",chip_rd(DDR1_MT_BADDR + 0x40));
     printf("0xC0000000 read 0x%x\n", chip_rd(0xC0000000));
     printf("0xCF000000 read 0x%x\n", chip_rd(0xCF000000));
 }
 
 static void  ddr_mt_result_check(void)
 {
-    printf("0xC0000000 read 0x%x\n", chip_rd(0xC0000000));
-    printf("0xDFFFFFF0 read 0x%x\n", chip_rd(0xDFFFFFF0));
-	/* wait & poll */
+    static unsigned long long int ddr0_pass = 0;
+    static unsigned long long int ddr0_fail = 0;
+    static unsigned long long int ddr1_pass = 0;
+    static unsigned long long int ddr1_fail = 0;
+
+    /* wait & poll */
     times++;
-	u32 rdata = chip_rd(DDR0_MT_BADDR + 0x04);
-	if((rdata & 0x1) == 0) {
+    u32 rdata = chip_rd(DDR0_MT_BADDR + 0x04);
+    if((rdata & 0x1) == 0) {
         if (times % 100 == 0)
-		    printf("CH0 DDR MT is Runing, everything ok,status is:0x%x ! addr=0x%x size=512M\n",rdata, ddr_mt_rd(0, 0x1c) << 8);
-	} else {
-		printf("CH0 DDR MT MT has Error, status is:0x%x !\n",rdata);
-        while(1) {;}
-	}
+            printf("CH0 DDR MT is Runing, everything ok,status is:0x%x ! addr=0x%x size=512M pass count=%llu fail count=%llu\n",
+                    rdata, ddr_mt_rd(0, 0x1c) << 8, ++ddr0_pass, ddr0_fail);
+    } else {
+        printf("CH0 DDR MT MT has Error, status is:0x%x ! fail count=%llu\n",rdata, ++ddr0_fail);
+        // while(1) {;}
+    }
     if (times % 100 == 0)
-	    printf("CH0 DDR  MT  AXI status:0x%x !\n",chip_rd(DDR0_MT_BADDR + 0x40));
-	
-	/* wait & poll */
-	rdata = chip_rd(DDR1_MT_BADDR + 0x04);
-	if((rdata & 0x1) == 0) {
+        printf("CH0 DDR  MT  AXI status:0x%x !\n",chip_rd(DDR0_MT_BADDR + 0x40));
+    
+    /* wait & poll */
+    rdata = chip_rd(DDR1_MT_BADDR + 0x04);
+    if((rdata & 0x1) == 0) {
         if (times % 100 == 0)
-		    printf("CH1 DDR MT is Runing, everything ok,status is:0x%x ! addr=0x%x size=512M\n",rdata, ddr_mt_rd(1, 0x1c) << 8);
-	} else {
-		printf("CH1 DDR MT MT has Error, status is:0x%x !\n",rdata);
-        while(1) {;}
-	}
+            printf("CH1 DDR MT is Runing, everything ok,status is:0x%x ! addr=0x%x size=512M pass count=%llu fail count=%llu\n",
+                    rdata, ddr_mt_rd(1, 0x1c) << 8, ++ddr1_pass, ddr1_fail);
+    } else {
+        printf("CH1 DDR MT MT has Error, status is:0x%x ! fail count=%llu\n",rdata, ++ddr1_fail);
+        // while(1) {;}
+    }
     if (times % 100 == 0)
-	    printf("CH1 DDR  MT  AXI status:0x%x !\n",chip_rd(DDR1_MT_BADDR + 0x40));
-	chip_wr(0xC0000000, 0x5555AAAA);
-    
-    chip_wr(0xDFFFFFF0, 0xA5A5A5A5);
-    
+        printf("CH1 DDR  MT  AXI status:0x%x !\n",chip_rd(DDR1_MT_BADDR + 0x40));
 }
 
 void ddr_dfmu_mt_test_single(void)
@@ -549,12 +550,12 @@ void ddr_dfmu_mt_test_single(void)
 
 void ddr_dfmu_mt_test(void)
 {
-	ddr_mt_infinite(0);
-	ddr_mt_infinite(1);
-	while(1) {
-		udelay(5000);
-		ddr_mt_result_check();
-	}
+    ddr_mt_infinite(0);
+    ddr_mt_infinite(1);
+    while(1) {
+        udelay(5000);
+        ddr_mt_result_check();
+    }
 }
 
 int lp4_mrr(int addr, int ddrc) {
@@ -589,26 +590,26 @@ DWC_DDR_UMCTL2_C_STRUCT_REG_S umctl2_reg;
 
 void ddr_registers_dump(void)
 {
-	printf("DDR SS data version=0x%x\n", chip_rd(0x04900000));
-	printf("DDR PLL lock=%d\n", chip_rd(0x04900018) & 0x1);
-	chip_wr(0x04900024, 0x0);
-	chip_wr(0x04900024, 0x1);
-	mdelay(10);
-	printf("DDR PLL=0x%x KHz\n", chip_rd(0x04900020));
-	printf("AMUX_HWLP_CH0=0x%x\n", chip_rd(0x04900040));
-	printf("AMUX_HWLP_CH1=0x%x\n", chip_rd(0x04900044));
-	printf("DDRC_HWLP_CH0=0x%x\n", chip_rd(0x04900048));
-	printf("DDRC_HWLP_CH1=0x%x\n", chip_rd(0x0490004c));
-	printf("SLC_CFG0=0x%x\n", chip_rd(0x04861000));
-	printf("SLC_ICG0=0x%x\n", chip_rd(0x04861008));
-	printf("DDR_CFG0=0x%x\n", chip_rd(0x04810000));
-	printf("DDR_ICG0=0x%x\n", chip_rd(0x04810008));
-	printf("SLC_CFG1=0x%x\n", chip_rd(0x05861000));
-	printf("SLC_ICG1=0x%x\n", chip_rd(0x05861008));
-	printf("DDR_CFG1=0x%x\n", chip_rd(0x05810000));
-	printf("DDR_ICG1=0x%x\n", chip_rd(0x05810008));
-	printf("DDRC0 VER NUMBER=0x%x\n", chip_rd(0x04800000));
-	printf("DDRC1 VER NUMBER=0x%x\n", chip_rd(0x05800000));
+    printf("DDR SS data version=0x%x\n", chip_rd(0x04900000));
+    printf("DDR PLL lock=%d\n", chip_rd(0x04900018) & 0x1);
+    chip_wr(0x04900024, 0x0);
+    chip_wr(0x04900024, 0x1);
+    mdelay(10);
+    printf("DDR PLL=0x%x KHz\n", chip_rd(0x04900020));
+    printf("AMUX_HWLP_CH0=0x%x\n", chip_rd(0x04900040));
+    printf("AMUX_HWLP_CH1=0x%x\n", chip_rd(0x04900044));
+    printf("DDRC_HWLP_CH0=0x%x\n", chip_rd(0x04900048));
+    printf("DDRC_HWLP_CH1=0x%x\n", chip_rd(0x0490004c));
+    printf("SLC_CFG0=0x%x\n", chip_rd(0x04861000));
+    printf("SLC_ICG0=0x%x\n", chip_rd(0x04861008));
+    printf("DDR_CFG0=0x%x\n", chip_rd(0x04810000));
+    printf("DDR_ICG0=0x%x\n", chip_rd(0x04810008));
+    printf("SLC_CFG1=0x%x\n", chip_rd(0x05861000));
+    printf("SLC_ICG1=0x%x\n", chip_rd(0x05861008));
+    printf("DDR_CFG1=0x%x\n", chip_rd(0x05810000));
+    printf("DDR_ICG1=0x%x\n", chip_rd(0x05810008));
+    printf("DDRC0 VER NUMBER=0x%x\n", chip_rd(0x04800000));
+    printf("DDRC1 VER NUMBER=0x%x\n", chip_rd(0x05800000));
     printf("AMUX_OST0=0x%x\n", chip_rd(0x04861010));
     printf("CAM_STATS0=0x%x\n", chip_rd(0x04810030));
     printf("WR_OSTD_CNT0=0x%x\n", chip_rd(0x04841000));

@@ -3,6 +3,8 @@
  * Copyright (C) 2021 Alibaba Group Holding Limited.
  */
 
+//#define DEBUG
+#include <log.h>
 #include <linux/delay.h>
 #include <clk.h>
 #include <dm.h>
@@ -10,9 +12,12 @@
 #include <sdhci.h>
 #include "zhihe_sdhci.h"
 
+/* a210 tx delay */
 #define HS400_DELAY_LANE 24
 #define HS200_DELAY_LANE 60
 #define SDR104_DELAY_LANE 46
+
+/* a200 & a210 default delay */
 volatile int DELAY_LANE = 50;
 
 /* flag for cmd manual setted DELAY_LANE,non-zero is setted. auto clear in cmd */
@@ -292,7 +297,7 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 	uint32_t val = 0;
 	uint16_t ctrl = 0;
 
-	debug("%s\n", __func__);
+	debug("\nEnter %s opcode %d\n", __func__, opcode);
 
 	sdhci_writeb(host, 3 << INPSEL_CNFG, PHY_ATDL_CNFG_R);
 
@@ -309,7 +314,7 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 		return -1;
 	}
 
-	//Start Tuning
+	/* Start Tuning */
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
 	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
@@ -338,7 +343,10 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 
 		mmc_send_cmd(mmc, &cmd, NULL);
 		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-
+#ifdef DEBUG
+		val = sdhci_readl(host, AT_STAT_R);
+		debug("  %d HOST_CTRL2_R=0x%x AT_STAT_R=0x%x\n", tuning_loop_counter, ctrl, val);
+#endif
 		if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK)
 			udelay(1);
 
@@ -353,6 +361,24 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 		printf("%s:Tuning failed\n", __func__);
 		return -1;
 	}
+
+	/*
+	 * Disable the tuning engine to prevent auto-tuning
+	 *
+	 * U-Boot is only involved in the brief boot process, disable auto-tuning here.
+	 * Implement auto-tuning in the kernel instead to enhance system stability.
+	 *
+	 * Auto-tuning is a hardware managed re-tuning feature that complies with the SD HCI Mode3 re-tuning procedure.
+	 * Auto-tuning removes the need for the host software to re-tune the sampling clock for every 4 MB of data transfer (SD HCI).
+	 * A tuning sampling clock is recommended in both SD and eMMC modes to ensure ease in timing closure and
+	 *   for robust operation while operating at high SDR speeds, such as SDR104 and HS200.
+	 *
+	 * Auto-tuning is supported only in HS200 (eMMC mode) and SDR104 (SD mode) modes.
+	 */
+	val = sdhci_readl(host, AT_CTRL_R);
+	val &= ~(1 << AT_EN);
+	val |= (1 << SW_TUNE_EN);
+	sdhci_writel(host, val, AT_CTRL_R);
 
 	return 0;
 }

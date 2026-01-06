@@ -329,7 +329,7 @@ int emmc_read_tuning_seq(void) {
     at_stat_data = hw_rd32(at_stat_r);
     at_stat_data = at_stat_data & 0xffffff00;
     at_stat_data = at_stat_data + (read_dc & 0xff); //set CENTER_PH_CODE = 0
-    hw_wr32(at_stat_data, at_stat_data);
+    hw_wr32(at_stat_r, at_stat_data);
     //turn on SD clk out
     clk_ctrl_r_data = hw_rd16(clk_ctrl_r);
     clk_ctrl_r_data = clk_ctrl_r_data | 0x4; //set SD_CLK_EN = 1
@@ -698,7 +698,7 @@ int sdio_read_tuning_seq(void) {
     at_stat_data = hw_rd32(at_stat_r);
     at_stat_data = at_stat_data & 0xffffff00;
     at_stat_data = at_stat_data + (read_dc & 0xff); //set CENTER_PH_CODE = 0
-    hw_wr32(at_stat_data, at_stat_data);
+    hw_wr32(at_stat_r, at_stat_data);
     //turn on SD clk out
     clk_ctrl_r_data = hw_rd16(clk_ctrl_r);
     clk_ctrl_r_data = clk_ctrl_r_data | 0x4; //set SD_CLK_EN = 1

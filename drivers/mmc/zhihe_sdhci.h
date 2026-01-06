@@ -74,7 +74,7 @@
 #define SWIN_TH_VAL 0x18      //9bit
 
 #define AT_STAT_R   (P_VENDOR_SPECIFIC_AREA + 0x44) // 32bit
-#define CENTER_PH_CODE         0x0  //4bit
+#define CENTER_PH_CODE         0x0  //8bit
 
 struct snps_sdhci_plat {
 	struct mmc_config cfg;

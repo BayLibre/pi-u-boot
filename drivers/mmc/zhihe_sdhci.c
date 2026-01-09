@@ -10,18 +10,54 @@
 #include <dm.h>
 #include <malloc.h>
 #include <sdhci.h>
+#include <mmc.h>
 #include "zhihe_sdhci.h"
 
-/* a210 tx delay */
-#define HS400_DELAY_LANE 24
-#define HS200_DELAY_LANE 60
-#define SDR104_DELAY_LANE 46
+/* DELAY LANE Config */
+#define TXDELAY_DEFAULT 50
+static char s_delay_lanes[]= {
+#ifdef CONFIG_TARGET_A210_EVB
+	TXDELAY_DEFAULT, /* 0: MMC_LEGACY */
+	TXDELAY_DEFAULT, /* 1: MMC_HS */
+	TXDELAY_DEFAULT, /* 2: SD_HS */
+	TXDELAY_DEFAULT, /* 3: MMC_HS_52 */
+	TXDELAY_DEFAULT, /* 4: MMC_DDR_52 */
+	46,              /* 5: UHS_SDR12 */
+	46,              /* 6: UHS_SDR25 */
+	46,              /* 7: UHS_SDR50 */
+	46,              /* 8: UHS_DDR50 */
+	46,              /* 9: UHS_SDR104 */
+	45,              /* 10: MMC_HS_200 */
+	24,              /* 11: MMC_HS_400 */
+	24,              /* 12: MMC_HS_400_ES */
+#else
+	TXDELAY_DEFAULT, /* 0: MMC_LEGACY */
+	TXDELAY_DEFAULT, /* 1: MMC_HS */
+	TXDELAY_DEFAULT, /* 2: SD_HS */
+	TXDELAY_DEFAULT, /* 3: MMC_HS_52 */
+	TXDELAY_DEFAULT, /* 4: MMC_DDR_52 */
+	TXDELAY_DEFAULT, /* 5: UHS_SDR12 */
+	TXDELAY_DEFAULT, /* 6: UHS_SDR25 */
+	TXDELAY_DEFAULT, /* 7: UHS_SDR50 */
+	TXDELAY_DEFAULT, /* 8: UHS_DDR50 */
+	TXDELAY_DEFAULT, /* 9: UHS_SDR104 */
+	TXDELAY_DEFAULT, /* 10: MMC_HS_200 */
+	TXDELAY_DEFAULT, /* 11: MMC_HS_400 */
+	TXDELAY_DEFAULT, /* 12: MMC_HS_400_ES */
+#endif
+};
 
-/* a200 & a210 default delay */
-volatile int DELAY_LANE = 50;
+#define DELAY_LANE s_delay_lanes[MMC_LEGACY]
 
-/* flag for cmd manual setted DELAY_LANE,non-zero is setted. auto clear in cmd */
-volatile int manual_set_delay =	0; 
+int zhihe_sdhci_set_delay(unsigned int mode, char delay)
+{
+	if (mode > MMC_HS_400_ES) {
+		return -1;
+	}
+
+	s_delay_lanes[mode] = delay;
+	return 0;
+}
 
 static void sdhci_phy_1_8v_init_no_pull(struct sdhci_host *host)
 {
@@ -79,7 +115,7 @@ static void sdhci_phy_3_3v_init_no_pull(struct sdhci_host *host)
 	sdhci_writeb(host, val | 1, PHY_DLL_CTRL_R);
 }
 
-static void sdhci_phy_1_8v_init(struct sdhci_host *host)
+static void sdhci_phy_1_8v_init(struct sdhci_host *host, int delay)
 {
 	uint32_t val;
 
@@ -88,6 +124,9 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 		sdhci_phy_1_8v_init_no_pull(host);
 		return;
 	}
+
+	debug("    %s: set txdelay %d\n", __func__, delay);
+
 	//set driving force
 	sdhci_writel(host, (1 << PHY_RSTN) | (0xc << PAD_SP) | (0xc << PAD_SN), PHY_CNFG_R);
 
@@ -98,7 +137,7 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	//disable delay lane
 	sdhci_writeb(host, 1 << UPDATE_DC, PHY_SDCLKDL_CNFG_R);
 	//set delay lane
-	sdhci_writeb(host, DELAY_LANE, PHY_SDCLKDL_DC_R);
+	sdhci_writeb(host, delay, PHY_SDCLKDL_DC_R);
 	sdhci_writeb(host, 0xa, PHY_DLL_CNFG2_R);
 	//enable delay lane
 	val = sdhci_readb(host, PHY_SDCLKDL_CNFG_R);
@@ -131,7 +170,7 @@ static void sdhci_phy_1_8v_init(struct sdhci_host *host)
 	sdhci_writeb(host, (1 << DLL_EN), PHY_DLL_CTRL_R);
 }
 
-static void sdhci_phy_3_3v_init(struct sdhci_host *host)
+static void sdhci_phy_3_3v_init(struct sdhci_host *host, int delay)
 {
 	uint32_t val;
 	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
@@ -139,6 +178,9 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 		sdhci_phy_3_3v_init_no_pull(host);
 		return;
 	}
+
+	debug("    %s: set txdelay %d\n", __func__, delay);
+
 	//set driving force
 	sdhci_writel(host, (1 << PHY_RSTN) | (0xc << PAD_SP) | (0xc << PAD_SN), PHY_CNFG_R);
 
@@ -149,7 +191,7 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 	//disable delay lane
 	sdhci_writeb(host, 1 << UPDATE_DC, PHY_SDCLKDL_CNFG_R);
 	//set delay lane
-	sdhci_writeb(host, DELAY_LANE, PHY_SDCLKDL_DC_R);
+	sdhci_writeb(host, delay, PHY_SDCLKDL_DC_R);
 	sdhci_writeb(host, 0xa, PHY_DLL_CNFG2_R);
 	//enable delay lane
 	val = sdhci_readb(host, PHY_SDCLKDL_CNFG_R);
@@ -176,73 +218,95 @@ static void sdhci_phy_3_3v_init(struct sdhci_host *host)
 	sdhci_writeb(host, 0x5, PHY_DLL_CNFG1_R);
 }
 
-void snps_set_uhs_timing(struct sdhci_host *host)
+static void zhihe_sdhci_set_voltage(struct sdhci_host *host)
+{
+	struct mmc *mmc = (struct mmc *)host->mmc;
+	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
+	u32 reg;
+
+	if (mmc->signal_voltage == MMC_SIGNAL_VOLTAGE_180) {
+		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
+		reg |= SDHCI_CTRL_VDD_180;
+		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
+	} else {
+		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
+		reg &= ~SDHCI_CTRL_VDD_180;
+		if (plat->io_fixed_1v8)
+			reg |= SDHCI_CTRL_VDD_180;
+		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
+	}
+}
+
+static void zhihe_sdhci_set_uhs_timing(struct sdhci_host *host)
 {
 	struct mmc *mmc = (struct mmc *)host->mmc;
 	u32 reg;
-	int restore_delay;
+
 	reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	reg &= ~SDHCI_CTRL_UHS_MASK;
 
-	if (manual_set_delay) {
-		DELAY_LANE = DELAY_LANE & 0x7f; /*limit bit[0:6]*/
-		debug("%s: manual set delay (%d) active \n", host->name, DELAY_LANE);
-	}
 	switch (mmc->selected_mode) {
+	// case UHS_SDR25:
+	// case MMC_HS:
+	// 	reg |= SDHCI_CTRL_UHS_SDR25;
+	// 	break;
 	case UHS_SDR50:
 	case MMC_HS_52:
-		sdhci_phy_1_8v_init(host);
 		reg |= SDHCI_CTRL_UHS_SDR50;
 		break;
 	case UHS_DDR50:
 	case MMC_DDR_52:
-		sdhci_phy_1_8v_init(host);
 		reg |= SDHCI_CTRL_UHS_DDR50;
 		break;
 	case UHS_SDR104:
-		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
-			restore_delay = DELAY_LANE;
-			/* default not set manual in cmd, when set in cmd, use DELAY_LANE set in cmd */
-			if (!manual_set_delay) {
-				DELAY_LANE = SDR104_DELAY_LANE;
-			}
-		}
-		sdhci_phy_1_8v_init(host);
 		reg |= SDHCI_CTRL_UHS_SDR104;
-		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
-			DELAY_LANE = restore_delay; /*restore for other modes*/
-		}
 		break;
 	case MMC_HS_200:
-		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
-			restore_delay = DELAY_LANE;
-			/* default not set manual in cmd, when set in cmd, use DELAY_LANE set in cmd */
-			if (!manual_set_delay) {
-				DELAY_LANE = HS200_DELAY_LANE;
-			}
-		}
-		sdhci_phy_1_8v_init(host);
 		reg |= SDHCI_CTRL_UHS_SDR104;
-		if (CONFIG_IS_ENABLED(TARGET_A210_EVB)) {
-			DELAY_LANE = restore_delay; /*restore for other modes*/
-		}
 		break;
 	case MMC_HS_400:
-		restore_delay = DELAY_LANE;
-		/* default not set manual in cmd, when set in cmd, use DELAY_LANE set in cmd */
-		if (!manual_set_delay) {
-			DELAY_LANE = HS400_DELAY_LANE;
-		}
-		sdhci_phy_1_8v_init(host);
 		reg |= SNPS_SDHCI_CTRL_HS400;
-		DELAY_LANE = restore_delay; /*restore for other modes*/
 		break;
 	default:
-		sdhci_phy_3_3v_init(host);
 		reg |= SDHCI_CTRL_UHS_SDR12;
 	}
 
 	sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
+}
+
+static void zhihe_sdhci_set_control_reg(struct sdhci_host *host)
+{
+	struct mmc *mmc = (struct mmc *)host->mmc;
+	u32 reg;
+
+	int delay = s_delay_lanes[mmc->selected_mode];
+	debug("\n%s: delay %d voltage %d\n", __func__, delay, mmc->signal_voltage);
+
+	reg = sdhci_readw(host, EMMC_CTRL_R);
+	if (IS_SD(host->mmc)) {
+		reg &= ~EMMC_CARD;
+	} else {
+		reg |= EMMC_CARD;
+	}
+
+	sdhci_writeb(host, reg, EMMC_CTRL_R);
+
+	/*
+	 * sdhci_set_control_reg 
+	 * is incompatible with the current peripheral, reimplementing it here.
+	 */
+	zhihe_sdhci_set_voltage(host);
+	zhihe_sdhci_set_uhs_timing(host);
+
+	/* 
+	 * Phy config
+	 * 3.3v Phy: MMC_LEGACY、MMC_HS、SD_HS、MMC_HS_52、MMC_DDR_52
+	 */
+	if (mmc->selected_mode <= MMC_DDR_52 ) {
+		sdhci_phy_3_3v_init(host, delay);
+	} else {
+		sdhci_phy_1_8v_init(host, delay);
+	}
 
 	if (mmc->selected_mode == MMC_HS_400) {
 		//disable auto tuning
@@ -254,39 +318,6 @@ void snps_set_uhs_timing(struct sdhci_host *host)
 	}
 }
 
-static void snps_sdhci_set_control_reg(struct sdhci_host *host)
-{
-	struct mmc *mmc = (struct mmc *)host->mmc;
-	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
-	u32 reg;
-
-	reg = sdhci_readw(host, EMMC_CTRL_R);
-	if (IS_SD(host->mmc)) {
-		reg &= ~EMMC_CARD;
-	} else {
-		reg |= EMMC_CARD;
-	}
-
-	sdhci_writeb(host, reg, EMMC_CTRL_R);
-
-	if (mmc->signal_voltage == MMC_SIGNAL_VOLTAGE_180) {
-		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-		reg |= SDHCI_CTRL_VDD_180;
-		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
-		sdhci_phy_1_8v_init(host);
-	} else {
-		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-		reg &= ~SDHCI_CTRL_VDD_180;
-		if (plat->io_fixed_1v8)
-			reg |= SDHCI_CTRL_VDD_180;
-		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
-		sdhci_phy_3_3v_init(host);
-	}
-
-	snps_set_uhs_timing(host);
-}
-
-extern int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data);
 static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 {
 #define SDHCI_TUNING_LOOP_COUNT 128
@@ -383,15 +414,16 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 	return 0;
 }
 
-int snps_sdhci_set_ios_post(struct sdhci_host *host)
+static int snps_sdhci_set_ios_post(struct sdhci_host *host)
 {
+	debug("\n%s\n", __func__);
 	mdelay(50);
 	return 0;
 }
 
 const struct sdhci_ops snps_ops = {
 	.platform_execute_tuning = &snps_execute_tuning,
-	.set_control_reg = &snps_sdhci_set_control_reg,
+	.set_control_reg = &zhihe_sdhci_set_control_reg,
 	.set_ios_post = snps_sdhci_set_ios_post,
 };
 
@@ -408,6 +440,8 @@ static int snps_sdhci_probe(struct udevice *dev)
 	ret = clk_get_by_index(dev, 0, &clk);
 	if (ret)
 		return ret;
+
+	debug("\n%s: txdelay %d\n", __func__, DELAY_LANE);
 
 	plat->pull_up_en = false;
 	plat->io_fixed_1v8 = false;
@@ -455,13 +489,13 @@ static int snps_sdhci_probe(struct udevice *dev)
 	if (host->voltages == MMC_VDD_165_195) {
 		val |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, val, SDHCI_HOST_CONTROL2);
-		sdhci_phy_1_8v_init(host);
+		sdhci_phy_1_8v_init(host, DELAY_LANE);
 	} else {
 		val &= ~SDHCI_CTRL_VDD_180;
 		if (plat->io_fixed_1v8)
 			val |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, val, SDHCI_HOST_CONTROL2);
-		sdhci_phy_3_3v_init(host);
+		sdhci_phy_3_3v_init(host, DELAY_LANE);
 	}
 
 	host->voltages = MMC_VDD_32_33 | MMC_VDD_33_34 | MMC_VDD_165_195;
@@ -471,33 +505,6 @@ static int snps_sdhci_probe(struct udevice *dev)
 err:
 	clk_disable(&clk);
 	return ret;
-}
-
-int snps_sdhci_init(struct mmc *mmc)
-{
-	struct sdhci_host *host = dev_get_priv(mmc->dev);
-	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
-	int ret;
-	host->voltages = MMC_VDD_33_34;
-	ret = sdhci_probe(mmc->dev);
-	if (ret)
-		return -1;
-
-	uint16_t val = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-
-	if (host->voltages == MMC_VDD_165_195) {
-		val |= SDHCI_CTRL_VDD_180;
-		sdhci_writew(host, val, SDHCI_HOST_CONTROL2);
-		sdhci_phy_1_8v_init(host);
-	} else {
-		val &= ~SDHCI_CTRL_VDD_180;
-		if (plat->io_fixed_1v8)
-			val |= SDHCI_CTRL_VDD_180;
-		sdhci_writew(host, val, SDHCI_HOST_CONTROL2);
-		sdhci_phy_3_3v_init(host);
-	}
-
-	return 0;
 }
 
 static int snps_sdhci_bind(struct udevice *dev)

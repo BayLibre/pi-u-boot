@@ -58,7 +58,7 @@ static struct dram_cfg_param lpddr4_ddrc_cfg[] = {
     { DRAMTMG12(0), 0x00020000 },
     { DRAMTMG13(0), 0x0e100002 },
     { DRAMTMG14(0), 0x00000133 },
-    { ZQCTL0(0), 0xc42d0026 },
+    { ZQCTL0(0), 0x042d0026 },
     { ZQCTL1(0), 0x03600800 },
     { ZQCTL2(0), 0x00000000 },
 #ifdef CONFIG_DDR_DBI_OFF

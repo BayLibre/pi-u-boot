@@ -32,12 +32,6 @@
 
 static int mmc_set_signal_voltage(struct mmc *mmc, uint signal_voltage);
 
-#ifdef CONFIG_ZHIHE_MMC_OP_SUPPORT
-unsigned int zhihe_fixed_mmc_caps = 0;
-unsigned int zhihe_fixed_sd_caps  = 0;
-static bool zhihe_sd_voltage_switched = false;
-#endif
-
 #if !CONFIG_IS_ENABLED(DM_MMC)
 
 static int mmc_wait_dat0(struct mmc *mmc, int state, int timeout_us)
@@ -687,9 +681,6 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 		err = mmc_switch_voltage(mmc, MMC_SIGNAL_VOLTAGE_180);
 		if (err)
 			return err;
-#if CONFIG_IS_ENABLED(ZHIHE_MMC_OP_SUPPORT)
-		zhihe_sd_voltage_switched = true;
-#endif
 	}
 #endif
 
@@ -1039,13 +1030,6 @@ static int mmc_get_capabilities(struct mmc *mmc)
 	if (ext_csd[EXT_CSD_STROBE_SUPPORT] &&
 	    (mmc->card_caps & MMC_MODE_HS400)) {
 		mmc->card_caps |= MMC_MODE_HS400_ES;
-	}
-#endif
-
-#ifdef CONFIG_ZHIHE_MMC_OP_SUPPORT
-	/* zhihe add for fixed emmc caps */
-	if (zhihe_fixed_mmc_caps) {
-		mmc->card_caps = zhihe_fixed_mmc_caps;
 	}
 #endif
 
@@ -1445,13 +1429,6 @@ static int sd_get_capabilities(struct mmc *mmc)
 		mmc->card_caps |= MMC_CAP(UHS_DDR50);
 #endif
 
-#ifdef CONFIG_ZHIHE_MMC_OP_SUPPORT
-	/* zhihe add for fixed sd caps */
-	if (zhihe_fixed_sd_caps) {
-		mmc->card_caps = zhihe_fixed_sd_caps;
-	}
-#endif
-
 	return 0;
 }
 
@@ -1815,10 +1792,6 @@ static int sd_select_mode_and_width(struct mmc *mmc, uint card_caps)
 	const struct mode_width_tuning *mwt;
 #if CONFIG_IS_ENABLED(MMC_UHS_SUPPORT)
 	bool uhs_en = (mmc->ocr & OCR_S18R) ? true : false;
-#if CONFIG_IS_ENABLED(ZHIHE_MMC_OP_SUPPORT)
-	if (!uhs_en)
-		uhs_en = zhihe_sd_voltage_switched;
-#endif
 #else
 	bool uhs_en = false;
 #endif

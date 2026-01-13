@@ -224,7 +224,7 @@ void ddr_enter_mission_mode(void)
 
     ddr_dch_sysreg_wr(DFIMISC(0), 0x00000014);
     ddr_dch_sysreg_wr(DFIMISC(0), 0x00000015);
-    ddr_dch_sysreg_wr(PWRCTL(0), 0x00000008); //[3] dfi_dram_clk_disable [1] powerdown_en
+    ddr_dch_sysreg_wr(PWRCTL(0), 0x0000010B); //[8] lpddr4_sr_allowed [3] dfi_dram_clk_disable [1] powerdown_en [0]selfref_en
 
     ddr_dch_sysreg_wr(SWCTL(0), 0x00000001);
 

@@ -224,16 +224,18 @@ static void zhihe_sdhci_set_voltage(struct sdhci_host *host)
 	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
 	u32 reg;
 
-	if (mmc->signal_voltage == MMC_SIGNAL_VOLTAGE_180) {
+	if ((mmc->selected_mode > MMC_DDR_52) && (mmc->signal_voltage <= MMC_SIGNAL_VOLTAGE_180)) {
 		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 		reg |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
-	} else {
+	} else if ((mmc->selected_mode <= MMC_DDR_52) && (mmc->signal_voltage > MMC_SIGNAL_VOLTAGE_180)) {
 		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 		reg &= ~SDHCI_CTRL_VDD_180;
 		if (plat->io_fixed_1v8)
 			reg |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
+	} else {
+		debug("Warning: mode %d, voltage %d\n", mmc->selected_mode, mmc->signal_voltage);
 	}
 }
 
@@ -242,16 +244,27 @@ static void zhihe_sdhci_set_uhs_timing(struct sdhci_host *host)
 	struct mmc *mmc = (struct mmc *)host->mmc;
 	u32 reg;
 
+	/*
+	 * HOST_CTRL2_R: 2:0 Bit
+	 *   0x0 (SDR12):  SDR12/Legacy             2(SD_HS),5/0,
+	 *   0x1 (SDR25):  SDR25/High Speed SDR     6/1(MMC_HS),3(MMC_HS_52)
+	 *   0x2 (SDR50):  SDR50                    7/-
+	 *   0x3 (SDR104): SDR104/HS200             9/10
+	 *   0x4 (DDR50):  DDR50/High Speed DDR     8/4(MMC_DDR_52)
+	 *   0x5 (RSVD5):  Reserved
+	 *   0x6 (RSVD6):  Reserved
+	 *   0x7 (UHS2):   HS400                    -/11
+	*/
 	reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	reg &= ~SDHCI_CTRL_UHS_MASK;
 
 	switch (mmc->selected_mode) {
-	// case UHS_SDR25:
-	// case MMC_HS:
-	// 	reg |= SDHCI_CTRL_UHS_SDR25;
-	// 	break;
-	case UHS_SDR50:
+	case UHS_SDR25:
+	case MMC_HS:
 	case MMC_HS_52:
+		reg |= SDHCI_CTRL_UHS_SDR25;
+		break;
+	case UHS_SDR50:
 		reg |= SDHCI_CTRL_UHS_SDR50;
 		break;
 	case UHS_DDR50:
@@ -259,12 +272,11 @@ static void zhihe_sdhci_set_uhs_timing(struct sdhci_host *host)
 		reg |= SDHCI_CTRL_UHS_DDR50;
 		break;
 	case UHS_SDR104:
-		reg |= SDHCI_CTRL_UHS_SDR104;
-		break;
 	case MMC_HS_200:
 		reg |= SDHCI_CTRL_UHS_SDR104;
 		break;
 	case MMC_HS_400:
+	case MMC_HS_400_ES:
 		reg |= SNPS_SDHCI_CTRL_HS400;
 		break;
 	default:
@@ -280,7 +292,7 @@ static void zhihe_sdhci_set_control_reg(struct sdhci_host *host)
 	u32 reg;
 
 	int delay = s_delay_lanes[mmc->selected_mode];
-	debug("\n%s: delay %d voltage %d\n", __func__, delay, mmc->signal_voltage);
+	debug("\n%s: mode %d delay %d voltage %d\n", __func__, mmc->selected_mode, delay, mmc->signal_voltage);
 
 	reg = sdhci_readw(host, EMMC_CTRL_R);
 	if (IS_SD(host->mmc)) {

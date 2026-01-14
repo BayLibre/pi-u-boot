@@ -49,6 +49,7 @@ static char s_delay_lanes[]= {
 
 #define DELAY_LANE s_delay_lanes[MMC_LEGACY]
 
+static unsigned int s_cur_delay_set_mode = MMC_HS_400_ES + 1;
 int zhihe_sdhci_set_delay(unsigned int mode, char delay)
 {
 	if (mode > MMC_HS_400_ES) {
@@ -56,6 +57,7 @@ int zhihe_sdhci_set_delay(unsigned int mode, char delay)
 	}
 
 	s_delay_lanes[mode] = delay;
+	s_cur_delay_set_mode = mode;
 	return 0;
 }
 
@@ -292,6 +294,10 @@ static void zhihe_sdhci_set_control_reg(struct sdhci_host *host)
 	u32 reg;
 
 	int delay = s_delay_lanes[mmc->selected_mode];
+
+	if (s_cur_delay_set_mode == mmc->selected_mode) {
+		printf("  Set mmc mode %d delay %d\n", mmc->selected_mode, delay);
+	}
 	debug("\n%s: mode %d delay %d voltage %d\n", __func__, mmc->selected_mode, delay, mmc->signal_voltage);
 
 	reg = sdhci_readw(host, EMMC_CTRL_R);

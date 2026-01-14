@@ -181,15 +181,15 @@ static int mmc_rw_test_single(ulong mem_start, ulong start_blk, ulong num_blks)
 
 #define TEST_LBA      (0x1400000)   // 10GB / 512 = 0x1400000
 #define TEST_BLK_CNT  0x10
-static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
+static int do_mmc_tuning(struct cmd_tbl *cmdtp, int flag,
 	       int argc, char * const argv[])
 {
 	struct mmc *mmc;
 	int mode;
-	int i = 0, n;
+	int i = 0, ret;
 	int stop_on_ok = 1;
 	int multiple = 0;
-	int err_count = 0, ret;
+	int valid_start_delay = -1;
 	int start_tx_delay = 0;
 	int end_tx_delay = 128;
 	char temp_buf[512];
@@ -230,7 +230,7 @@ static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 		loop_count = dectoul(argv[5], NULL);
 	}
 
-	printf("MMC turning Test:\n");
+	printf("MMC tuning Test:\n");
 	printf("  stop_on_ok: 0x%x multiple: 0x%x\n", stop_on_ok, multiple);
 	printf("  test tx delay start:%d end:%d \n", start_tx_delay, end_tx_delay);
 	if (multiple) {
@@ -238,7 +238,7 @@ static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 	}
 
 	for(i = start_tx_delay; i < end_tx_delay; i++) {
-		printf("Set DELAY_LANE = %d\n", i);
+		printf("\n>>>Scan DELAY_LANE %d at mode %d\n", i, mode);
 
 		if (ctrlc()) {
             return CMD_RET_FAILURE;
@@ -246,11 +246,17 @@ static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 
 		/* Set txdelay */
 		if (zhihe_sdhci_set_delay(mode, i) == 0 ) {
-			sprintf(temp_buf, "mmc rescan %d", mode);
+			sprintf(temp_buf, "mmc dev %d 0 %d", curr_device, mode);
+			//sprintf(temp_buf, "mmc rescan %d", mode);
 			ret = run_command(temp_buf, 0);
 			if ((ret != CMD_RET_SUCCESS) | (mmc->selected_mode != mode)) {
-				printf("ERROR\n");
-				continue;
+				printf("ERROR: Switch mode\n");
+				if (valid_start_delay >= 0) {
+					printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+					return CMD_RET_FAILURE;
+				} else {
+					continue;
+				}
 			}
 		}
 
@@ -258,41 +264,44 @@ static int do_mmc_turning(struct cmd_tbl *cmdtp, int flag,
 		if (multiple) {
 			for (j = 0; j < loop_count; j++) {
 				ret = mmc_rw_test_single(0x82000000, TEST_LBA, TEST_BLK_CNT);
-				if (ret != 0) {
+				if (ret == 0) {
+					printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "OK" );
+					if (valid_start_delay < 0) {
+						valid_start_delay = i;
+					}
+				} else {
 					printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "ERROR");
-					err_count++;
-					break;
+					if (valid_start_delay >= 0) {
+						printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+						return CMD_RET_FAILURE;
+					}
 				}
-				printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "OK" );
 			}
-			if (err_count >= 5)
-				goto FAILED;
 
 			if(stop_on_ok)
 				return CMD_RET_SUCCESS;
 		} else {
 			memset(temp_buf, 0xa5, sizeof(temp_buf));
-			n = blk_dwrite(mmc_get_blk_desc(mmc), TEST_LBA, 1, temp_buf);
-			if (n == 1) {
+			ret = blk_dwrite(mmc_get_blk_desc(mmc), TEST_LBA, 1, temp_buf);
+			if (ret == 1) {
 				printf("Testing blocks written: %s\n", "OK" );
+				if (valid_start_delay < 0) {
+					valid_start_delay = i;
+				}
 				if(stop_on_ok)
 					return CMD_RET_SUCCESS;
 			} else {
 				printf("Testing blocks written: %s\n", "ERROR");
-				if (err_count++ >= 5)
-					goto FAILED;
+				if (valid_start_delay >= 0) {
+					printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+					return CMD_RET_FAILURE;
+				}
 			}
 		}
 	}
 
-	if (i >= 128) {
-		return CMD_RET_FAILURE;
-	}
-
+	printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
 	return CMD_RET_SUCCESS;
-
-FAILED:
-	return CMD_RET_FAILURE;
 }
 
 /*
@@ -363,32 +372,25 @@ static int do_mmc_rw_test(struct cmd_tbl *cmdtp, int flag, int argc, char * cons
 static int do_mmc_dev(struct cmd_tbl *cmdtp, int flag,
 		      int argc, char *const argv[])
 {
-	int dev;
-	struct mmc *mmc;
+	char cmd[64];
 
-	if (argc == 1) {
-		dev = curr_device;
+	if (argc == 4) {
+		sprintf(cmd, "mmc %s %s %s %s", argv[0], argv[1],argv[2],argv[3]);
 	} else if (argc == 2) {
-		dev = (int)dectoul(argv[1], NULL);
+		sprintf(cmd, "mmc %s %s", argv[0], argv[1]);
 	} else {
 		return CMD_RET_USAGE;
 	}
 
-	mmc = init_mmc_device(dev, true);
-	if (!mmc)
-		return CMD_RET_FAILURE;
-
-	curr_device = dev;
-	printf("mmc%d is current device\n", curr_device);
-
-	return CMD_RET_SUCCESS;
+	curr_device = (int)dectoul(argv[1], NULL);
+	return run_command(cmd, 0);;
 }
 
 static struct cmd_tbl cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(dev, 4, 0, do_mmc_dev, "", ""),
 	U_BOOT_CMD_MKENT(set_clk, 4, 1, do_mmc_set_clk_freq, "", ""),
 	U_BOOT_CMD_MKENT(set_delay, 4, 1, do_mmc_set_delay_lane, "", ""),
-	U_BOOT_CMD_MKENT(turning, 6, 1, do_mmc_turning, "", ""),
+	U_BOOT_CMD_MKENT(tuning, 6, 1, do_mmc_tuning, "", ""),
 	U_BOOT_CMD_MKENT(rw_test, 5, 1, do_mmc_rw_test, "", ""),
 };
 
@@ -422,12 +424,10 @@ static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(
 	mmcz, 29, 1, do_mmcops,
 	"MMC sub system",
-	"mmcz dev [dev] - show or set current mmc device\n"
-	"mmcz set_clk # freq - set mmc clock frequency\n"
+	"mmcz dev devid [part] [mode] - show or set current mmc device\n"
+	"mmcz set_clk freq - set mmc clock frequency\n"
 	"mmcz set_delay <mode> <delay> - set mode & delay, rescan dev\n"
-	"mmcz turning [continue start end] [multiple loop_count] - loop test for clk delay form start to end (default 0 to 128), reinit host and rescan dev\n"
-	"	- without arg [continue start end] exit once init and write ok\n"
-	"	- with arg [multiple loop_count] loop write-read-compare multiple blocks for tx clk delay\n"
+	"mmcz tuning [continue start end] [multiple loop_count] - scan tx delay from start to end (default 0 to 128)\n"
     "mmcz rw_test <mem_start> <start_blk> <num_blks> [loop_count] - perform MMC R/W test\n"
     "    loop_count defaults to 1 if omitted\n"
     "    (block size = 512 bytes)\n"

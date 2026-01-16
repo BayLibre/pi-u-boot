@@ -16421,13 +16421,13 @@ static const short int DCCM_1D_PS0[0x33e] = {
 0x0,
 0x3f74,
 0xf2,
-0x1223,
+0x1222,
 0x1a08,
 0x0,
 0x84,
 0x3f74,
 0xf2,
-0x1223,
+0x1222,
 0x1a08,
 0x0,
 0x84,
@@ -16446,13 +16446,13 @@ static const short int DCCM_1D_PS0[0x33e] = {
 0x0,
 0x7400,
 0xf23f,
-0x2300,
+0x2200,
 0x812,
 0x1a,
 0x8400,
 0x7400,
 0xf23f,
-0x2300,
+0x2200,
 0x812,
 0x1a,
 0x8400,
@@ -33641,13 +33641,13 @@ static const short int DCCM_2D[0x2be] = {
 0x0,
 0x3f74,
 0xf2,
-0x1223,
+0x1222,
 0x1a08,
 0x0,
 0x84,
 0x3f74,
 0xf2,
-0x1223,
+0x1222,
 0x1a08,
 0x0,
 0x84,
@@ -33666,13 +33666,13 @@ static const short int DCCM_2D[0x2be] = {
 0x0,
 0x7400,
 0xf23f,
-0x2300,
+0x2200,
 0x812,
 0x1a,
 0x8400,
 0x7400,
 0xf23f,
-0x2300,
+0x2200,
 0x812,
 0x1a,
 0x8400,
@@ -34546,7 +34546,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR2_A0 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR3_A0 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR4_A0 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_A0 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_A0 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR12_A0 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR13_A0 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR14_A0 = 0x1a
@@ -34558,7 +34558,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR2_A1 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR3_A1 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR4_A1 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_A1 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_A1 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR12_A1 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR13_A1 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR14_A1 = 0x1a
@@ -34573,7 +34573,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR2_B0 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR3_B0 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR4_B0 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_B0 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_B0 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR12_B0 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR13_B0 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR14_B0 = 0x1a
@@ -34585,7 +34585,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR2_B1 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR3_B1 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR4_B1 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_B1 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR11_B1 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR12_B1 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR13_B1 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_1D[0].MR14_B1 = 0x1a
@@ -34634,7 +34634,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR2_A0 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR3_A0 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR4_A0 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_A0 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_A0 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR12_A0 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR13_A0 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR14_A0 = 0x1a
@@ -34646,7 +34646,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR2_A1 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR3_A1 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR4_A1 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_A1 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_A1 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR12_A1 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR13_A1 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR14_A1 = 0x1a
@@ -34661,7 +34661,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR2_B0 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR3_B0 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR4_B0 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_B0 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_B0 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR12_B0 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR13_B0 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR14_B0 = 0x1a
@@ -34673,7 +34673,7 @@ static const short int DCCM_2D[0x2be] = {
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR2_B1 = 0x3f
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR3_B1 = 0xf2
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR4_B1 = 0x0
-// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_B1 = 0x23
+// // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR11_B1 = 0x22
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR12_B1 = 0x12
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR13_B1 = 0x8
 // // [phyinit_print_dat] mb_LPDDR4X_2D[0].MR14_B1 = 0x1a

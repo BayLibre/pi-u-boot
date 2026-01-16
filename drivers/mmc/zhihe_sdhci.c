@@ -336,15 +336,39 @@ static void zhihe_sdhci_set_control_reg(struct sdhci_host *host)
 	}
 }
 
-static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
+#ifndef CONFIG_SPL_BUILD
+int zhihe_send_tuning(struct mmc *mmc, u8 opcode)
+{
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+	struct sdhci_host *host = dev_get_priv(mmc->dev);
+
+	cmd.cmdidx = opcode;
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = 0;
+
+	data.blocksize = 64;
+	data.blocks = 1;
+	data.flags = MMC_DATA_READ;
+
+	if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK_HS200 && mmc->bus_width == 8)
+		data.blocksize = 128;
+
+	sdhci_writew(host, SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG, data.blocksize),
+				SDHCI_BLOCK_SIZE);
+	sdhci_writew(host, data.blocks, SDHCI_BLOCK_COUNT);
+	sdhci_writew(host, SDHCI_TRNS_READ, SDHCI_TRANSFER_MODE);
+
+	return mmc_send_cmd(mmc, &cmd, NULL);
+}
+static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 {
 #define SDHCI_TUNING_LOOP_COUNT 128
 	struct sdhci_host *host = dev_get_priv(mmc->dev);
-	struct mmc_cmd cmd;
-	struct mmc_data data;
-	char tuning_loop_counter = SDHCI_TUNING_LOOP_COUNT;
 	uint32_t val = 0;
 	uint16_t ctrl = 0;
+	int i;
+	//static char rx_tuning_wnd[SDHCI_TUNING_LOOP_COUNT];
 
 	debug("\nEnter %s opcode %d\n", __func__, opcode);
 
@@ -370,40 +394,34 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 
 	mdelay(1);
 
-	do {
-		cmd.cmdidx = opcode;
-		cmd.resp_type = MMC_RSP_R1;
-		cmd.cmdarg = 0;
-
-		data.blocksize = 64;
-		data.blocks = 1;
-		data.flags = MMC_DATA_READ;
-
-		if (tuning_loop_counter-- == 0)
-			break;
-
-		if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK_HS200 && mmc->bus_width == 8)
-			data.blocksize = 128;
-
-		sdhci_writew(host, SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG, data.blocksize),
-			     SDHCI_BLOCK_SIZE);
-		sdhci_writew(host, data.blocks, SDHCI_BLOCK_COUNT);
-		sdhci_writew(host, SDHCI_TRNS_READ, SDHCI_TRANSFER_MODE);
-
-		mmc_send_cmd(mmc, &cmd, NULL);
+	for(i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++ ) {
+		if (zhihe_send_tuning(host->mmc, opcode)) {
+			//rx_tuning_wnd[i] = 0;
+		} else {
+			//rx_tuning_wnd[i] = 1;
+		}
 		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 #ifdef DEBUG
 		val = sdhci_readl(host, AT_STAT_R);
-		debug("  %d HOST_CTRL2_R=0x%x AT_STAT_R=0x%x\n", tuning_loop_counter, ctrl, val);
+		debug("  %d HOST_CTRL2_R=0x%x AT_STAT_R=0x08%x\n", i, ctrl, val);
 #endif
-		if (cmd.cmdidx == MMC_CMD_SEND_TUNING_BLOCK)
+		if (!(ctrl & SDHCI_CTRL_EXEC_TUNING)) {
+			break;
+		}
+
+		if (opcode == MMC_CMD_SEND_TUNING_BLOCK) {
 			udelay(1);
+		}
+	}
 
-	} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
-
-	if (tuning_loop_counter < 0) {
-		ctrl &= ~SDHCI_CTRL_TUNED_CLK;
-		sdhci_writel(host, ctrl, SDHCI_HOST_CONTROL2);
+	if (s_cur_delay_set_mode == mmc->selected_mode) {
+		val = sdhci_readl(host, AT_STAT_R);
+		printf("  TXDLY&ATSTAT %03d 0x%08x\n",s_delay_lanes[mmc->selected_mode], val);
+		// printf("  RXTUNING:[");
+		// for(i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++) {
+		// 	printf("%d", rx_tuning_wnd[i]);
+		// }
+		// printf("]\n");
 	}
 
 	if (!(ctrl & SDHCI_CTRL_TUNED_CLK)) {
@@ -431,8 +449,9 @@ static int snps_execute_tuning(struct mmc *mmc, u8 opcode)
 
 	return 0;
 }
+#endif
 
-static int snps_sdhci_set_ios_post(struct sdhci_host *host)
+static int zhihe_sdhci_set_ios_post(struct sdhci_host *host)
 {
 	debug("\n%s\n", __func__);
 	mdelay(50);
@@ -440,9 +459,11 @@ static int snps_sdhci_set_ios_post(struct sdhci_host *host)
 }
 
 const struct sdhci_ops snps_ops = {
-	.platform_execute_tuning = &snps_execute_tuning,
+#ifndef CONFIG_SPL_BUILD
+	.platform_execute_tuning = &zhihe_execute_tuning,
+#endif
 	.set_control_reg = &zhihe_sdhci_set_control_reg,
-	.set_ios_post = snps_sdhci_set_ios_post,
+	.set_ios_post = zhihe_sdhci_set_ios_post,
 };
 
 static int snps_sdhci_probe(struct udevice *dev)

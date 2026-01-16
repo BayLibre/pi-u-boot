@@ -13,6 +13,9 @@
 #include <mmc.h>
 #include "zhihe_sdhci.h"
 
+#define SDHCI_TUNING_LOOP_COUNT 128
+//#define SOFT_TUNING_EN
+
 /* DELAY LANE Config */
 #define TXDELAY_DEFAULT 50
 static char s_delay_lanes[]= {
@@ -361,50 +364,50 @@ int zhihe_send_tuning(struct mmc *mmc, u8 opcode)
 
 	return mmc_send_cmd(mmc, &cmd, NULL);
 }
+
+#ifdef SOFT_TUNING_EN
+static char rx_tuning_wnd[SDHCI_TUNING_LOOP_COUNT];
+#endif
 static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 {
-#define SDHCI_TUNING_LOOP_COUNT 128
 	struct sdhci_host *host = dev_get_priv(mmc->dev);
 	uint32_t val = 0;
-	uint16_t ctrl = 0;
 	int i;
-	//static char rx_tuning_wnd[SDHCI_TUNING_LOOP_COUNT];
 
 	debug("\nEnter %s opcode %d\n", __func__, opcode);
 
+#ifndef SOFT_TUNING_EN
+	uint16_t ctrl = 0;
+	/* Enable AT_EN */
 	sdhci_writeb(host, 3 << INPSEL_CNFG, PHY_ATDL_CNFG_R);
 
 	val = sdhci_readl(host, AT_CTRL_R);
-
 	val &= ~((1 << CI_SEL) | (1 << RPT_TUNE_ERR) | (1 << SW_TUNE_EN) | (0xf << WIN_EDGE_SEL));
 	val |= (1 << AT_EN) | (1 << SWIN_TH_EN) | (1 << TUNE_CLK_STOP_EN) | (1 << PRE_CHANGE_DLY) |
 	       (3 << POST_CHANGE_DLY) | (9 << SWIN_TH_VAL);
-
 	sdhci_writel(host, val, AT_CTRL_R);
-	val = sdhci_readl(host, AT_CTRL_R);
-	if (!(val & (1 << AT_EN))) {
-		printf("*****Auto Tuning is NOT Enable!!!\n");
-		return -1;
-	}
 
 	/* Start Tuning */
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
 	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
+#else
+	/* Enable SW_TUNE_EN */
+	//sdhci_writeb(host, 3 << INPSEL_CNFG, PHY_ATDL_CNFG_R);
 
+	val = sdhci_readl(host, AT_CTRL_R);
+	//val &= ~((1 << CI_SEL) | (1 << RPT_TUNE_ERR) | (1 << AT_EN) | (0xf << WIN_EDGE_SEL));
+	val |= (1 << SW_TUNE_EN) | (1 << TUNE_CLK_STOP_EN);
+	sdhci_writel(host, val, AT_CTRL_R);
+#endif
 	mdelay(1);
 
 	for(i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++ ) {
-		if (zhihe_send_tuning(host->mmc, opcode)) {
-			//rx_tuning_wnd[i] = 0;
-		} else {
-			//rx_tuning_wnd[i] = 1;
-		}
+#ifndef SOFT_TUNING_EN
+		/* CMD21 or CMD19 */
+		zhihe_send_tuning(host->mmc, opcode);
 		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
-#ifdef DEBUG
-		val = sdhci_readl(host, AT_STAT_R);
-		debug("  %d HOST_CTRL2_R=0x%x AT_STAT_R=0x08%x\n", i, ctrl, val);
-#endif
+		debug("  %d HOST_CTRL2_R=0x%x AT_STAT_R=0x08%x\n", i, ctrl, sdhci_readl(host, AT_STAT_R));
 		if (!(ctrl & SDHCI_CTRL_EXEC_TUNING)) {
 			break;
 		}
@@ -412,22 +415,114 @@ static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 		if (opcode == MMC_CMD_SEND_TUNING_BLOCK) {
 			udelay(1);
 		}
+#else
+		/* Update CENTER_PH_CODE */
+		val = sdhci_readl(host, AT_STAT_R);
+		val &= ~(0xff << CENTER_PH_CODE);
+		val |= (i << CENTER_PH_CODE);
+		sdhci_writel(host, val, AT_STAT_R);
+		if (mmc_send_tuning(host->mmc, opcode)) {
+			rx_tuning_wnd[i] = 0;
+		} else {
+			rx_tuning_wnd[i] = 1;
+		}
+#endif
 	}
 
 	if (s_cur_delay_set_mode == mmc->selected_mode) {
+#ifndef SOFT_TUNING_EN
 		val = sdhci_readl(host, AT_STAT_R);
 		printf("  TXDLY&ATSTAT %03d 0x%08x\n",s_delay_lanes[mmc->selected_mode], val);
-		// printf("  RXTUNING:[");
-		// for(i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++) {
-		// 	printf("%d", rx_tuning_wnd[i]);
-		// }
-		// printf("]\n");
+#else
+		printf("  RXTUNING:[");
+		for(i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++) {
+			if (rx_tuning_wnd[i])
+				printf("%c", '-');
+			else
+				printf("%02x", i);
+		}
+		printf("]\n");
+#endif
 	}
 
+#ifndef SOFT_TUNING_EN
 	if (!(ctrl & SDHCI_CTRL_TUNED_CLK)) {
 		printf("%s:Tuning failed\n", __func__);
 		return -1;
 	}
+#else
+	/* Config best CENTER_PH_CODE
+	 * Pass Step and Fail Step Scenarios
+	 *   FPF PF FP PFP PFPF P(all pass)
+	 */
+	/* {{end-idx1 size1}, {end-idx2 size2}, , {end-idx3 size3}} */
+	int steps[3][3] = {{0, 0}, {0, 0}, {0, 0}};
+	int step = 0;
+	for (i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++) {
+		if (rx_tuning_wnd[i] == 1) {
+			steps[step][1]++; // count size
+		} else {
+			if (steps[step][1] > 0) {
+				//save step, find next step
+				steps[step][0] = i;
+				step++;
+				if (step > 2) {
+					break;
+				}
+			}
+		}
+	}
+	// printf("  Steps: {%d %d}, {%d %d}, {%d %d}, %d\n", 
+	// 			steps[0][0], steps[0][1],
+	// 			steps[1][0], steps[1][1],
+	// 			steps[2][0], steps[2][1], i);
+	if(i == SDHCI_TUNING_LOOP_COUNT) {
+		if (steps[0][0] == steps[0][1]) {
+			if (steps[2][0] == 0 && steps[2][1] > 0) {
+				/* pfpfp -> pfpf*/
+				steps[0][1] += steps[2][1];
+				steps[2][1] = 0;
+			} else if (steps[1][0] == 0 && steps[1][1] > 0) {
+				/* pfp -> pf*/
+				steps[0][1] += steps[1][1];
+				steps[1][1] = 0;
+			}
+		}
+		// printf("  Steps: {%d %d}, {%d %d}\n", 
+		// 			steps[0][0], steps[0][1],
+		// 			steps[1][0], steps[1][1]);
+
+		/* Max valid step count = 2 */
+		int valid_step = 0;
+		if (steps[1][1] > 0) {
+			if (steps[1][1] > steps[0][1]) {
+				valid_step = 1;
+			}
+		} else if (steps[0][1] > 0) {
+			valid_step = 0;
+		} else {
+			printf("  SW TUNING: Unkown Scenarios\n"); // all F
+			return -1;
+		}
+
+		/* Compute the optimal parameters. */
+		int mid = steps[valid_step][0] - (steps[valid_step][1] / 2);
+		mid = (mid + SDHCI_TUNING_LOOP_COUNT) % SDHCI_TUNING_LOOP_COUNT;
+		// printf("  step %d, 0x%08x(%d)\n",valid_step, mid, mid);
+
+		val = sdhci_readl(host, AT_STAT_R);
+		val &= ~(0xff << CENTER_PH_CODE);
+		val |= (mid << CENTER_PH_CODE);
+		sdhci_writel(host, val, AT_STAT_R);
+	} else {
+		printf("  SW TUNING: Unkown Scenarios\n");
+		return -1;
+	}
+
+#endif
+
+	val = sdhci_readl(host, AT_STAT_R);
+	printf("  Tuning: %d 0x%08x\n",s_delay_lanes[mmc->selected_mode], val);
 
 	/*
 	 * Disable the tuning engine to prevent auto-tuning

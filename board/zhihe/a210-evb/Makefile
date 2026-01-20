@@ -16,8 +16,6 @@ obj-y += arch_ext/arch_ext.o
 obj-y += adc/adc.o
 else
 obj-y += board.o pinctrl.o
-# obj-y += cmd/emmc.o
-# obj-y += cmd/emmc_sw_tuning.o
 obj-y += cmd/iopmp.o
 obj-$(CONFIG_USB_GADGET_DWC2_OTG) += board_dwc2_otg.o
 endif

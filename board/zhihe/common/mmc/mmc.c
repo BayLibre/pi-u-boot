@@ -179,66 +179,62 @@ static int mmc_rw_test_single(ulong mem_start, ulong start_blk, ulong num_blks)
 	return 0;
 }
 
-#define TEST_LBA      (0x1400000)   // 10GB / 512 = 0x1400000
-#define TEST_BLK_CNT  0x10
+#define TEST_LBA (0x00081000) /* boot_b */
+static char tx_delay_eye[128 + 1];
 static int do_mmc_tuning(struct cmd_tbl *cmdtp, int flag,
 	       int argc, char * const argv[])
 {
-	struct mmc *mmc;
 	int mode;
 	int i = 0, ret;
-	int stop_on_ok = 1;
-	int multiple = 0;
 	int valid_start_delay = -1;
 	int start_tx_delay = 0;
 	int end_tx_delay = 128;
-	char temp_buf[512];
-	ulong j, loop_count = 5;
+	int scan_detail = 0;
+	char cmd_buf[64];
+	char *temp_buf = NULL;
+
+	if (argc < 4) {
+		return CMD_RET_USAGE; 
+	}
 
 	if (curr_device < 0) {
 		printf("run <mmcz dev 0|1> first\n");
-		return CMD_RET_SUCCESS;
-	}
-
-	mmc = find_mmc_device(curr_device);
-	if (!mmc) {
-		printf("No MMC device at slot %x\n", curr_device);
 		return CMD_RET_FAILURE;
 	}
-	mode = mmc->selected_mode;
-	printf("Info: id %d, mode %d\n",  curr_device, mmc->selected_mode);
 
-	if(argc > 1 && (!strncmp(argv[1], "cont", 4))) {
-		stop_on_ok = 0;
+	mode = dectoul(argv[1], NULL);
+
+	if (mode > MMC_HS_400_ES) {
+		printf("Unknown mode %d\n", mode);
+		return CMD_RET_FAILURE;
 	}
 
-	if(argc > 3) {
-		start_tx_delay = dectoul(argv[2], NULL);
-		end_tx_delay = dectoul(argv[3], NULL);
-		if (start_tx_delay >= end_tx_delay || start_tx_delay < 0 || start_tx_delay > 128
-			|| end_tx_delay < 0 || end_tx_delay > 128) {
-			printf("Error: start_tx_delay and end_tx_delay must be between 0 and 128!\n");
-			return CMD_RET_FAILURE;
-		}
+	start_tx_delay = dectoul(argv[2], NULL);
+	end_tx_delay = dectoul(argv[3], NULL);
+	if (start_tx_delay > end_tx_delay || start_tx_delay < 0 || start_tx_delay >= 128
+		|| end_tx_delay < 0 || end_tx_delay >= 128) {
+		return CMD_RET_USAGE;
 	}
 
-	if(argc > 4 && (!strncmp(argv[4], "mult", 4))) {
-		multiple = 1;
+	if (argc == 5) {
+		scan_detail = 1;
 	}
 
-	if(argc > 5) {
-		loop_count = dectoul(argv[5], NULL);
+	temp_buf = (char *)env_get_hex("tmp_addr", 0);
+	if (temp_buf == NULL) {
+		printf("Unknown env tmp_addr\n");
+		return CMD_RET_FAILURE;
 	}
 
-	printf("MMC tuning Test:\n");
-	printf("  stop_on_ok: 0x%x multiple: 0x%x\n", stop_on_ok, multiple);
-	printf("  test tx delay start:%d end:%d \n", start_tx_delay, end_tx_delay);
-	if (multiple) {
-		printf("  multiple Loops       : %lu\n", loop_count);
-	}
+	printf("MMC txdelay scan:\n");
+	printf("  devid %d, mode %d\n",  curr_device, mode);
+	printf("  range (%d, %d)\n", start_tx_delay, end_tx_delay);
+	printf("  temp buf 0x%p\n",temp_buf);
 
-	for(i = start_tx_delay; i < end_tx_delay; i++) {
-		printf("\n>>>Scan DELAY_LANE %d at mode %d\n", i, mode);
+	memset(tx_delay_eye, '?', sizeof(tx_delay_eye));
+	tx_delay_eye[sizeof(tx_delay_eye) - 1] = '\0';
+	for(i = start_tx_delay; i <= end_tx_delay; i++) {
+		printf("\n>>>Scan DELAY_LANE %d\n", i);
 
 		if (ctrlc()) {
             return CMD_RET_FAILURE;
@@ -246,61 +242,43 @@ static int do_mmc_tuning(struct cmd_tbl *cmdtp, int flag,
 
 		/* Set txdelay */
 		if (zhihe_sdhci_set_delay(mode, i) == 0 ) {
-			sprintf(temp_buf, "mmc dev %d 0 %d", curr_device, mode);
-			//sprintf(temp_buf, "mmc rescan %d", mode);
-			ret = run_command(temp_buf, 0);
-			if ((ret != CMD_RET_SUCCESS) | (mmc->selected_mode != mode)) {
+			sprintf(cmd_buf, "mmc dev %d 0 %d", curr_device, mode);
+			ret = run_command(cmd_buf, 0);
+			if (ret != CMD_RET_SUCCESS) {
 				printf("ERROR: Switch mode\n");
-				if (valid_start_delay >= 0) {
-					printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+				if ((valid_start_delay >= 0) && (scan_detail == 0)) {
+					printf(">>>Scan result: %d ~ %d\n", valid_start_delay, i - 1);
 					return CMD_RET_FAILURE;
 				} else {
+					tx_delay_eye[i] = 'S';
 					continue;
 				}
 			}
 		}
 
-		/* Read & Write test */
-		if (multiple) {
-			for (j = 0; j < loop_count; j++) {
-				ret = mmc_rw_test_single(0x82000000, TEST_LBA, TEST_BLK_CNT);
-				if (ret == 0) {
-					printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "OK" );
-					if (valid_start_delay < 0) {
-						valid_start_delay = i;
-					}
-				} else {
-					printf("Testing blocks write-read-compare %lu/%lu: %s\n", j + 1, loop_count, "ERROR");
-					if (valid_start_delay >= 0) {
-						printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
-						return CMD_RET_FAILURE;
-					}
-				}
+		/* Write test */
+		memset(temp_buf, 0xa5, 20 * 512);
+		sprintf(cmd_buf, "mmc write %p %x %x", temp_buf, TEST_LBA + (i * 20), 20);
+		ret = run_command(cmd_buf, 0);
+		if (ret == CMD_RET_SUCCESS) {
+			tx_delay_eye[i] = '-';
+			if (valid_start_delay < 0) {
+				valid_start_delay = i;
 			}
-
-			if(stop_on_ok)
-				return CMD_RET_SUCCESS;
 		} else {
-			memset(temp_buf, 0xa5, sizeof(temp_buf));
-			ret = blk_dwrite(mmc_get_blk_desc(mmc), TEST_LBA, 1, temp_buf);
-			if (ret == 1) {
-				printf("Testing blocks written: %s\n", "OK" );
-				if (valid_start_delay < 0) {
-					valid_start_delay = i;
-				}
-				if(stop_on_ok)
-					return CMD_RET_SUCCESS;
-			} else {
-				printf("Testing blocks written: %s\n", "ERROR");
-				if (valid_start_delay >= 0) {
-					printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
-					return CMD_RET_FAILURE;
-				}
+			tx_delay_eye[i] = 'X';
+			if ((valid_start_delay >= 0) && (scan_detail == 0)) {
+				printf(">>>Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+				return CMD_RET_FAILURE;
 			}
 		}
 	}
 
-	printf("Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+	if (scan_detail) {
+		printf(">>>Scan result: [%s]\n", tx_delay_eye);
+	} else {
+		printf(">>>Scan result: %d ~ %d\n", valid_start_delay, i - 1);
+	}
 	return CMD_RET_SUCCESS;
 }
 
@@ -424,10 +402,10 @@ static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,
 U_BOOT_CMD(
 	mmcz, 29, 1, do_mmcops,
 	"MMC sub system",
-	"mmcz dev devid [part] [mode] - show or set current mmc device\n"
+	"dev devid [part] [mode] - show or set current mmc device\n"
 	"mmcz set_clk freq - set mmc clock frequency\n"
 	"mmcz set_delay <mode> <delay> - set mode & delay, rescan dev\n"
-	"mmcz tuning [continue start end] [multiple loop_count] - scan tx delay from start to end (default 0 to 128)\n"
+	"mmcz tuning mode start end - scan tx delay from start to end\n"
     "mmcz rw_test <mem_start> <start_blk> <num_blks> [loop_count] - perform MMC R/W test\n"
     "    loop_count defaults to 1 if omitted\n"
     "    (block size = 512 bytes)\n"

@@ -30,7 +30,7 @@ static char s_delay_lanes[]= {
 	46,              /* 7: UHS_SDR50 */
 	46,              /* 8: UHS_DDR50 */
 	46,              /* 9: UHS_SDR104 */
-	45,              /* 10: MMC_HS_200 */
+	TXDELAY_DEFAULT, /* 10: MMC_HS_200 */
 	24,              /* 11: MMC_HS_400 */
 	24,              /* 12: MMC_HS_400_ES */
 #else
@@ -365,39 +365,58 @@ int zhihe_send_tuning(struct mmc *mmc, u8 opcode)
 	return mmc_send_cmd(mmc, &cmd, NULL);
 }
 
+/*
+ * Tuning Schema
+ * 1. Threshold Based Selection Tuning Schema
+ *      This mode allows the tuning engine to select the first complete sampling window
+ *      that meets the threshold criteria defined.
+ *      AT_CTRL_R.SWIN_TH_EN = 1, AT_CTRL_R.SWIN_TH_VAL = <as required for design>
+ * 2. Backward Compatible Tuning Schema
+ *      This mode allows the tuning engine to function as it was in 1.50a and earlier releases of the DWC_mshc.
+ *      AT_CTRL_R.SWIN_TH_EN = 1, AT_CTRL_R.SWIN_TH_VAL = 0
+ * 3. Largest Sampling Window Tuning Schema
+ *      This mode allows the tuning algorithm to move through all the taps of delay line
+ *      to identify the largest sampling window available.
+ *      AT_CTRL_R.SWIN_TH_EN = 1, AT_CTRL_R.SWIN_TH_VAL = <do not care>
+ */
 #ifdef SOFT_TUNING_EN
 static char rx_tuning_wnd[SDHCI_TUNING_LOOP_COUNT];
 #endif
 static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 {
 	struct sdhci_host *host = dev_get_priv(mmc->dev);
-	uint32_t val = 0;
+	uint32_t val;
 	int i;
 
 	debug("\nEnter %s opcode %d\n", __func__, opcode);
 
+	/* AT_CTRL_R value base init */
+	val = sdhci_readl(host, AT_CTRL_R);
+	val &= ~(1 << SW_TUNE_EN);     // Disable software tuning
+	val &= ~(0xf << WIN_EDGE_SEL); // Clear =0 User selection disabled. Tuning calculated edges are used.
+	val &= ~(1 << RPT_TUNE_ERR);   // Default mode, No errors are reported.
+	val &= ~(1 << CI_SEL);         // Clear =0 Driven in block gap interval
+	val &= ~((1 << SWIN_TH_EN) | (0xff << SWIN_TH_VAL));   // Largest Sampling Window Tuning
+
+	val |= (1 << PRE_CHANGE_DLY) | (3 << POST_CHANGE_DLY); // Phase switching cycle latency
+	val |= (1 << TUNE_CLK_STOP_EN);// Clocks stopped during phase code change
+
 #ifndef SOFT_TUNING_EN
 	uint16_t ctrl = 0;
-	/* Enable AT_EN */
-	sdhci_writeb(host, 3 << INPSEL_CNFG, PHY_ATDL_CNFG_R);
+	/* Auto-tuning */
+	sdhci_writeb(host, 3 << INPSEL_CNFG, PHY_ATDL_CNFG_R); //ATDL Select drift clk by design
 
-	val = sdhci_readl(host, AT_CTRL_R);
-	val &= ~((1 << CI_SEL) | (1 << RPT_TUNE_ERR) | (1 << SW_TUNE_EN) | (0xf << WIN_EDGE_SEL));
-	val |= (1 << AT_EN) | (1 << SWIN_TH_EN) | (1 << TUNE_CLK_STOP_EN) | (1 << PRE_CHANGE_DLY) |
-	       (3 << POST_CHANGE_DLY) | (9 << SWIN_TH_VAL);
-	sdhci_writel(host, val, AT_CTRL_R);
+	/* Enable auto-tuning */
+	val |= (1 << AT_EN);
+	sdhci_writel(host, val, AT_CTRL_R); 
 
-	/* Start Tuning */
+	/* Start tuning */
 	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	ctrl |= SDHCI_CTRL_EXEC_TUNING;
 	sdhci_writew(host, ctrl, SDHCI_HOST_CONTROL2);
 #else
-	/* Enable SW_TUNE_EN */
-	//sdhci_writeb(host, 3 << INPSEL_CNFG, PHY_ATDL_CNFG_R);
-
-	val = sdhci_readl(host, AT_CTRL_R);
-	//val &= ~((1 << CI_SEL) | (1 << RPT_TUNE_ERR) | (1 << AT_EN) | (0xf << WIN_EDGE_SEL));
-	val |= (1 << SW_TUNE_EN) | (1 << TUNE_CLK_STOP_EN);
+	/* Soft tuning */
+	val |= (1 << SW_TUNE_EN);
 	sdhci_writel(host, val, AT_CTRL_R);
 #endif
 	mdelay(1);
@@ -430,11 +449,8 @@ static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 	}
 
 	if (s_cur_delay_set_mode == mmc->selected_mode) {
-#ifndef SOFT_TUNING_EN
-		val = sdhci_readl(host, AT_STAT_R);
-		printf("  TXDLY&ATSTAT %03d 0x%08x\n",s_delay_lanes[mmc->selected_mode], val);
-#else
-		printf("  RXTUNING:[");
+#ifdef SOFT_TUNING_EN
+		printf("  TXDLY %d, RXWND[", s_delay_lanes[mmc->selected_mode]);
 		for(i = 0; i < SDHCI_TUNING_LOOP_COUNT; i++) {
 			if (rx_tuning_wnd[i])
 				printf("%c", '-');
@@ -522,7 +538,7 @@ static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 #endif
 
 	val = sdhci_readl(host, AT_STAT_R);
-	printf("  Tuning: %d 0x%08x\n",s_delay_lanes[mmc->selected_mode], val);
+	printf("  Tuning: %d 0x%08x\n", s_delay_lanes[mmc->selected_mode], val);
 
 	/*
 	 * Disable the tuning engine to prevent auto-tuning

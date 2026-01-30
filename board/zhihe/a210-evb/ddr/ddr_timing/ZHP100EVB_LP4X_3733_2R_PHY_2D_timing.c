@@ -34693,7 +34693,7 @@ static const short int DCCM_2D[0x2be] = {
 // //############################################################## 
 
 
-void ddr_phy_training_4266_2r(unsigned int fsp_table[4]) { 
+void ddr_phy_training_3733_2r(unsigned int fsp_table[4]) { 
 
  int i;
  

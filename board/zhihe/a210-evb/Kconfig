@@ -63,6 +63,9 @@ config ZHP100EVB_LP4X_3200_1R_2D
 config ZHP100EVB_LP4X_4266_2R_2D
 	bool "ZHP100EVB_LP4X_4266_2R_2D"
 
+config ZHP100EVB_LP4X_3733_2R_2D
+	bool "ZHP100EVB_LP4X_3733_2R_2D"
+
 config LPDDR_EYE
         bool "DDR diagnose mode configuration"
         def_bool n

@@ -400,6 +400,10 @@ extern void ddr_phy_training_4266_1r(unsigned int fsp_table[4]);
 extern struct dram_timing_info dram_timing_4266_2r;
 extern void ddr_phy_training_4266_2r(unsigned int fsp_table[4]);
 #endif
+#ifdef CONFIG_ZHP100EVB_LP4X_3733_2R_2D
+extern struct dram_timing_info dram_timing_3733_2r;
+extern void ddr_phy_training_3733_2r(unsigned int fsp_table[4]);
+#endif
 
 typedef union {
     struct {

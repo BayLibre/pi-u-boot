@@ -285,6 +285,10 @@ int ddr_init(enum ddr_type type)
             dram_timing = &dram_timing_4266_1r;
             ddr_phy_training = &ddr_phy_training_4266_1r;
             break;
+        case DDR_LP4X_3733_2Rank_8GBx2:
+            dram_timing = &dram_timing_3733_2r;
+            ddr_phy_training = &ddr_phy_training_3733_2r;
+            break;
         case DDR_LP4X_4266_2Rank_8GBx2:
             dram_timing = &dram_timing_4266_2r;
             ddr_phy_training = &ddr_phy_training_4266_2r;
@@ -721,6 +725,7 @@ u64 ddr_determine_size(enum ddr_type type)
         case DDR_LP4X_4266_1Rank_4GBx2:
             return 0x200000000; // 8GB
         case DDR_LP4X_4266_2Rank_8GBx2:
+        case DDR_LP4X_3733_2Rank_8GBx2:
             return 0x400000000; // 16GB
         default:
             printf("unsupported type:%d\n", type);

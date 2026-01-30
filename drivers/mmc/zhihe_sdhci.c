@@ -229,18 +229,16 @@ static void zhihe_sdhci_set_voltage(struct sdhci_host *host)
 	struct snps_sdhci_plat *plat = dev_get_plat(host->mmc->dev);
 	u32 reg;
 
-	if ((mmc->selected_mode > MMC_DDR_52) && (mmc->signal_voltage <= MMC_SIGNAL_VOLTAGE_180)) {
+	if (mmc->signal_voltage == MMC_SIGNAL_VOLTAGE_180) {
 		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 		reg |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
-	} else if ((mmc->selected_mode <= MMC_DDR_52) && (mmc->signal_voltage > MMC_SIGNAL_VOLTAGE_180)) {
+	} else {
 		reg = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 		reg &= ~SDHCI_CTRL_VDD_180;
 		if (plat->io_fixed_1v8)
 			reg |= SDHCI_CTRL_VDD_180;
 		sdhci_writew(host, reg, SDHCI_HOST_CONTROL2);
-	} else {
-		debug("Warning: mode %d, voltage %d\n", mmc->selected_mode, mmc->signal_voltage);
 	}
 }
 
@@ -538,7 +536,7 @@ static int zhihe_execute_tuning(struct mmc *mmc, u8 opcode)
 #endif
 
 	val = sdhci_readl(host, AT_STAT_R);
-	printf("  Tuning: %d 0x%08x\n", s_delay_lanes[mmc->selected_mode], val);
+	printf("HS200: txdly %d, phcode 0x%08x\n", s_delay_lanes[mmc->selected_mode], val);
 
 	/*
 	 * Disable the tuning engine to prevent auto-tuning

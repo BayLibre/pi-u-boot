@@ -44,11 +44,6 @@ static int spl_opensbi_find_os_node(void *blob, int *uboot_node, int os_type)
 	return -ENODEV;
 }
 
-__weak int board_spl_call_opensbi(void * entry, ulong hartid, ulong dtb, ulong info)
-{
-	return -1;
-}
-
 void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 {
 	int ret, os_node;
@@ -126,9 +121,6 @@ void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 	if (ret)
 		hang();
 #endif
-	board_spl_call_opensbi(opensbi_entry, gd->arch.boot_hart,
-		      (ulong)spl_image->fdt_addr, (ulong)&opensbi_info);
-
 	opensbi_entry(gd->arch.boot_hart, (ulong)spl_image->fdt_addr,
 		      (ulong)&opensbi_info);
 }

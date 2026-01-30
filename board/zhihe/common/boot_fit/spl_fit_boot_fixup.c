@@ -104,6 +104,19 @@ const char * board_get_fit_config(void)
 /******************************
  * Main fixups
  ******************************/
+typedef void (*opensbi_entry_t)(ulong hartid, ulong dtb, ulong info);
+ __weak void board_spl_call_opensbi(uintptr_t entry, ulong hartid, ulong dtb, ulong info)
+{
+    opensbi_entry_t opensbi_entry = (opensbi_entry_t)entry;
+    opensbi_entry(hartid, dtb, info);
+}
+
+static uintptr_t s_opensbi_entry;
+static void fixup_opensbi_entry(ulong hartid, ulong dtb, ulong info)
+{
+	board_spl_call_opensbi(s_opensbi_entry, hartid, dtb, info);
+}
+
 /*
  * Fix the issue where the full fit mode cannot access the next level of OS entry
  * spl_perform_fixups is weak imp at u-boot/common/spl/spl.c
@@ -148,6 +161,12 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 
     /* 2. Set board type pass to u-boot */
     spl_set_binfo_to_uboot_fdt(fdt_uboot);
+
+    /*
+     * OpenSBI jump fixup
+     */
+    s_opensbi_entry = spl_image->entry_point;
+    spl_image->entry_point = (uintptr_t)fixup_opensbi_entry;
 }
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE

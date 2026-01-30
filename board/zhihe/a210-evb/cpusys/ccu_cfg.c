@@ -7,6 +7,7 @@
 #include "../include/addr_defines.h"
 #include "../include/utils/io.h"
 
+#if 0
 static void cpu_ss_ccu_ctrl_bypass(u32 addr, u32 bypass)
 {
 	chip_wr(addr, (chip_rd(addr) & (~(1 << 0))) | (bypass));
@@ -48,6 +49,7 @@ static void cpu_ss_sw_clk_gate_cfg(u32 cgen)
 	cpu_ss_ccu_ctrl_cgen(AP_CPU_SS_TOP_GPU_CORE_CLK_CCU_CCU_CTRL, cgen);
 	cpu_ss_ccu_ctrl_cgen(AP_CPU_SS_TOP_TDT_APB_CLK_CCU_CCU_CTRL, cgen);
 }
+#endif
 
 static void cpu_ss_auto_clk_gate_cfg(u32 ccu_mode)
 {

@@ -68,20 +68,24 @@ static char *spl_env_get_os_dtb(ulong *paddr)
 }
 
 /*
- * This function is called before loading the FIT file to return the eMMC partition ID
- * For this function to take effect, CONFIG_SYS_MMCSD_FS_BOOT_PARTITION must not be defined as -1
+ * This function is called before load dtbfile from bootfs
  */
+#ifdef CONFIG_SYS_MMCSD_FS_BOOT_PARTITION
+#define DEFAULT_BOOTFS_PART_ID CONFIG_SYS_MMCSD_FS_BOOT_PARTITION
+#else
+#define DEFAULT_BOOTFS_PART_ID 3 //boot_a
+#endif
 static int spl_env_get_mmc_bootfs_partid(void)
 {
     char *act_slot;
     char bootpart_name[]="x_bootpart";
-    int bootpart_id = CONFIG_SYS_MMCSD_FS_BOOT_PARTITION;
+    int bootpart_id = DEFAULT_BOOTFS_PART_ID;
 
     act_slot = env_get("active_slot");
 
     if (act_slot) {
         bootpart_name[0] = act_slot[0];
-        bootpart_id = env_get_hex(bootpart_name, CONFIG_SYS_MMCSD_FS_BOOT_PARTITION);
+        bootpart_id = env_get_hex(bootpart_name, DEFAULT_BOOTFS_PART_ID);
     }
     
     printf("## Boot AB\n");

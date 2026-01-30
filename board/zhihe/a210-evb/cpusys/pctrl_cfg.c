@@ -32,6 +32,7 @@ void core_bpc_init(int core_id)
     chip_wr(AP_CORE_BPC_SW_CTR(core_id), 0x0);
 }
 
+#if 0
 static void c908_bpc_crg_sw_release(void)
 {
     chip_wr(AP_C908_BPC_BPC_SW_CTR_OPT, 0x18);
@@ -46,6 +47,7 @@ static void cpuss_bpc_crg_sw_release(void)
 {
     chip_wr(AP_CPU_SS_TOP_BPC_BPC_SW_CTR_OPT, 0x18);
 }
+#endif
 
 void core_bpc_crg_sw_release(int core_id)
 {

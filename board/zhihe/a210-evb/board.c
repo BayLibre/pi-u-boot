@@ -86,6 +86,7 @@ int board_late_init(void)
 		 */
 		run_command("if test -z \"$first_boot_done\"; then \
 			fnv load; \
+			echo -n \"Reading GPT: \"; \
 			gpt read ${devtype} ${devnum} partitions; \
 			gpt write ${devtype} ${devnum} $partitions; \
 			env set first_boot_done yes; env save; \

@@ -370,7 +370,7 @@ void spl_board_check(void)
 		} else if (adc_ch0_mv >= 500 && adc_ch0_mv <= 700) {
 			_ddr_type = DDR_LP4X_4266_1Rank_4GBx2;
 		} else if (adc_ch0_mv >= 1100 && adc_ch0_mv <= 1300) {
-			_ddr_type = DDR_LP4X_4266_2Rank_8GBx2;
+			_ddr_type = DDR_LP4X_3733_2Rank_8GBx2;
 		}
 	} else if (_board_type == BOARD_A210_DEV) {
 		if (adc_ch2_mv >= 1700 && adc_ch2_mv <= 1900) {

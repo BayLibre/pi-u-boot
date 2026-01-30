@@ -9,55 +9,6 @@
 static int curr_device = -1;
 
 extern int zhihe_sdhci_set_delay(unsigned int mode, char delay);
-
-static int mmc_dev_init(void)
-{
-	if (curr_device < 0) {
-		if (get_mmc_num() > 0) {
-			curr_device = 0;
-		} else {
-			printf("No MMC device available\n");
-			return CMD_RET_FAILURE;
-		}
-	}
-	return CMD_RET_SUCCESS;
-}
-
-static struct mmc *__init_mmc_device(int dev, bool force_init,
-				     enum bus_mode speed_mode)
-{
-	struct mmc *mmc;
-	mmc = find_mmc_device(dev);
-	if (!mmc) {
-		printf("No MMC device at slot %x\n", dev);
-		return NULL;
-	}
-
-	if (!mmc_getcd(mmc))
-		force_init = true;
-
-	if (force_init)
-		mmc->has_init = 0;
-
-	if (IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET))
-		mmc->user_speed_mode = speed_mode;
-
-	if (mmc_init(mmc))
-		return NULL;
-
-#ifdef CONFIG_BLOCK_CACHE
-	struct blk_desc *bd = mmc_get_blk_desc(mmc);
-	blkcache_invalidate(bd->uclass_id, bd->devnum);
-#endif
-
-	return mmc;
-}
-
-static struct mmc *init_mmc_device(int dev, bool force_init)
-{
-	return __init_mmc_device(dev, force_init, MMC_MODES_END);
-}
-
 static int do_mmc_set_delay_lane(struct cmd_tbl *cmdtp, int flag,
 	       int argc, char * const argv[])
 {
@@ -67,6 +18,12 @@ static int do_mmc_set_delay_lane(struct cmd_tbl *cmdtp, int flag,
 
 	if (argc != 3)
 		return CMD_RET_USAGE;
+
+	if (curr_device < 0) {
+		run_command("mmc list", 0);
+		printf("run 'mmcz dev' cmd select current dev\n");
+		return CMD_RET_FAILURE;
+	}
 
 	mode = dectoul(argv[1], NULL);
 	delay = dectoul(argv[2], NULL);
@@ -91,13 +48,18 @@ static int do_mmc_set_clk_freq(struct cmd_tbl *cmdtp, int flag,
 	if (argc != 2)
 		return CMD_RET_USAGE;
 
-	if (mmc_dev_init() != 0)
+	if (curr_device < 0) {
+		run_command("mmc list", 0);
+		printf("run 'mmcz dev' cmd select current dev\n");
 		return CMD_RET_FAILURE;
+	}
 
 	freq = dectoul(argv[1], NULL);
-	mmc = init_mmc_device(curr_device, false);
-	if (!mmc)
+	mmc = find_mmc_device(curr_device);
+	if (!mmc) {
+		printf("No MMC device at slot %x\n", curr_device);
 		return CMD_RET_FAILURE;
+	}
 
 	printf("Set freq:%u ... ", freq);
 
@@ -198,7 +160,8 @@ static int do_mmc_tuning(struct cmd_tbl *cmdtp, int flag,
 	}
 
 	if (curr_device < 0) {
-		printf("run <mmcz dev 0|1> first\n");
+		run_command("mmc list", 0);
+		printf("run 'mmcz dev' cmd select current dev\n");
 		return CMD_RET_FAILURE;
 	}
 
@@ -361,7 +324,7 @@ static int do_mmc_dev(struct cmd_tbl *cmdtp, int flag,
 	}
 
 	curr_device = (int)dectoul(argv[1], NULL);
-	return run_command(cmd, 0);;
+	return run_command(cmd, 0);
 }
 
 static struct cmd_tbl cmd_mmc[] = {
@@ -387,15 +350,6 @@ static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_USAGE;
 	if (flag == CMD_FLAG_REPEAT && !cmd_is_repeatable(cp))
 		return CMD_RET_SUCCESS;
-
-	if (curr_device < 0) {
-		if (get_mmc_num() > 0) {
-			curr_device = 0;
-		} else {
-			printf("No MMC device available\n");
-			return CMD_RET_FAILURE;
-		}
-	}
 	return cp->cmd(cmdtp, flag, argc, argv);
 }
 

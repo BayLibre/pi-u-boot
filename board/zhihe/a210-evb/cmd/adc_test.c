@@ -66,13 +66,12 @@
 #define A210_ADC_SAMPLE_CH0_NUMBER_OFF 12
 
 static uint32_t g_chan = 0;
-static uint32_t g_sample_cnt = 49152;
-static uint32_t g_fclk_ctrl = 0x10004;
-static uint32_t g_sample_time = 0xe;
-static uint32_t g_start_time = 0x160;
-static int32_t g_phy_cfg = 0x0;
+static uint32_t g_sample_cnt = 0x100;
+static uint32_t g_fclk_ctrl = 0x1000b;
+static uint32_t g_sample_time = 0x1e;
+static uint32_t g_start_time = 0xa0;
+static int32_t g_phy_cfg = 0x3;
 static uint32_t g_op_ctrl = 0x1000;
-static uint32_t g_console_print = 0;
 
 static void a210_adc_reset(void)
 {
@@ -176,8 +175,6 @@ static void a210_adc_start_sampling(void)
 	sample_cnt = cnt2 > cnt1 ? cnt2 - cnt1 : (1 << 24) - cnt1 + cnt2;
 	printf("sample_cnt:%d\n", sample_cnt);
 
-	if (!g_console_print)
-		return;
 	cnt = 0;
 	while (cnt < g_sample_cnt) {
 		printf("%d\n", cont_data[cnt]);
@@ -191,13 +188,13 @@ static int adc_sampling(struct cmd_tbl *cmdtp, int flag, int argc,
 	ulong args[8] = {0};
 	uint32_t *globals[] = {
 		&g_chan, &g_sample_cnt, &g_fclk_ctrl, &g_sample_time,
-		&g_start_time, &g_phy_cfg, &g_op_ctrl, &g_console_print
+		&g_start_time, &g_phy_cfg
 	};
 	const char *names[] = {
 		"chan", "sample_cnt", "fclk_ctrl", "sample_time",
-		"start_time", "phy_cfg", "op_ctrl", "console_print"
+		"start_time", "phy_cfg"
 	};
-	int i, n = min(argc - 1, 8);
+	int i, n = min(argc - 1, 6);
 
 	for (i = 0; i < n; i++) {
 		if (strict_strtoul(argv[i + 1], 16, &args[i]) < 0) {
@@ -207,9 +204,16 @@ static int adc_sampling(struct cmd_tbl *cmdtp, int flag, int argc,
 		*globals[i] = (uint32_t)args[i];
 	}
 
-	printf("adc_sampling %#x %#x %#x %#x %#x %#x %#x %#x\n",
+	/*
+	 * [19:12] adc_ch_en_vect Support for channel(1 2 4 8)
+	 * [4]     adc_dma_enable 
+	 * [0]     adc_op_mode    1:Single mode 0:Continous mode
+	 */
+	g_op_ctrl = (1 << (g_chan + 12));
+
+	printf("        adc_sampling %#x %#x %#x %#x %#x %#x (op ctrl %#x)\n",
 			g_chan, g_sample_cnt, g_fclk_ctrl, g_sample_time,
-			g_start_time, g_phy_cfg, g_op_ctrl, g_console_print);
+			g_start_time, g_phy_cfg, g_op_ctrl);
 
 	a210_adc_reset();
 	a210_adc_hw_init();
@@ -220,5 +224,5 @@ static int adc_sampling(struct cmd_tbl *cmdtp, int flag, int argc,
 
 U_BOOT_CMD(
 	adc_sampling, 9, 1, adc_sampling,
-	"Zhihe ADC sampling, example: adc_sampling 0x0 100 0x10004 0xe 0x160 0x0 0x1000 1",
-	"[chan sample_cnt fclk_ctrl sample_time satrt_time phy_cfg op_ctrl console_print]");
+	"Zhihe ADC sampling, example: adc_sampling 0x0 0x100 0x1000b 0x1e 0xa0 0x3",
+	"[chan sample_cnt fclk_ctrl sample_time satrt_time phy_cfg]");

@@ -74,3 +74,4 @@ obj-$(CONFIG_ZHP100EVB_USBATE_CMD_SUPPORT) += cmd/usb_ate.o
 obj-$(CONFIG_ZHP100EVB_PCIEATE_CMD_SUPPORT) += cmd/ate_pcie.o
 obj-$(CONFIG_ZHP100EVB_GPU_MAX_POWER_TEST) += cmd/gpu_max_power.o
 obj-$(CONFIG_ZHP100EVB_GPU_MAX_POWER_TEST) += cmd/gpu_BinLitePdumpPlayer.o
+obj-$(CONFIG_ZHP100EVB_ADCTEST_CMD_SUPPORT) += cmd/adc_test.o

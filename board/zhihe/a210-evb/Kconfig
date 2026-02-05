@@ -45,6 +45,10 @@ config ZHP100EVB_PCIEATE_CMD_SUPPORT
         bool "PCIe ATE unit test for zhihe a210-evb in uboot command line"
         default n
 
+config ZHP100EVB_ADCTEST_CMD_SUPPORT
+        bool "adc test for zhihe a210-evb in uboot command line"
+        default n
+
 config ZHP100EMU_LP4X
 	bool "ZHP100EMU_LP4X"
 

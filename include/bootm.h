@@ -124,4 +124,13 @@ int bootm_process_cmdline(char *buf, int maxlen, int flags);
  */
 int bootm_process_cmdline_env(int flags);
 
+/**
+ * bootm_boot_start() - Boot an image at the given address
+ *
+ * @addr: Image address
+ * @cmdline: OS command line to pass (set as bootargs env)
+ * Return: 0 if OK (but normally does not return), -ve on error
+ */
+int bootm_boot_start(ulong addr, const char *cmdline);
+
 #endif

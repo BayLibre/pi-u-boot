@@ -266,7 +266,7 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 
 	/* "part" argument must be at least 1 */
 	if (part < 1) {
-		pr_err("%s: Invalid Argument(s)\n", __func__);
+		log_debug("%s: part=%d < 1, skipping\n", __func__, part);
 		return -1;
 	}
 

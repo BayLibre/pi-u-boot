@@ -9,7 +9,7 @@
 #include <mtd.h>
 
 /*define max partition number*/
-#define MAX_PARTITION_NUM (20)
+#define MAX_PARTITION_NUM (32)
 
 #define MAX_BLK_WRITE (16384)
 #define RESULT_OK (0)

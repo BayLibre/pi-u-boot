@@ -12,6 +12,7 @@
 #include <bootmeth.h>
 #include <bootstd.h>
 #include <dm.h>
+#include <env.h>
 #include <malloc.h>
 #include <dm/device-internal.h>
 #include <dm/uclass-internal.h>
@@ -345,6 +346,9 @@ void bootflow_free(struct bootflow *bflow)
 	free(bflow->subdir);
 	free(bflow->fname);
 	free(bflow->buf);
+	free(bflow->os_name);
+	free(bflow->cmdline);
+	free(bflow->bootmeth_priv);
 }
 
 void bootflow_remove(struct bootflow *bflow)
@@ -429,6 +433,18 @@ int bootflow_iter_uses_blk_dev(const struct bootflow_iter *iter)
 	return -ENOTSUPP;
 }
 
+int bootflow_iter_check_mmc(const struct bootflow_iter *iter)
+{
+	const struct udevice *media = dev_get_parent(iter->dev);
+	enum uclass_id id = device_get_uclass_id(media);
+
+	log_debug("uclass %d: %s\n", id, uclass_get_name(id));
+	if (id == UCLASS_MMC)
+		return 0;
+
+	return -ENOTSUPP;
+}
+
 int bootflow_iter_uses_network(const struct bootflow_iter *iter)
 {
 	const struct udevice *media = dev_get_parent(iter->dev);
@@ -451,4 +467,206 @@ int bootflow_iter_uses_system(const struct bootflow_iter *iter)
 		return 0;
 
 	return -ENOTSUPP;
+}
+
+/**
+ * copy_in() - Copy a string into a cmdline buffer
+ *
+ * @buf: Buffer to copy into
+ * @end: End of buffer (pointer to char after the end)
+ * @arg: String to copy from
+ * @len: Number of chars to copy from @arg
+ * @new_val: Value to put after arg, or BOOTFLOWCL_EMPTY to use no value
+ * Returns: Number of chars written to @buf
+ */
+static int copy_in(char *buf, char *end, const char *arg, int len,
+		   const char *new_val)
+{
+	char *to = buf;
+
+	/* copy the arg name */
+	if (to + len >= end)
+		return -E2BIG;
+	memcpy(to, arg, len);
+	to += len;
+
+	if (new_val == BOOTFLOWCL_EMPTY) {
+		/* no value */
+	} else {
+		bool need_quote = strchr(new_val, ' ');
+
+		len = strlen(new_val);
+
+		/* need space for value, equals sign and maybe two quotes */
+		if (to + 1 + (need_quote ? 2 : 0) + len >= end)
+			return -E2BIG;
+		*to++ = '=';
+		if (need_quote)
+			*to++ = '"';
+		memcpy(to, new_val, len);
+		to += len;
+		if (need_quote)
+			*to++ = '"';
+	}
+
+	return to - buf;
+}
+
+int cmdline_set_arg(char *buf, int maxlen, const char *cmdline,
+		    const char *set_arg, const char *new_val, int *posp)
+{
+	bool found_arg = false;
+	const char *from;
+	char *to, *end;
+	int set_arg_len;
+	char empty = '\0';
+	int ret;
+
+	from = cmdline ? cmdline : &empty;
+
+	/* check if the value has quotes inside */
+	if (new_val && new_val != BOOTFLOWCL_EMPTY && strchr(new_val, '"'))
+		return -EBADF;
+
+	set_arg_len = strlen(set_arg);
+	for (to = buf, end = buf + maxlen; *from;) {
+		const char *val, *arg_end, *val_end, *p;
+		bool in_quote;
+
+		if (to >= end)
+			return -E2BIG;
+		while (*from == ' ')
+			from++;
+		if (!*from)
+			break;
+
+		/* find the end of this arg */
+		val = NULL;
+		arg_end = NULL;
+		val_end = NULL;
+		in_quote = false;
+		for (p = from;; p++) {
+			if (in_quote) {
+				if (!*p)
+					return -EINVAL;
+				if (*p == '"')
+					in_quote = false;
+				continue;
+			}
+			if (*p == '=' && !arg_end) {
+				arg_end = p;
+				val = p + 1;
+			} else if (*p == '"') {
+				in_quote = true;
+			} else if (!*p || *p == ' ') {
+				val_end = p;
+				if (!arg_end)
+					arg_end = p;
+				break;
+			}
+		}
+
+		log_debug("from %s arg_end %ld val %ld val_end %ld\n", from,
+			  (long)(arg_end - from), (long)(val - from),
+			  (long)(val_end - from));
+
+		if (to != buf) {
+			if (to >= end)
+				return -E2BIG;
+			*to++ = ' ';
+		}
+
+		/* if this is the target arg, update it */
+		if (arg_end - from == set_arg_len &&
+		    !strncmp(from, set_arg, set_arg_len)) {
+			if (!buf) {
+				bool has_quote = val_end[-1] == '"';
+
+				if (!val)
+					val = val_end;
+				*posp = val - cmdline + has_quote;
+				return val_end - val - 2 * has_quote;
+			}
+			found_arg = true;
+			if (!new_val) {
+				/* delete this arg */
+				from = val_end + (*val_end == ' ');
+				log_debug("delete from: %s\n", from);
+				if (to != buf)
+					to--;
+				continue;
+			}
+
+			ret = copy_in(to, end, from, arg_end - from, new_val);
+			if (ret < 0)
+				return ret;
+			to += ret;
+
+		/* if not the target arg, copy it unchanged */
+		} else if (to) {
+			int len;
+
+			len = val_end - from;
+			if (to + len >= end)
+				return -E2BIG;
+			memcpy(to, from, len);
+			to += len;
+		}
+		from = val_end;
+	}
+
+	/* If we didn't find the arg, add it */
+	if (!found_arg) {
+		if (!new_val || !buf)
+			return -ENOENT;
+		if (to >= end)
+			return -E2BIG;
+
+		if (to != buf && to[-1] != ' ')
+			*to++ = ' ';
+		ret = copy_in(to, end, set_arg, set_arg_len, new_val);
+		log_debug("ret=%d, to: %s buf: %s\n", ret, to, buf);
+		if (ret < 0)
+			return ret;
+		to += ret;
+	}
+
+	/* delete any trailing space */
+	if (to > buf && to[-1] == ' ')
+		to--;
+
+	if (to >= end)
+		return -E2BIG;
+	*to++ = '\0';
+
+	return to - buf;
+}
+
+int bootflow_cmdline_set_arg(struct bootflow *bflow, const char *set_arg,
+			     const char *new_val, bool set_env)
+{
+	char buf[2048];
+	char *cmd = NULL;
+	int ret;
+
+	ret = cmdline_set_arg(buf, sizeof(buf), bflow->cmdline, set_arg,
+			      new_val, NULL);
+	if (ret < 0)
+		return ret;
+
+	if (*buf) {
+		cmd = strdup(buf);
+		if (!cmd)
+			return -ENOMEM;
+	}
+	free(bflow->cmdline);
+	bflow->cmdline = cmd;
+
+	if (set_env) {
+		ret = env_set("bootargs", bflow->cmdline);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
 }

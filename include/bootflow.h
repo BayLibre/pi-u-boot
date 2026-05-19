@@ -52,6 +52,9 @@ enum bootflow_state_t {
  * @buf: Bootflow file contents (allocated)
  * @size: Size of bootflow file in bytes
  * @err: Error number received (0 if OK)
+ * @os_name: Name of the OS / distro being booted, or NULL if not known (allocated)
+ * @cmdline: OS command line, or NULL if not known (allocated)
+ * @bootmeth_priv: Private data for the bootmeth
  */
 struct bootflow {
 	struct list_head bm_node;
@@ -68,6 +71,9 @@ struct bootflow {
 	char *buf;
 	int size;
 	int err;
+	char *os_name;
+	char *cmdline;
+	void *bootmeth_priv;
 };
 
 /**
@@ -308,6 +314,15 @@ int bootflow_iter_uses_blk_dev(const struct bootflow_iter *iter);
 int bootflow_iter_uses_network(const struct bootflow_iter *iter);
 
 /**
+ * bootflow_iter_check_mmc() - Check that a bootflow uses a MMC device
+ *
+ * This checks the bootdev in the bootflow to make sure it uses a mmc device
+ *
+ * Return: 0 if OK, -ENOTSUPP if some other device is used (e.g. ethernet)
+ */
+int bootflow_iter_check_mmc(const struct bootflow_iter *iter);
+
+/**
  * bootflow_iter_uses_system() - Check that a bootflow uses the bootstd device
  *
  * This checks the bootdev in the bootflow to make sure it uses the bootstd
@@ -316,5 +331,23 @@ int bootflow_iter_uses_network(const struct bootflow_iter *iter);
  * Return: 0 if OK, -ENOTSUPP if some other device is used (e.g. MMC)
  */
 int bootflow_iter_uses_system(const struct bootflow_iter *iter);
+
+#define BOOTFLOWCL_EMPTY	((void *)1)
+
+/**
+ * bootflow_cmdline_set_arg() - Set a single argument for a bootflow
+ *
+ * Update the allocated cmdline and optionally set the bootargs variable
+ *
+ * @bflow: Bootflow to update
+ * @arg: Argument to update (e.g. "console")
+ * @val: Value to set (e.g. "ttyS2") or NULL to delete the argument if present,
+ * "" to set it to an empty value and BOOTFLOWCL_EMPTY to add it without value
+ * @set_env: true to set the "bootargs" environment variable too
+ *
+ * Return: 0 if OK, -ENOMEM if out of memory
+ */
+int bootflow_cmdline_set_arg(struct bootflow *bflow, const char *arg,
+			     const char *val, bool set_env);
 
 #endif

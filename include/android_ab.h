@@ -28,8 +28,20 @@ struct disk_partition;
  *
  * @param[in] dev_desc Place to store the device description pointer
  * @param[in] part_info Place to store the partition information
+ * @param[in] dec_tries If true, decrement tries_remaining on the selected slot
  * Return: The slot number (>= 0) on success, or a negative on error
  */
-int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info);
+int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info,
+		   bool dec_tries);
+
+/**
+ * ab_dump_abc() - Dump ABC information for specific partition.
+ *
+ * @dev_desc: Device description pointer
+ * @part_info: Partition information
+ *
+ * Return: 0 on success, or a negative on error
+ */
+int ab_dump_abc(struct blk_desc *dev_desc, struct disk_partition *part_info);
 
 #endif /* __ANDROID_AB_H */

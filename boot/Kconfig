@@ -356,6 +356,26 @@ config BOOTMETH_GLOBAL
 	  EFI bootmgr, since they take full control over which bootdevs are
 	  selected to boot.
 
+config BOOTMETH_ANDROID
+	bool "Bootdev support for Android"
+	depends on RISCV || ARM || SANDBOX
+	depends on CMDLINE
+	select ANDROID_BOOT_IMAGE
+	select CMD_BCB
+	imply CMD_FASTBOOT
+	select PARTITION_TYPE_GUID
+	select PARTITION_UUIDS
+	help
+	  Enables support for booting Android using bootstd. Android requires
+	  multiple partitions (misc, boot, vbmeta, ...) in storage for booting.
+
+	  This bootmeth reads the BCB (Boot Control Block) from the misc
+	  partition to determine boot mode (normal, recovery, bootloader).
+	  It supports A/B slot selection when CONFIG_ANDROID_AB is enabled,
+	  and Android Verified Boot when CONFIG_AVB_VERIFY is enabled.
+
+	  Note that only MMC bootdevs are supported at present.
+
 config BOOTMETH_DISTRO
 	bool "Bootdev support for distro boot"
 	select PXE_UTILS

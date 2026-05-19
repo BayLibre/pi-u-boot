@@ -17,6 +17,9 @@
 #include <log.h>
 #include <malloc.h>
 #include <mapmem.h>
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+#include <android_image.h>
+#endif
 #include <net.h>
 #include <asm/cache.h>
 #include <asm/global_data.h>
@@ -180,16 +183,27 @@ static int bootm_find_os(struct cmd_tbl *cmdtp, int flag, int argc,
 		break;
 #endif
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
-	case IMAGE_FORMAT_ANDROID:
-		images.os.type = IH_TYPE_KERNEL;
-		images.os.comp = android_image_get_kcomp(os_hdr);
-		images.os.os = IH_OS_LINUX;
+	case IMAGE_FORMAT_ANDROID: {
+		const void *boot_img = os_hdr;
+		const void *vendor_boot_img = NULL;
 
-		images.os.end = android_image_get_end(os_hdr);
-		images.os.load = android_image_get_kload(os_hdr);
+		if (IS_ENABLED(CONFIG_CMD_ABOOTIMG)) {
+			boot_img = map_sysmem(get_abootimg_addr(), 0);
+			vendor_boot_img = map_sysmem(get_avendor_bootimg_addr(), 0);
+		}
+		images.os.type = IH_TYPE_KERNEL;
+		images.os.comp = android_image_get_kcomp(boot_img, vendor_boot_img);
+		images.os.os = IH_OS_LINUX;
+		images.os.end = android_image_get_end(boot_img, vendor_boot_img);
+		images.os.load = android_image_get_kload(boot_img, vendor_boot_img);
 		images.ep = images.os.load;
 		ep_found = true;
+		if (IS_ENABLED(CONFIG_CMD_ABOOTIMG)) {
+			unmap_sysmem(vendor_boot_img);
+			unmap_sysmem(boot_img);
+		}
 		break;
+	}
 #endif
 	default:
 		puts("ERROR: unknown image format type!\n");
@@ -966,12 +980,26 @@ static const void *boot_get_kernel(struct cmd_tbl *cmdtp, int flag, int argc,
 		break;
 #endif
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
-	case IMAGE_FORMAT_ANDROID:
+	case IMAGE_FORMAT_ANDROID: {
+		const void *boot_img = buf;
+		const void *vendor_boot_img = NULL;
+		int ret;
+
+		if (IS_ENABLED(CONFIG_CMD_ABOOTIMG)) {
+			boot_img = map_sysmem(get_abootimg_addr(), 0);
+			vendor_boot_img = map_sysmem(get_avendor_bootimg_addr(), 0);
+		}
 		printf("## Booting Android Image at 0x%08lx ...\n", img_addr);
-		if (android_image_get_kernel(buf, images->verify,
-					     os_data, os_len))
+		ret = android_image_get_kernel(boot_img, vendor_boot_img,
+					       images->verify, os_data, os_len);
+		if (IS_ENABLED(CONFIG_CMD_ABOOTIMG)) {
+			unmap_sysmem(vendor_boot_img);
+			unmap_sysmem(boot_img);
+		}
+		if (ret)
 			return NULL;
 		break;
+	}
 #endif
 	default:
 		printf("Wrong Image Format for %s command\n", cmdtp->name);
@@ -983,6 +1011,42 @@ static const void *boot_get_kernel(struct cmd_tbl *cmdtp, int flag, int argc,
 	      *os_data, *os_len, *os_len);
 
 	return buf;
+}
+
+int bootm_boot_start(ulong addr, const char *cmdline)
+{
+	char addr_str[30];
+	int states;
+	int ret;
+
+	states = BOOTM_STATE_START | BOOTM_STATE_FINDOS | BOOTM_STATE_PRE_LOAD |
+		BOOTM_STATE_FINDOTHER | BOOTM_STATE_LOADOS |
+		BOOTM_STATE_OS_PREP | BOOTM_STATE_OS_FAKE_GO |
+		BOOTM_STATE_OS_GO;
+	if (IS_ENABLED(CONFIG_SYS_BOOT_RAMDISK_HIGH))
+		states |= BOOTM_STATE_RAMDISK;
+
+	snprintf(addr_str, sizeof(addr_str), "%lx", addr);
+
+	ret = env_set("bootargs", cmdline);
+	if (ret) {
+		printf("Failed to set cmdline\n");
+		return ret;
+	}
+
+	/*
+	 * Use do_bootm_states (2022.10 API) to boot.
+	 * Note: do_bootm() does argc--/argv++ to strip the command name,
+	 * so do_bootm_states() expects argv[0] to be the address, not
+	 * the command name.
+	 */
+	{
+		char *argv[] = { addr_str };
+
+		ret = do_bootm_states(NULL, 0, 1, argv, states, &images, 1);
+	}
+
+	return ret;
 }
 
 /**

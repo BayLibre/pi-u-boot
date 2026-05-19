@@ -169,7 +169,10 @@ struct boot_storage_op
 	"kernel_comp_size=" __stringify(CONFIG_FASTBOOT_BUF_SIZE) "\0" \
 	"kernel_addr_r=" __stringify(CONFIG_FASTBOOT_BUF_ADDR) "\0" \
 	"ramdisk_addr=" __stringify(RAMDISK_LOAD_ADDR) "\0" \
+	"ramdisk_addr_r=" __stringify(RAMDISK_LOAD_ADDR) "\0" \
 	"dtb_addr=" __stringify(DTB_LOAD_ADDR) "\0" \
+	"fdt_addr_r=" __stringify(DTB_LOAD_ADDR) "\0" \
+	"vendor_boot_comp_addr_r=0x08000000\0" \
 	"scriptaddr=0x2c100000\0" \
 	"pxefile_addr_r=0x0c200000\0" \
 	"ipaddr=192.168.1.15\0" \

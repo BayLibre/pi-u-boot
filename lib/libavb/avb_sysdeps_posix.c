@@ -5,6 +5,7 @@
 
 #include <hang.h>
 #include <malloc.h>
+#include <asm/cache.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -54,7 +55,7 @@ void avb_printv(const char* message, ...) {
 }
 
 void* avb_malloc_(size_t size) {
-  return malloc(size);
+  return memalign(ARCH_DMA_MINALIGN, size);
 }
 
 void avb_free(void* ptr) {

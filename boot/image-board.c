@@ -9,6 +9,9 @@
  */
 
 #include <common.h>
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+#include <android_image.h>
+#endif
 #include <bootstage.h>
 #include <cpu_func.h>
 #include <display_options.h>
@@ -285,7 +288,7 @@ int genimg_get_format(const void *img_addr)
 			return IMAGE_FORMAT_FIT;
 	}
 	if (IS_ENABLED(CONFIG_ANDROID_BOOT_IMAGE) &&
-	    !android_image_check_header(img_addr))
+	    is_android_boot_image_header(img_addr))
 		return IMAGE_FORMAT_ANDROID;
 
 	return IMAGE_FORMAT_INVALID;
@@ -422,10 +425,22 @@ static int select_ramdisk(bootm_headers_t *images, const char *select, u8 arch,
 			break;
 #endif
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
-		case IMAGE_FORMAT_ANDROID:
-			android_image_get_ramdisk((void *)images->os.start,
+		case IMAGE_FORMAT_ANDROID: {
+			const void *boot_img = (void *)images->os.start;
+			const void *vendor_boot_img = NULL;
+
+			if (IS_ENABLED(CONFIG_CMD_ABOOTIMG)) {
+				boot_img = map_sysmem(get_abootimg_addr(), 0);
+				vendor_boot_img = map_sysmem(get_avendor_bootimg_addr(), 0);
+			}
+			android_image_get_ramdisk(boot_img, vendor_boot_img,
 						  rd_datap, rd_lenp);
+			if (IS_ENABLED(CONFIG_CMD_ABOOTIMG)) {
+				unmap_sysmem(vendor_boot_img);
+				unmap_sysmem(boot_img);
+			}
 			break;
+		}
 #endif
 		default:
 			if (IS_ENABLED(CONFIG_SUPPORT_RAW_INITRD)) {

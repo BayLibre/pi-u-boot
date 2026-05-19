@@ -1551,21 +1551,21 @@ int fit_image_cipher_get_algo(const void *fit, int noffset, char **algo);
 
 struct cipher_algo *image_get_cipher_algo(const char *full_name);
 
-struct andr_img_hdr;
-int android_image_check_header(const struct andr_img_hdr *hdr);
-int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
-			     ulong *os_data, ulong *os_len);
-int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
+struct andr_boot_img_hdr_v0;
+int android_image_get_kernel(const void *hdr, const void *vendor_boot_img,
+			     int verify, ulong *os_data, ulong *os_len);
+int android_image_get_ramdisk(const void *hdr, const void *vendor_boot_img,
 			      ulong *rd_data, ulong *rd_len);
-int android_image_get_second(const struct andr_img_hdr *hdr,
+int android_image_get_second(const void *hdr,
 			      ulong *second_data, ulong *second_len);
 bool android_image_get_dtbo(ulong hdr_addr, ulong *addr, u32 *size);
-bool android_image_get_dtb_by_index(ulong hdr_addr, u32 index, ulong *addr,
-				    u32 *size);
-ulong android_image_get_end(const struct andr_img_hdr *hdr);
-ulong android_image_get_kload(const struct andr_img_hdr *hdr);
-ulong android_image_get_kcomp(const struct andr_img_hdr *hdr);
-void android_print_contents(const struct andr_img_hdr *hdr);
+bool android_image_get_dtb_by_index(ulong hdr_addr, ulong vendor_boot_img,
+				    u32 index, ulong *addr, u32 *size);
+ulong android_image_get_end(const struct andr_boot_img_hdr_v0 *hdr,
+			    const void *vendor_boot_img);
+ulong android_image_get_kload(const void *hdr, const void *vendor_boot_img);
+ulong android_image_get_kcomp(const void *hdr, const void *vendor_boot_img);
+void android_print_contents(const struct andr_boot_img_hdr_v0 *hdr);
 bool android_image_print_dtb_contents(ulong hdr_addr);
 
 /**

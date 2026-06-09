@@ -134,6 +134,23 @@ static int getvar_get_part_info(const char *part_name, char *response,
 		r = fastboot_mtd_get_part_info(part_name, &mtd_part_info, response);
 		if (r >= 0 && size)
 			*size = mtd_part_info->size;
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC) || CONFIG_IS_ENABLED(FASTBOOT_MULTI_FLASH_OPTION_MMC)
+		if (r < 0) {
+			/*
+			 * NOR/NAND-boot boards (e.g. MUSE-Pi-Pro) keep the Android
+			 * partitions on eMMC. When the name is not an MTD partition,
+			 * fall back to the block device so getvar partition-size (and
+			 * therefore "fastboot format") resolves eMMC partitions.
+			 */
+			struct blk_desc *blk_dev_desc;
+			struct disk_partition blk_part_info;
+
+			r = fastboot_mmc_get_part_info(part_name, &blk_dev_desc,
+						       &blk_part_info, response);
+			if (r >= 0 && size)
+				*size = blk_part_info.size * blk_part_info.blksz;
+		}
+#endif
 		break;
 #endif
 
@@ -372,7 +389,13 @@ static void getvar_partition_type(char *part_name, char *response)
 	if (r >= 0) {
 		r = fs_set_blk_dev_with_part(dev_desc, r);
 		if (r < 0)
-			fastboot_fail("failed to set partition", response);
+			/*
+			 * Partition exists but has no recognizable filesystem yet
+			 * (e.g. a fresh metadata/persist before "fastboot format").
+			 * Report "raw" instead of failing so the host proceeds with
+			 * the explicit format type (format:f2fs / format:ext4).
+			 */
+			fastboot_okay("raw", response);
 		else
 			fastboot_okay(fs_get_type_name(), response);
 	}

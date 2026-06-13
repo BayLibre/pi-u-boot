@@ -837,6 +837,18 @@ int board_late_init(void)
 
 	set_serialnumber_based_on_boot_mode();
 
+	/*
+	 * Select the kernel DTB index in the Android dtb.img by board: the
+	 * MUSE-Pi-Pro DTB is the 2nd entry (idx 1), the BananaPi F3 the 1st
+	 * (idx 0). bootmeth_android reads ${adtb_idx} (boot/image-fdt.c). Set
+	 * it from product_name on every boot so it survives a reflashed env.
+	 */
+	if (env_get("product_name") &&
+	    !strcmp(env_get("product_name"), "k1-x_MUSE-Pi-Pro"))
+		env_set("adtb_idx", "1");
+	else
+		env_set("adtb_idx", "0");
+
 #ifdef CONFIG_VIDEO_SPACEMIT
 	ret = uclass_probe_all(UCLASS_VIDEO);
 	if (ret) {

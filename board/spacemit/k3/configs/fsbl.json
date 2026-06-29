@@ -1,0 +1,192 @@
+{
+  "_comment": {
+    "info": "FSBL build configuration script",
+    "key word": {
+      "image": "image definition",
+      "module": "image module definition",
+      "data": "image item data config"
+    }
+  },
+  "info": {
+    "arch": "RISCV64",
+    "description": "spacemit k3 fsbl image"
+  },
+  "image": [
+    {
+      "module": "ROTPK",
+      "data": [
+        {
+          "pubkey": {
+            "name": "root_key",
+            "algorithm": "RSA2048",
+            "source": "key/root_key_prv.key",
+            "align": 256
+          }
+        }
+      ]
+    },
+    {
+      "module": "image_header",
+      "data": [
+        {
+          "structure": [
+            "name, header0, 0",
+            "magic, AIHD, 4",
+            "version, 1, 1",
+            "secure, 0, 1",
+            "reserved, 0, 2",
+            "imgsize, 0xFE0, 8",
+            "load_addr, 0xC0800000, 8"
+          ]
+        },
+        {
+          "structure": [
+            "name, crc0, 0",
+            "header_crc, crc32(header0), 4",
+            "img_crc, 0, 4"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "image_config",
+      "data": [
+        {
+          "structure": [
+            "name, keydata, 0",
+            "key_default, 0, 4",
+            "table_num, 4, 4",
+            {
+              "structure": [
+                "name, keytable0, 0",
+                "key_name, spl, 16",
+                "key_id, 0, 4"
+              ]
+            },
+            {
+              "structure": [
+                "name, keytable1, 0",
+                "key_name, uboot, 16",
+                "key_id, 1, 4"
+              ]
+            },
+            {
+              "structure": [
+                "name, keytable2, 0",
+                "key_name, kernel, 16",
+                "key_id, 2, 4"
+              ]
+            },
+            {
+              "structure": [
+                "name, keytable3, 0",
+                "key_name, rootfs, 16",
+                "key_id, 3, 4"
+              ]
+            },
+            "reserved, 0, 320",
+            {
+              "hash": {
+                "name": "rotpk_hash",
+                "algorithm": "SHA256",
+                "source": "root_key",
+                "align": 32
+              }
+            },
+            "pad, 0, 40"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "oem_pubkey",
+      "data": [
+        {
+          "structure": [
+            "name, oem_key, 0",
+            {
+              "pubkey": {
+                "name": "spl_key",
+                "algorithm": "RSA2048",
+                "source": "key/spl_key_prv.key",
+                "align": 256
+              }
+            },
+            {
+              "pubkey": {
+                "name": "uboot_pubkey",
+                "algorithm": "RSA2048",
+                "source": "key/uboot_key_pub.key",
+                "align": 256
+              }
+            },
+            "reserved, 0, 1536"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "cert0",
+      "data": [
+        {
+          "signature": {
+            "name": "signature0",
+            "algorithm": "SHA256+RSA2048",
+            "key": "root_key",
+            "source": "header0 + crc0 + keydata + oem_key",
+            "align": 256
+          }
+        }
+      ]
+    },
+    {
+      "module": "padding",
+      "data": [
+        {
+          "structure": [
+            "pad, 0, 992"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "spl",
+      "data": [
+        {
+          "structure": [
+            "name, header1, 0",
+            "magic, AIHD, 4",
+            "version, 1, 1",
+            "secure, 0, 1",
+            "reserved, 0, 2",
+            "imgsize, sizeof(fsbl), 8",
+            "load_addr, 0, 8"
+          ]
+        },
+        {
+          "structure": [
+            "name, crc1, 0",
+            "header_crc, crc32(header1), 4",
+            "img_crc, crc32(fsbl), 4"
+          ]
+        },
+        {
+          "file": {
+            "name": "fsbl",
+            "source": "../u-boot-spl.bin",
+            "align": 32
+          }
+        },
+        {
+          "signature": {
+            "name": "signature1",
+            "algorithm": "SHA256+RSA2048",
+            "key": "spl_key",
+            "source": "header1 + crc1 + fsbl",
+            "align": 256
+          }
+        }
+      ]
+    }
+  ]
+}

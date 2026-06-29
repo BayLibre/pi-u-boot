@@ -1,0 +1,78 @@
+if TARGET_SPACEMIT_K3
+
+config SYS_BOARD
+	default "k3"
+
+config SYS_VENDOR
+	default "spacemit"
+
+config SYS_CPU
+	default "x100"
+
+config SYS_CONFIG_NAME
+	default "k3"
+
+config TEXT_BASE
+	default 0x80200000
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+	def_bool y
+	select SPACEMIT_X100
+	select SPACEMIT_K3_DDR
+	select SPL_RISCV_ACLINT
+	select SPL_LOAD_BLOCK
+	imply BOARD_LATE_INIT
+
+choice
+	prompt "product board"
+	default K3_BOARD_ASIC
+
+config K3_BOARD_FPGA
+	bool "k3 board fpga"
+	help
+	  K3 (X100) target is the FPGA prototype. Selects the FPGA DDR PHY
+	  init path.
+
+config K3_BOARD_ASIC
+	bool "k3 board asic"
+	help
+	  K3 (X100) target is the production ASIC. Selects the LPDDR4X/LPDDR5
+	  training and quick-boot DDR init path.
+
+endchoice
+
+config BOOT_FROM_USB_DISK
+	bool "boot using usb disk"
+	default n
+	help
+	  Use a USB disk to boot.
+
+config FDT_ADD_MEMORY_NODE
+	bool "Rebuild the FDT memory node from detected DRAM before boot"
+	default y
+	help
+	  The SPL overwrites the placeholder memory node(s) in the FIT-loaded
+	  control DT with the real DRAM banks detected during DDR init, so
+	  U-Boot proper sees the full memory size.
+
+choice
+	prompt "DDR quick boot framework"
+	default DDR_TRAINING_UPDATE_FSBL
+
+config DDR_TRAINING_SAVE_RESTORE
+	bool "save DDR training info to local storage"
+	help
+	  To support quick boot, save the DDR training info during the first
+	  boot and restore it on the next boot.
+
+config DDR_TRAINING_UPDATE_FSBL
+	depends on !RSA_VERIFY
+	bool "write DDR training info back to fsbl image"
+	help
+	  To support quick boot, update the DDR training info into the fsbl
+	  image during the image flash process, so the training info is
+	  available during normal boot.
+
+endchoice
+
+endif

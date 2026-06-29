@@ -92,6 +92,20 @@ config SPL_DM_PMIC_DA9063
 	  This config enables implementation of driver-model pmic uclass features
 	  for PMIC DA9063. The driver implements read/write operations.
 
+config PMIC_SPM8XX
+	bool "Enable Driver Model for SPM8XX PMICs"
+	depends on DM_I2C
+	help
+	  This config enables driver-model PMIC uclass features for
+	  spm8821, pm853 PMICs.
+
+config SPL_PMIC_SPM8XX
+	bool "Enable Driver Model for SPM8XX PMICs in SPL"
+	depends on SPL_DM_I2C
+	help
+	  This config enables driver-model PMIC uclass features for
+	  spm8821, pm853 PMICs in SPL.
+
 config PMIC_AS3722
 	bool "Enable support for the Austria Micro Systems (AMS) AS7322 PMIC"
 	help

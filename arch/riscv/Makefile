@@ -40,8 +40,12 @@ ifeq ($(CONFIG_CMODEL_MEDANY),y)
 endif
 
 
-RISCV_MARCH = $(ARCH_BASE)$(ARCH_A)$(ARCH_F)$(ARCH_D)$(ARCH_C)$(ARCH_ZBB)
-ABI = $(ABI_BASE)$(ABI_D)
+RISCV_MARCH = $(ARCH_BASE)$(ARCH_A)$(ARCH_F)$(ARCH_D)$(ARCH_C)_zicbom_zba_zbb_zbc_zbs
+# K3/X100: match the vendor (buildroot) FSBL toolchain flags exactly:
+# -mabi=lp64 (soft-float ABI, FPU still available) and the full vendor -march
+# (zicbom/zba/zbb/zbc/zbs). Same gcc 15.2.0 both sides; this gives byte-for-byte
+# flag parity so any remaining difference is the U-Boot version itself.
+ABI = $(ABI_BASE)
 
 # Newer binutils versions default to ISA spec version 20191213 which moves some
 # instructions from the I extension to the Zicsr and Zifencei extensions.

@@ -17,6 +17,9 @@ config TARGET_ANDES_VOYAGER
 config TARGET_BANANAPI_F3
 	bool "Support BananaPi F3 Board"
 
+config TARGET_SPACEMIT_K3
+	bool "Support SpacemiT K3 (X100) Board"
+
 config TARGET_BEAGLEBOARD_BEAGLEVFIRE
 	bool "Support BeagleBoard BeagleV-Fire Board (based on Microchip MPFS)"
 
@@ -134,6 +137,7 @@ source "arch/riscv/cpu/mpfs/Kconfig"
 source "arch/riscv/cpu/generic/Kconfig"
 source "arch/riscv/cpu/jh7110/Kconfig"
 source "arch/riscv/cpu/k1/Kconfig"
+source "arch/riscv/cpu/x100/Kconfig"
 source "arch/riscv/cpu/k230/Kconfig"
 source "arch/riscv/cpu/th1520/Kconfig"
 

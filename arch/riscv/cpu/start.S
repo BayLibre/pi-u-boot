@@ -214,21 +214,30 @@ wait_for_gd_init:
 	jal	debug_uart_init
 #endif
 
+#ifdef CONFIG_XPL_BUILD
+	/*
+	 * Clear the BSS *before* board_init_f(). On the SpacemiT K3,
+	 * board_init_f() brings up DDR + clocks through the Driver Model and
+	 * leaves live DM/console state in the BSS. The stock RISC-V SPL cleared
+	 * the BSS *after* board_init_f(), wiping that state and hanging every
+	 * printf() in board_init_r(). Clearing first gives board_init_f() a
+	 * clean BSS whose contents then persist into board_init_r().
+	 */
+	la	t0, __bss_start
+	la	t1, __bss_end
+	beq	t0, t1, spl_bss_cleared
+spl_clear_bss_loop:
+	SREG	zero, 0(t0)
+	addi	t0, t0, REGBYTES
+	blt	t0, t1, spl_clear_bss_loop
+spl_bss_cleared:
+#endif
+
 	mv	a0, zero		/* a0 <-- boot_flags = 0 */
 	la	t5, board_init_f
 	jalr	t5			/* jump to board_init_f() */
 
 #ifdef CONFIG_XPL_BUILD
-spl_clear_bss:
-	la	t0, __bss_start
-	la	t1, __bss_end
-	beq	t0, t1, spl_stack_gd_setup
-
-spl_clear_bss_loop:
-	SREG	zero, 0(t0)
-	addi	t0, t0, REGBYTES
-	blt	t0, t1, spl_clear_bss_loop
-
 spl_stack_gd_setup:
 	jal	spl_relocate_stack_gd
 

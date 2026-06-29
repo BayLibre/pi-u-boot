@@ -705,6 +705,12 @@ EVENT_SPY_SIMPLE(EVT_DM_POST_INIT_F, riscv_cpu_setup);
 
 int arch_early_init_r(void)
 {
+	int ret;
+
+	ret = riscv_cpu_probe();
+	if (ret)
+		return ret;
+
 	if (IS_ENABLED(CONFIG_SYSRESET_SBI))
 		device_bind_driver(gd->dm_root, "sbi-sysreset",
 				   "sbi-sysreset", NULL);

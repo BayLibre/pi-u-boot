@@ -62,6 +62,7 @@ obj-$(CONFIG_IMX_RGPIO2P)	+= imx_rgpio2p.o
 obj-$(CONFIG_$(PHASE_)PALMAS_GPIO)	+= palmas_gpio.o
 obj-$(CONFIG_PIC32_GPIO)	+= pic32_gpio.o
 obj-$(CONFIG_OCTEON_GPIO)	+= octeon_gpio.o
+obj-$(CONFIG_K1X_GPIO)		+= k1x_gpio.o
 obj-$(CONFIG_MVEBU_GPIO)	+= mvebu_gpio.o
 obj-$(CONFIG_MSM_GPIO)		+= msm_gpio.o
 obj-$(CONFIG_$(PHASE_)PCF8575_GPIO)	+= pcf8575_gpio.o

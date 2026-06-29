@@ -23,6 +23,15 @@ config K3_SYSTEM_CONTROLLER
 	help
 	  Say 'y' here to add support for TI' K3 System Controller.
 
+config REMOTEPROC_K3_PROC
+	bool "Support for SpacemiT K3 power processor"
+	select REMOTEPROC
+	depends on DM
+	depends on OF_CONTROL
+	help
+	  Say 'y' here to add support for the SpacemiT K3 (X100) RCPU power
+	  processors.
+
 config REMOTEPROC_ADI_SC5XX
 	bool "Support for ADI SC5xx SHARC cores"
 	select REMOTEPROC

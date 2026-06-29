@@ -1,0 +1,2994 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Spacemit k3 clock controller driver
+ *
+ * Copyright (c) 2023, spacemit Corporation.
+ *
+ */
+
+#include <linux/clk-provider.h>
+#include <clk.h>
+#include <clk-uclass.h>
+#include <dm.h>
+#include <log.h>
+#include <asm/io.h>
+#include "common.h"
+#include "ccu_mix.h"
+#include "ccu_plla.h"
+#include "ccu_ddn.h"
+#include "ccu-k3.h"
+
+/* APBS register offset */
+#define APBS_PLL1_SWCR1			0x100
+#define APBS_PLL1_SWCR2			0x104
+#define APBS_PLL1_SWCR3			0x108
+#define APBS_PLL2_SWCR1			0x118
+#define APBS_PLL2_SWCR2			0x11c
+#define APBS_PLL2_SWCR3			0x120
+#define APBS_PLL3_SWCR1			0x124
+#define APBS_PLL3_SWCR2			0x128
+#define APBS_PLL3_SWCR3			0x12c
+#define APBS_PLL4_SWCR1			0x130
+#define APBS_PLL4_SWCR2			0x134
+#define APBS_PLL4_SWCR3			0x138
+#define APBS_PLL5_SWCR1			0x13c
+#define APBS_PLL5_SWCR2			0x140
+#define APBS_PLL5_SWCR3			0x144
+#define APBS_PLL6_SWCR1			0x148
+#define APBS_PLL6_SWCR2			0x14c
+#define APBS_PLL6_SWCR3			0x150
+#define APBS_PLL7_SWCR1			0x158
+#define APBS_PLL7_SWCR2			0x15c
+#define APBS_PLL7_SWCR3			0x160
+#define APBS_PLL8_SWCR1			0x180
+#define APBS_PLL8_SWCR2			0x184
+#define APBS_PLL8_SWCR3			0x188
+/* end of APBS register offset */
+
+/* APBC register offset */
+#define APBC_UART0_CLK_RST		0x00
+#define APBC_UART2_CLK_RST		0x04
+#define APBC_GPIO_CLK_RST		0x08
+#define APBC_PWM0_CLK_RST		0x0c
+#define APBC_PWM1_CLK_RST		0x10
+#define APBC_PWM2_CLK_RST		0x14
+#define APBC_PWM3_CLK_RST		0x18
+#define APBC_TWSI8_CLK_RST		0x20
+#define APBC_UART3_CLK_RST		0x24
+#define APBC_RTC_CLK_RST		0x28
+#define APBC_TWSI0_CLK_RST		0x2c
+#define APBC_TWSI1_CLK_RST		0x30
+#define APBC_TIMERS0_CLK_RST		0x34
+#define APBC_TWSI2_CLK_RST		0x38
+#define APBC_AIB_CLK_RST		0x3c
+#define APBC_TWSI4_CLK_RST		0x40
+#define APBC_TIMERS1_CLK_RST		0x44
+#define APBC_ONEWIRE_CLK_RST		0x48
+#define APBC_TWSI5_CLK_RST		0x4c
+#define APBC_DRO_CLK_RST		0x58
+#define APBC_IR0_CLK_RST		0x5c
+#define APBC_IR1_CLK_RST		0x1c
+#define APBC_TWSI6_CLK_RST		0x60
+#define APBC_COUNTER_CLK_SEL		0x64
+#define APBC_TSEN_CLK_RST		0x6c
+#define APBC_UART4_CLK_RST		0x70
+#define APBC_UART5_CLK_RST		0x74
+#define APBC_UART6_CLK_RST		0x78
+#define APBC_SSP3_CLK_RST		0x7c
+#define APBC_SSPA0_CLK_RST		0x80
+#define APBC_SSPA1_CLK_RST		0x84
+#define APBC_SSPA2_CLK_RST		0x88
+#define APBC_SSPA3_CLK_RST		0x8c
+#define APBC_IPC_AP2AUD_CLK_RST		0x90
+#define APBC_UART7_CLK_RST		0x94
+#define APBC_UART8_CLK_RST		0x98
+#define APBC_UART9_CLK_RST		0x9c
+#define APBC_CAN0_CLK_RST		0xa0
+#define APBC_CAN1_CLK_RST		0xa4
+#define APBC_PWM4_CLK_RST		0xa8
+#define APBC_PWM5_CLK_RST		0xac
+#define APBC_PWM6_CLK_RST		0xb0
+#define APBC_PWM7_CLK_RST		0xb4
+#define APBC_PWM8_CLK_RST		0xb8
+#define APBC_PWM9_CLK_RST		0xbc
+#define APBC_PWM10_CLK_RST		0xc0
+#define APBC_PWM11_CLK_RST		0xc4
+#define APBC_PWM12_CLK_RST		0xc8
+#define APBC_PWM13_CLK_RST		0xcc
+#define APBC_PWM14_CLK_RST		0xd0
+#define APBC_PWM15_CLK_RST		0xd4
+#define APBC_PWM16_CLK_RST		0xd8
+#define APBC_PWM17_CLK_RST		0xdc
+#define APBC_PWM18_CLK_RST		0xe0
+#define APBC_PWM19_CLK_RST		0xe4
+#define APBC_TIMERS2_CLK_RST		0x11c
+#define APBC_TIMERS3_CLK_RST		0x120
+#define APBC_TIMERS4_CLK_RST		0x124
+#define APBC_TIMERS5_CLK_RST		0x128
+#define APBC_TIMERS6_CLK_RST		0x12c
+#define APBC_TIMERS7_CLK_RST		0x130
+
+#define APBC_CAN2_CLK_RST		0x148
+#define APBC_CAN3_CLK_RST		0x14c
+#define APBC_CAN4_CLK_RST		0x150
+#define APBC_UART10_CLK_RST		0x154
+#define APBC_SSP0_CLK_RST		0x158
+#define APBC_SSP1_CLK_RST		0x15c
+#define APBC_SSPA4_CLK_RST		0x160
+#define APBC_SSPA5_CLK_RST		0x164
+/* end of APBC register offset */
+
+/* MPMU register offset */
+#define MPMU_FCCR			0x0008
+#define MPMU_POSR			0x0010
+#define POSR_PLL1_LOCK			BIT(24)
+#define POSR_PLL2_LOCK			BIT(25)
+#define POSR_PLL3_LOCK			BIT(26)
+#define POSR_PLL4_LOCK			BIT(27)
+#define POSR_PLL5_LOCK			BIT(28)
+#define POSR_PLL6_LOCK			BIT(29)
+#define POSR_PLL7_LOCK			BIT(30)
+#define POSR_PLL8_LOCK			BIT(31)
+#define MPMU_SUCCR			0x0014
+#define MPMU_ISCCR			0x0044
+#define MPMU_WDTPCR			0x0200
+#define MPMU_RIPCCR			0x0210
+#define MPMU_ACGR			0x1024
+#define MPMU_APBCSCR			0x1050
+#define MPMU_SUCCR_1			0x10b0
+
+#define MPMU_I2S0_SYSCLK		0x1100
+#define MPMU_I2S2_SYSCLK		0x1104
+#define MPMU_I2S3_SYSCLK		0x1108
+#define MPMU_I2S4_SYSCLK		0x110c
+#define MPMU_I2S5_SYSCLK		0x1110
+#define MPMU_I2S_SYSCLK_CTRL		0x1114
+/* end of MPMU register offset */
+
+/* APMU register offset */
+#define APMU_CSI_CCIC2_CLK_RES_CTRL	0x024
+#define APMU_ISP_CLK_RES_CTRL		0x038
+#define APMU_PMU_CLK_GATE_CTRL		0x040
+#define APMU_LCD_CLK_RES_CTRL1		0x044
+#define APMU_LCD_SPI_CLK_RES_CTRL	0x048
+#define APMU_LCD_CLK_RES_CTRL2		0x04c
+#define APMU_CCIC_CLK_RES_CTRL		0x050
+#define APMU_SDH0_CLK_RES_CTRL		0x054
+#define APMU_SDH1_CLK_RES_CTRL		0x058
+#define APMU_USB_CLK_RES_CTRL		0x05c
+#define APMU_QSPI_CLK_RES_CTRL		0x060
+#define APMU_DMA_CLK_RES_CTRL		0x064
+#define APMU_AES_CLK_RES_CTRL		0x068
+#define APMU_MCB_CLK_RES_CTRL		0x06c
+#define APMU_VPU_CLK_RES_CTRL		0x0a4
+#define APMU_DTC_CLK_RES_CTRL		0x0ac
+#define APMU_GPU_CLK_RES_CTRL		0x0cc
+#define APMU_SDH2_CLK_RES_CTRL		0x0e0
+#define APMU_PMUA_MC_CTRL		0x0e8
+#define APMU_PMU_CC2_AP			0x100
+#define APMU_PMUA_EM_CLK_RES_CTRL	0x104
+#define APMU_UCIE_CTRL			0x11c
+#define APMU_RCPU_CLK_RES_CTRL		0x14c
+#define APMU_TOP_DCLK_CTRL		0x158
+#define APMU_LCD_EDP_CTRL		0x23c
+#define APMU_UFS_CLK_RES_CTRL		0x268
+#define APMU_LCD_CLK_RES_CTRL3		0x26c
+#define APMU_LCD_CLK_RES_CTRL4		0x270
+#define APMU_LCD_CLK_RES_CTRL5		0x274
+#define APMU_CCI550_CLK_CTRL		0x300
+#define APMU_ACLK_CLK_CTRL		0x388
+#define APMU_CPU_C0_CLK_CTRL		0x38C
+#define APMU_CPU_C1_CLK_CTRL		0x390
+#define APMU_CPU_C2_CLK_CTRL		0x394
+#define APMU_CPU_C3_CLK_CTRL		0x208
+#define APMU_PCIE_CLK_RES_CTRL_A	0x1f0
+#define APMU_PCIE_CLK_RES_CTRL_B	0x1d0
+#define APMU_PCIE_CLK_RES_CTRL_C	0x1c8
+#define APMU_PCIE_CLK_RES_CTRL_D	0x1e0
+#define APMU_PCIE_CLK_RES_CTRL_E	0x1e8
+#define APMU_EMAC0_CLK_RES_CTRL		0x3e4
+#define APMU_EMAC1_CLK_RES_CTRL		0x3ec
+#define APMU_EMAC2_CLK_RES_CTRL		0x248
+#define APMU_ESPI_CLK_RES_CTRL		0x240
+#define APMU_SNR_ISIM_VCLK_CTRL		0x3f8
+/* end of APMU register offset */
+
+/* DCIU register offset */
+#define DCIU_DMASYS_CLK_EN		0x234
+#define DCIU_DMASYS_SDMA_CLK_EN		0x238
+#define DCIU_C2_TCM_PIPE_CLK		0x244
+#define DCIU_C3_TCM_PIPE_CLK		0x248
+/* end of DCIU register offset */
+
+/* RCPU register offset */
+//0xc088c000
+#define RCPU5_CLK_RST_OFFSET		0xC000
+#define RCPU5_RT24_CORE0_CLK_CTRL	(0xC4 + RCPU5_CLK_RST_OFFSET)
+#define RCPU5_RT24_CORE1_CLK_CTRL	(0xC8 + RCPU5_CLK_RST_OFFSET)
+/* end of RCPU register offset */
+
+/* APBC2 register offset */
+#define APBC2_UART1_CLK_RST		0x00
+#define APBC2_SSP2_CLK_RST		0x04
+#define APBC2_TWSI3_CLK_RST		0x08
+#define APBC2_RTC_CLK_RST		0x0c
+#define APBC2_TIMERS_CLK_RST		0x10
+#define APBC2_GPIO_CLK_RST		0x1c
+/* end of APBC2 register offset */
+
+struct spacemit_ccu_clk k3_clock_controller;
+struct clk vctcxo_24, vctcxo_3, vctcxo_1, pll1_vco, osc_32k, clk_dummy;
+
+#ifdef CONFIG_SPL_BUILD
+//apbs
+static SPACEMIT_CCU_FACTOR(pll1_2457p6_vco, "pll1_2457p6_vco", "pll1_vco",
+	1, 100);
+
+static const struct ccu_plla_rate_tbl pll2_rate_tbl[] = {
+	PLLA_RATE(3000000000UL, 0x0b3e2000, 0x00000000, 0xa0558c8c),
+};
+
+static const struct ccu_plla_rate_tbl pll3_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+	PLLA_RATE(2050000000UL, 0x0b2a2d55, 0x00005500, 0xa0558686),
+	PLLA_RATE(2100000000UL, 0x0b2b3000, 0x00000000, 0xa0558787),
+	PLLA_RATE(2150000000UL, 0x0b2c32aa, 0x0000ab00, 0xa0558787),
+	PLLA_RATE(2200000000UL, 0x0b2d3555, 0x00005500, 0xa0558787),
+	PLLA_RATE(2250000000UL, 0x0b2e3800, 0x00000000, 0xa0558888),
+	PLLA_RATE(2300000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0558888),
+	PLLA_RATE(2350000000UL, 0x0b303d55, 0x00005500, 0xa0558888),
+	PLLA_RATE(2400000000UL, 0x0b320000, 0x00000000, 0xa0558989),
+};
+
+static const struct ccu_plla_rate_tbl pll4_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+	PLLA_RATE(2050000000UL, 0x0b2a2d55, 0x00005500, 0xa0558686),
+	PLLA_RATE(2100000000UL, 0x0b2b3000, 0x00000000, 0xa0558787),
+	PLLA_RATE(2150000000UL, 0x0b2c32aa, 0x0000ab00, 0xa0558787),
+	PLLA_RATE(2200000000UL, 0x0b2d3555, 0x00005500, 0xa0558787),
+	PLLA_RATE(2250000000UL, 0x0b2e3800, 0x00000000, 0xa0558888),
+	PLLA_RATE(2300000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0558888),
+	PLLA_RATE(2350000000UL, 0x0b303d55, 0x00005500, 0xa0558888),
+	PLLA_RATE(2400000000UL, 0x0b320000, 0x00000000, 0xa0558989),
+};
+
+static const struct ccu_plla_rate_tbl pll5_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+};
+
+static const struct ccu_plla_rate_tbl pll6_rate_tbl[] = {
+	PLLA_RATE(3200000000UL, 0x0b422aaa, 0x0000ab00, 0xa0558e8e),
+};
+
+static const struct ccu_plla_rate_tbl pll7_rate_tbl[] = {
+	PLLA_RATE(2800000000UL, 0x0b3a1555, 0x00005500, 0xa0558b8b),
+};
+
+static const struct ccu_plla_rate_tbl pll8_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+};
+
+static SPACEMIT_CCU_PLLA(pll2, "pll2", &pll2_rate_tbl, ARRAY_SIZE(pll2_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL2_SWCR1, APBS_PLL2_SWCR2, APBS_PLL2_SWCR3,
+	MPMU_POSR, POSR_PLL2_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll3, "pll3", &pll3_rate_tbl, ARRAY_SIZE(pll3_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL3_SWCR1, APBS_PLL3_SWCR2, APBS_PLL3_SWCR3,
+	MPMU_POSR, POSR_PLL3_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll4, "pll4", &pll4_rate_tbl, ARRAY_SIZE(pll4_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL4_SWCR1, APBS_PLL4_SWCR2, APBS_PLL4_SWCR3,
+	MPMU_POSR, POSR_PLL4_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll5, "pll5", &pll5_rate_tbl, ARRAY_SIZE(pll5_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL5_SWCR1, APBS_PLL5_SWCR2, APBS_PLL5_SWCR3,
+	MPMU_POSR, POSR_PLL5_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll6, "pll6", &pll6_rate_tbl, ARRAY_SIZE(pll6_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL6_SWCR1, APBS_PLL6_SWCR2, APBS_PLL6_SWCR3,
+	MPMU_POSR, POSR_PLL6_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll7, "pll7", &pll7_rate_tbl, ARRAY_SIZE(pll7_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL7_SWCR1, APBS_PLL7_SWCR2, APBS_PLL7_SWCR3,
+	MPMU_POSR, POSR_PLL7_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll8, "pll8", &pll8_rate_tbl, ARRAY_SIZE(pll8_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL8_SWCR1, APBS_PLL8_SWCR2, APBS_PLL8_SWCR3,
+	MPMU_POSR, POSR_PLL8_LOCK, 1,
+	0);
+
+//pll1
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d2, "pll1_d2", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d3, "pll1_d3", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d4, "pll1_d4", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d5, "pll1_d5", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d6, "pll1_d6", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d8, "pll1_d8", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+static SPACEMIT_CCU_DIV_GATE(pll1_dx, "pll1_dx", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	23, 5, BIT(22), BIT(22), 0x0,
+	0);
+
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d64_38p4, "pll1_d64_38p4", "pll1_2457p6_vco",
+        BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+        BIT(31), BIT(31), 0x0,
+        64, 1, 0);
+
+//pll2
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d2, "pll2_d2", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d3, "pll2_d3", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d4, "pll2_d4", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d5, "pll2_d5", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d6, "pll2_d6", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d8, "pll2_d8", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+static SPACEMIT_CCU_FACTOR(pll2_66, "pll2_66", "pll2_d5", 9, 1);
+static SPACEMIT_CCU_FACTOR(pll2_33, "pll2_33", "pll2_66", 2, 1);
+static SPACEMIT_CCU_FACTOR(pll2_50, "pll2_50", "pll2_d5", 12, 1);
+static SPACEMIT_CCU_FACTOR(pll2_25, "pll2_25", "pll2_50", 2, 1);
+static SPACEMIT_CCU_FACTOR(pll2_20, "pll2_20", "pll2_d5", 30, 1);
+
+//pll3
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d1, "pll3_d1", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d4, "pll3_d4", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+
+//pll4
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d1, "pll4_d1", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+
+//pll5
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d1, "pll5_d1", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+
+//pll6
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d3, "pll6_d3", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d4, "pll6_d4", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d5, "pll6_d5", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+
+//pll7
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d2, "pll7_d2", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d3, "pll7_d3", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d4, "pll7_d4", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+
+//pll8
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d1, "pll8_d1", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+
+//mpmu
+//pll1_d8
+static SPACEMIT_CCU_GATE(pll1_d8_307p2, "pll1_d8_307p2", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(13), BIT(13), 0x0,
+	0);
+//pll1_d6
+static SPACEMIT_CCU_GATE(pll1_d6_409p6, "pll1_d6_409p6", "pll1_d6",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(0), BIT(0), 0x0,
+	0);
+//pll1_d5
+static SPACEMIT_CCU_GATE(pll1_d5_491p52, "pll1_d5_491p52", "pll1_d5",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(21), BIT(21), 0x0,
+	0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d10_245p76, "pll1_d10_245p76", "pll1_d5",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(18), BIT(18), 0x0,
+	2, 1, 0);
+//pll1_d4
+static SPACEMIT_CCU_GATE(pll1_d4_614p4, "pll1_d4_614p4", "pll1_d4",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(15), BIT(15), 0x0,
+	0);
+//pll1_d3
+static SPACEMIT_CCU_GATE(pll1_d3_819p2, "pll1_d3_819p2", "pll1_d3",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(14), BIT(14), 0x0,
+	0);
+//pll1_d2
+static SPACEMIT_CCU_GATE(pll1_d2_1228p8, "pll1_d2_1228p8", "pll1_d2",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(16), BIT(16), 0x0,
+	0);
+
+//apmu
+static SPACEMIT_CCU_GATE(sdh_axi_aclk, "sdh_axi_aclk", "clk_dummy",
+	BASE_TYPE_APMU, APMU_SDH0_CLK_RES_CTRL,
+	BIT(3), BIT(3), 0x0,
+	0);
+static const char * const sdh01_parent_names[] = {"pll1_d6_409p6",
+	"pll1_d4_614p4", "pll2_d8", "pll2_d5", "clk_dummy", "clk_dummy", "pll1_dx"
+};
+
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(sdh0_clk, "sdh0_clk", sdh01_parent_names,
+	BASE_TYPE_APMU, APMU_SDH0_CLK_RES_CTRL,
+	8, 3, BIT(11),
+	5, 3, BIT(4), BIT(4), 0x0,
+	0);
+
+static const char * const sdh2_parent_names[] = {"pll1_d6_409p6",
+	"pll1_d4_614p4", "pll2_d8", "pll1_d3_819p2", "clk_dummy", "clk_dummy", "pll1_dx"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(sdh2_clk, "sdh2_clk", sdh2_parent_names,
+	BASE_TYPE_APMU, APMU_SDH2_CLK_RES_CTRL,
+	8, 3, BIT(11),
+	5, 3, BIT(4), BIT(4), 0x0,
+	0);
+
+static const char * const qspi_parent_names[] = {
+	"pll1_d6_409p6", "pll2_d8", "pll1_d8_307p2", "pll1_d10_245p76",
+	"clk_dummy", "pll1_dx", "pll1_d5_491p52", "clk_dummy"
+};
+static SPACEMIT_CCU_DIV_MFC_MUX_GATE(qspi_clk, "qspi_clk", qspi_parent_names,
+	BASE_TYPE_APMU, APMU_QSPI_CLK_RES_CTRL,
+	9, 3, BIT(12),
+	6, 3, BIT(4), BIT(4), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(qspi_bus_clk, "qspi_bus_clk", "clk_dummy",
+	BASE_TYPE_APMU, APMU_QSPI_CLK_RES_CTRL,
+	BIT(3), BIT(3), 0x0,
+	0);
+
+static const char * const ufs_aclk_parents[] = {
+	 "pll1_d5_491p52", "pll1_d6_409p6", "pll2_d6", "pll2_d5"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(ufs_aclk, "ufs_aclk", ufs_aclk_parents,
+	BASE_TYPE_APMU, APMU_UFS_CLK_RES_CTRL,
+	5, 3, BIT(8),
+	2, 3,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static SPACEMIT_CCU_FACTOR(ufs_refclk, "ufs_refclk", "pll1_d64_38p4", 2, 1);
+
+static const char * const axi_clk_parents[] = {
+	"pll1_d8_307p2", "pll1_d6_409p6"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(axi_clk, "axi_clk", axi_clk_parents,
+	BASE_TYPE_APMU, APMU_ACLK_CLK_CTRL,
+	1, 2, BIT(4),
+	0, 1,
+	0);
+
+static const char * const espi_sclk_src_parents[] = {
+	"pll2_20", "pll2_25", "pll2_33", "pll2_50", "pll2_66"
+};
+static SPACEMIT_CCU_MUX(espi_sclk_src, "espi_sclk_src", espi_sclk_src_parents,
+	BASE_TYPE_APMU, APMU_ESPI_CLK_RES_CTRL,
+	4, 3, 0);
+
+static const char * const espi_sclk_parents[] = {
+	"clk_dummy", "espi_sclk_src"
+};
+static SPACEMIT_CCU_MUX_GATE(espi_sclk, "espi_sclk", espi_sclk_parents,
+	BASE_TYPE_APMU, APMU_ESPI_CLK_RES_CTRL,
+	7, 1, BIT(3), BIT(3), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(espi_mclk, "espi_mclk", "axi_clk",
+	BASE_TYPE_APMU, APMU_ESPI_CLK_RES_CTRL,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static const char * const cci550_clk_parents[] = {
+	"pll1_d10_245p76", "pll1_d6_409p6", "pll1_d4_614p4",
+	"pll1_d3_819p2", "pll7_d3", "pll2_d3", "pll1_d2_1228p8", "pll7_d2"
+};
+static SPACEMIT_CCU_MUX_FC_GATE(cci550_clk, "cci550_clk", cci550_clk_parents,
+	BASE_TYPE_APMU, APMU_CCI550_CLK_CTRL,
+	BIT(12),
+	0, 3,
+	BIT(13), BIT(13), 0,
+	0);
+
+static const char * const cpu_c0_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "pll3_d1"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c0_core_clk, "cpu_c0_core_clk", cpu_c0_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C0_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+
+static const char * const cpu_c1_pll_src_parent_names[] = {
+	"pll4_d1", "pll3_d1"
+};
+static SPACEMIT_CCU_MUX(cpu_c1_pll_src, "cpu_c1_pll_src", cpu_c1_pll_src_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C1_CLK_CTRL,
+	13, 1, 0);
+
+static const char * const cpu_c1_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "cpu_c1_pll_src"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c1_core_clk, "cpu_c1_core_clk", cpu_c1_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C1_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+static const char * const cpu_c2_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "pll5_d1"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c2_core_clk, "cpu_c2_core_clk", cpu_c2_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C2_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+
+static const char * const cpu_c3_pll_src_parent_names[] = {
+	"pll8_d1", "pll5_d1"
+};
+static SPACEMIT_CCU_MUX(cpu_c3_pll_src, "cpu_c3_pll_src", cpu_c3_pll_src_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C3_CLK_CTRL,
+	13, 1, 0);
+
+static const char * const cpu_c3_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "cpu_c3_pll_src"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c3_core_clk, "cpu_c3_core_clk", cpu_c3_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C3_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+
+static const char * const top_dclk_parents[] = {
+	"pll1_d8_307p2", "pll1_d6_409p6", "pll3_d4", "pll6_d5",
+	"pll7_d4", "pll6_d4", "pll7_d3", "pll6_d3"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(top_dclk, "top_dclk", top_dclk_parents,
+	BASE_TYPE_APMU, APMU_TOP_DCLK_CTRL,
+	5, 3, BIT(8),
+	2, 3,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static u32 transfer_to_spl_list[][2] = {
+	{CLK_PLL1_2457P6, CLK_PLL1_2457P6_SPL},
+	{CLK_PLL2, CLK_PLL2_SPL},
+	{CLK_PLL3, CLK_PLL3_SPL},
+	{CLK_PLL4, CLK_PLL4_SPL},
+	{CLK_PLL5, CLK_PLL5_SPL},
+	{CLK_PLL6, CLK_PLL6_SPL},
+	{CLK_PLL7, CLK_PLL7_SPL},
+	{CLK_PLL8, CLK_PLL8_SPL},
+	{CLK_PLL1_D2, CLK_PLL1_D2_SPL},
+	{CLK_PLL1_D3, CLK_PLL1_D3_SPL},
+	{CLK_PLL1_D4, CLK_PLL1_D4_SPL},
+	{CLK_PLL1_D5, CLK_PLL1_D5_SPL},
+	{CLK_PLL1_D6, CLK_PLL1_D6_SPL},
+	{CLK_PLL1_D8, CLK_PLL1_D8_SPL},
+	{CLK_PLL1_DX, CLK_PLL1_DX_SPL},
+	{CLK_PLL1_D64, CLK_PLL1_D64_SPL},
+	{CLK_PLL2_D2, CLK_PLL2_D2_SPL},
+	{CLK_PLL2_D3, CLK_PLL2_D3_SPL},
+	{CLK_PLL2_D4, CLK_PLL2_D4_SPL},
+	{CLK_PLL2_D5, CLK_PLL2_D5_SPL},
+	{CLK_PLL2_D6, CLK_PLL2_D6_SPL},
+	{CLK_PLL2_D8, CLK_PLL2_D8_SPL},
+	{CLK_PLL3_D1, CLK_PLL3_D1_SPL},
+	{CLK_PLL3_D4, CLK_PLL3_D4_SPL},
+	{CLK_PLL4_D1, CLK_PLL4_D1_SPL},
+	{CLK_PLL5_D1, CLK_PLL5_D1_SPL},
+	{CLK_PLL6_D3, CLK_PLL6_D3_SPL},
+	{CLK_PLL6_D4, CLK_PLL6_D4_SPL},
+	{CLK_PLL6_D5, CLK_PLL6_D5_SPL},
+	{CLK_PLL7_D2, CLK_PLL7_D2_SPL},
+	{CLK_PLL7_D3, CLK_PLL7_D3_SPL},
+	{CLK_PLL7_D4, CLK_PLL7_D4_SPL},
+	{CLK_PLL8_D1, CLK_PLL8_D1_SPL},
+	//MPMU
+	{CLK_PLL1_307P2, CLK_PLL1_307P2_SPL},
+	{CLK_PLL1_409P6, CLK_PLL1_409P6_SPL},
+	{CLK_PLL1_491, CLK_PLL1_491_SPL},
+	{CLK_PLL1_245P76, CLK_PLL1_245P76_SPL},
+	{CLK_PLL1_614, CLK_PLL1_614_SPL},
+	{CLK_PLL1_819, CLK_PLL1_819_SPL},
+	{CLK_PLL1_1228, CLK_PLL1_1228_SPL},
+	//APMU
+	{CLK_SDH_AXI, CLK_SDH_AXI_SPL},
+	{CLK_SDH0, CLK_SDH0_SPL},
+	{CLK_SDH2, CLK_SDH2_SPL},
+	{CLK_QSPI, CLK_QSPI_SPL},
+	{CLK_QSPI_BUS, CLK_QSPI_BUS_SPL},
+	{CLK_UFS_ACLK, CLK_UFS_ACLK_SPL},
+	{CLK_UFS_REFCLK, CLK_UFS_REFCLK_SPL},
+	{CLK_PLL2_66, CLK_PLL2_66_SPL},
+	{CLK_PLL2_33, CLK_PLL2_33_SPL},
+	{CLK_PLL2_50, CLK_PLL2_50_SPL},
+	{CLK_PLL2_25, CLK_PLL2_25_SPL},
+	{CLK_PLL2_20, CLK_PLL2_20_SPL},
+	{CLK_AXICLK, CLK_AXICLK_SPL},
+	{CLK_ESPI_SCLK_SRC, CLK_ESPI_SCLK_SRC_SPL},
+	{CLK_ESPI_SCLK, CLK_ESPI_SCLK_SPL},
+	{CLK_ESPI_MCLK, CLK_ESPI_MCLK_SPL},
+	{CLK_TOP_DCLK, CLK_TOP_DCLK_SPL},
+	{CLK_CCI550, CLK_CCI550_SPL},
+	{CLK_CPU_C1_PLL_SRC, CLK_CPU_C1_PLL_SRC_SPL},
+	{CLK_CPU_C3_PLL_SRC, CLK_CPU_C3_PLL_SRC_SPL},
+	{CLK_CPU_C0_CORE, CLK_CPU_C0_CORE_SPL},
+	{CLK_CPU_C1_CORE, CLK_CPU_C1_CORE_SPL},
+	{CLK_CPU_C2_CORE, CLK_CPU_C2_CORE_SPL},
+	{CLK_CPU_C3_CORE, CLK_CPU_C3_CORE_SPL},
+};
+
+static struct spacemit_clk_table spacemit_k3_clks = {
+	.clks	= {
+		[CLK_PLL1_2457P6_SPL]	= &pll1_2457p6_vco.common.clk,
+		[CLK_PLL2_SPL]		= &pll2.common.clk,
+		[CLK_PLL3_SPL]		= &pll3.common.clk,
+		[CLK_PLL4_SPL]		= &pll4.common.clk,
+		[CLK_PLL5_SPL]		= &pll5.common.clk,
+		[CLK_PLL6_SPL]		= &pll6.common.clk,
+		[CLK_PLL7_SPL]		= &pll7.common.clk,
+		[CLK_PLL8_SPL]		= &pll8.common.clk,
+		[CLK_PLL1_D2_SPL]	= &pll1_d2.common.clk,
+		[CLK_PLL1_D3_SPL]	= &pll1_d3.common.clk,
+		[CLK_PLL1_D4_SPL]	= &pll1_d4.common.clk,
+		[CLK_PLL1_D5_SPL]	= &pll1_d5.common.clk,
+		[CLK_PLL1_D6_SPL]	= &pll1_d6.common.clk,
+		[CLK_PLL1_D8_SPL]	= &pll1_d8.common.clk,
+		[CLK_PLL1_DX_SPL]	= &pll1_dx.common.clk,
+		[CLK_PLL1_D64_SPL]	= &pll1_d64_38p4.common.clk,
+		[CLK_PLL2_D2_SPL]	= &pll2_d2.common.clk,
+		[CLK_PLL2_D3_SPL]	= &pll2_d3.common.clk,
+		[CLK_PLL2_D4_SPL]	= &pll2_d4.common.clk,
+		[CLK_PLL2_D5_SPL]	= &pll2_d5.common.clk,
+		[CLK_PLL2_D6_SPL]	= &pll2_d6.common.clk,
+		[CLK_PLL2_D8_SPL]	= &pll2_d8.common.clk,
+		[CLK_PLL3_D1_SPL]	= &pll3_d1.common.clk,
+		[CLK_PLL3_D4_SPL]	= &pll3_d4.common.clk,
+		[CLK_PLL4_D1_SPL]	= &pll4_d1.common.clk,
+		[CLK_PLL5_D1_SPL]	= &pll5_d1.common.clk,
+		[CLK_PLL6_D3_SPL]	= &pll6_d3.common.clk,
+		[CLK_PLL6_D4_SPL]	= &pll6_d4.common.clk,
+		[CLK_PLL6_D5_SPL]	= &pll6_d5.common.clk,
+		[CLK_PLL7_D2_SPL]	= &pll7_d2.common.clk,
+		[CLK_PLL7_D3_SPL]	= &pll7_d3.common.clk,
+		[CLK_PLL7_D4_SPL]	= &pll7_d4.common.clk,
+		[CLK_PLL8_D1_SPL]	= &pll8_d1.common.clk,
+		//MPMU
+		[CLK_PLL1_307P2_SPL]	= &pll1_d8_307p2.common.clk,
+		[CLK_PLL1_409P6_SPL]	= &pll1_d6_409p6.common.clk,
+		[CLK_PLL1_491_SPL]	= &pll1_d5_491p52.common.clk,
+		[CLK_PLL1_245P76_SPL]	= &pll1_d10_245p76.common.clk,
+		[CLK_PLL1_614_SPL]	= &pll1_d4_614p4.common.clk,
+		[CLK_PLL1_819_SPL]	= &pll1_d3_819p2.common.clk,
+		[CLK_PLL1_1228_SPL]	= &pll1_d2_1228p8.common.clk,
+		//APMU
+		[CLK_SDH_AXI_SPL]	= &sdh_axi_aclk.common.clk,
+		[CLK_SDH0_SPL] 		= &sdh0_clk.common.clk,
+		[CLK_SDH2_SPL]		= &sdh2_clk.common.clk,
+		[CLK_QSPI_SPL]		= &qspi_clk.common.clk,
+		[CLK_QSPI_BUS_SPL]	= &qspi_bus_clk.common.clk,
+		[CLK_UFS_ACLK_SPL]	= &ufs_aclk.common.clk,
+		[CLK_UFS_REFCLK_SPL]	= &ufs_refclk.common.clk,
+		[CLK_PLL2_66_SPL]	= &pll2_66.common.clk,
+		[CLK_PLL2_33_SPL]	= &pll2_33.common.clk,
+		[CLK_PLL2_50_SPL]	= &pll2_50.common.clk,
+		[CLK_PLL2_25_SPL]	= &pll2_25.common.clk,
+		[CLK_PLL2_20_SPL]	= &pll2_20.common.clk,
+		[CLK_AXICLK_SPL]	= &axi_clk.common.clk,
+		[CLK_ESPI_SCLK_SRC_SPL]	= &espi_sclk_src.common.clk,
+		[CLK_ESPI_SCLK_SPL]	= &espi_sclk.common.clk,
+		[CLK_ESPI_MCLK_SPL]	= &espi_mclk.common.clk,
+		[CLK_TOP_DCLK_SPL]	= &top_dclk.common.clk,
+		[CLK_CCI550_SPL]	= &cci550_clk.common.clk,
+		[CLK_CPU_C1_PLL_SRC_SPL] = &cpu_c1_pll_src.common.clk,
+		[CLK_CPU_C3_PLL_SRC_SPL] = &cpu_c3_pll_src.common.clk,
+		[CLK_CPU_C0_CORE_SPL]	= &cpu_c0_core_clk.common.clk,
+		[CLK_CPU_C1_CORE_SPL]	= &cpu_c1_core_clk.common.clk,
+		[CLK_CPU_C2_CORE_SPL]	= &cpu_c2_core_clk.common.clk,
+		[CLK_CPU_C3_CORE_SPL]	= &cpu_c3_core_clk.common.clk,
+	},
+	.num = CLK_MAX_NO_SPL,
+};
+
+ulong transfer_clk_id_to_spl(ulong id)
+{
+	u32 listsize = ARRAY_SIZE(transfer_to_spl_list);
+
+	for (int i = 0; i < listsize; i++){
+		if (id == transfer_to_spl_list[i][0]){
+			pr_info("id:%ld, %d,\n", id, transfer_to_spl_list[i][1]);
+			return transfer_to_spl_list[i][1];
+		}
+	}
+	return id;
+}
+
+static int ccu_of_xlate(struct clk *clk,
+			struct ofnode_phandle_args *args)
+{
+	if (args->args_count > 1) {
+		pr_debug("Invalid args_count: %d\n", args->args_count);
+		return -EINVAL;
+	}
+
+	if (args->args_count) {
+		clk->id = args->args[0];
+		clk->id = transfer_clk_id_to_spl(clk->id);
+	}
+	else
+		clk->id = 0;
+
+	clk->data = 0;
+	return 0;
+}
+
+#else
+
+//apbs
+static SPACEMIT_CCU_FACTOR(pll1_2457p6_vco, "pll1_2457p6_vco", "pll1_vco",
+	1, 100);
+
+static const struct ccu_plla_rate_tbl pll2_rate_tbl[] = {
+	PLLA_RATE(3000000000UL, 0x0b3e2000, 0x00000000, 0xa0558c8c),
+};
+
+static const struct ccu_plla_rate_tbl pll3_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+	PLLA_RATE(2050000000UL, 0x0b2a2d55, 0x00005500, 0xa0558686),
+	PLLA_RATE(2100000000UL, 0x0b2b3000, 0x00000000, 0xa0558787),
+	PLLA_RATE(2150000000UL, 0x0b2c32aa, 0x0000ab00, 0xa0558787),
+	PLLA_RATE(2200000000UL, 0x0b2d3555, 0x00005500, 0xa0558787),
+	PLLA_RATE(2250000000UL, 0x0b2e3800, 0x00000000, 0xa0558888),
+	PLLA_RATE(2300000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0558888),
+	PLLA_RATE(2350000000UL, 0x0b303d55, 0x00005500, 0xa0558888),
+	PLLA_RATE(2400000000UL, 0x0b320000, 0x00000000, 0xa0558989),
+};
+
+static const struct ccu_plla_rate_tbl pll4_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+	PLLA_RATE(2050000000UL, 0x0b2a2d55, 0x00005500, 0xa0558686),
+	PLLA_RATE(2100000000UL, 0x0b2b3000, 0x00000000, 0xa0558787),
+	PLLA_RATE(2150000000UL, 0x0b2c32aa, 0x0000ab00, 0xa0558787),
+	PLLA_RATE(2200000000UL, 0x0b2d3555, 0x00005500, 0xa0558787),
+	PLLA_RATE(2250000000UL, 0x0b2e3800, 0x00000000, 0xa0558888),
+	PLLA_RATE(2300000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0558888),
+	PLLA_RATE(2350000000UL, 0x0b303d55, 0x00005500, 0xa0558888),
+	PLLA_RATE(2400000000UL, 0x0b320000, 0x00000000, 0xa0558989),
+};
+
+static const struct ccu_plla_rate_tbl pll5_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+};
+
+static const struct ccu_plla_rate_tbl pll6_rate_tbl[] = {
+	PLLA_RATE(3200000000UL, 0x0b422aaa, 0x0000ab00, 0xa0558e8e),
+};
+
+static const struct ccu_plla_rate_tbl pll7_rate_tbl[] = {
+	PLLA_RATE(2800000000UL, 0x0b3a1555, 0x00005500, 0xa0558b8b),
+};
+
+static const struct ccu_plla_rate_tbl pll8_rate_tbl[] = {
+	PLLA_RATE(1050000000UL, 0x0b2b3000, 0x00000000, 0xa0458080),
+	PLLA_RATE(1100000000UL, 0x0b2d3555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1150000000UL, 0x0b2f3aaa, 0x0000ab00, 0xa0458181),
+	PLLA_RATE(1200000000UL, 0x0b320000, 0x00000000, 0xa0458181),
+	PLLA_RATE(1250000000UL, 0x0b340555, 0x00005500, 0xa0458181),
+	PLLA_RATE(1300000000UL, 0x0b360aaa, 0x0000ab00, 0xa0458282),
+	PLLA_RATE(1350000000UL, 0x0b381000, 0x00000000, 0xa0458282),
+	PLLA_RATE(1400000000UL, 0x0b3a1555, 0x00005500, 0xa0458282),
+	PLLA_RATE(1450000000UL, 0x0b3c1aaa, 0x0000ab00, 0xa0458383),
+	PLLA_RATE(1500000000UL, 0x0b3e2000, 0x00000000, 0xa0458383),
+	PLLA_RATE(1550000000UL, 0x0b402555, 0x00005500, 0xa0458383),
+	PLLA_RATE(1600000000UL, 0x0b422aaa, 0x0000ab00, 0xa0458484),
+	PLLA_RATE(1650000000UL, 0x0b443000, 0x00000000, 0xa0458484),
+	PLLA_RATE(1700000000UL, 0x0b463555, 0x00005500, 0xa0458484),
+	PLLA_RATE(1750000000UL, 0x0b483aaa, 0x0000ab00, 0xa0458585),
+	PLLA_RATE(1800000000UL, 0x0b4b0000, 0x00000000, 0xa0458585),
+	PLLA_RATE(1850000000UL, 0x0b4d0555, 0x00005500, 0xa0458585),
+	PLLA_RATE(1900000000UL, 0x0b4f0aaa, 0x0000ab00, 0xa0458686),
+	PLLA_RATE(1950000000UL, 0x0b511000, 0x00000000, 0xa0458686),
+	PLLA_RATE(2000000000UL, 0x0b292aaa, 0x0000ab00, 0xa0558686),
+};
+
+static SPACEMIT_CCU_PLLA(pll2, "pll2", &pll2_rate_tbl, ARRAY_SIZE(pll2_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL2_SWCR1, APBS_PLL2_SWCR2, APBS_PLL2_SWCR3,
+	MPMU_POSR, POSR_PLL2_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll3, "pll3", &pll3_rate_tbl, ARRAY_SIZE(pll3_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL3_SWCR1, APBS_PLL3_SWCR2, APBS_PLL3_SWCR3,
+	MPMU_POSR, POSR_PLL3_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll4, "pll4", &pll4_rate_tbl, ARRAY_SIZE(pll4_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL4_SWCR1, APBS_PLL4_SWCR2, APBS_PLL4_SWCR3,
+	MPMU_POSR, POSR_PLL4_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll5, "pll5", &pll5_rate_tbl, ARRAY_SIZE(pll5_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL5_SWCR1, APBS_PLL5_SWCR2, APBS_PLL5_SWCR3,
+	MPMU_POSR, POSR_PLL5_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll6, "pll6", &pll6_rate_tbl, ARRAY_SIZE(pll6_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL6_SWCR1, APBS_PLL6_SWCR2, APBS_PLL6_SWCR3,
+	MPMU_POSR, POSR_PLL6_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll7, "pll7", &pll7_rate_tbl, ARRAY_SIZE(pll7_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL7_SWCR1, APBS_PLL7_SWCR2, APBS_PLL7_SWCR3,
+	MPMU_POSR, POSR_PLL7_LOCK, 1,
+	0);
+
+static SPACEMIT_CCU_PLLA(pll8, "pll8", &pll8_rate_tbl, ARRAY_SIZE(pll8_rate_tbl),
+	BASE_TYPE_APBS, APBS_PLL8_SWCR1, APBS_PLL8_SWCR2, APBS_PLL8_SWCR3,
+	MPMU_POSR, POSR_PLL8_LOCK, 1,
+	0);
+
+//pll1
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d2, "pll1_d2", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d3, "pll1_d3", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d4, "pll1_d4", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d5, "pll1_d5", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d6, "pll1_d6", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d7, "pll1_d7", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d8, "pll1_d8", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+static SPACEMIT_CCU_DIV_GATE(pll1_dx, "pll1_dx", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	23, 5, BIT(22), BIT(22), 0x0,
+	0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d64_38p4, "pll1_d64_38p4", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(31), BIT(31), 0x0,
+	64, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_aud_245p7, "pll1_aud_245p7", "pll1_2457p6_vco",
+	BASE_TYPE_APBS, APBS_PLL1_SWCR2,
+	BIT(21), BIT(21), 0x0,
+	10, 1, 0);
+static SPACEMIT_CCU_FACTOR(pll1_aud_24p5, "pll1_aud_24p5", "pll1_aud_245p7", 10, 1);
+
+//pll2
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d1, "pll2_d1", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d2, "pll2_d2", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d3, "pll2_d3", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d4, "pll2_d4", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d5, "pll2_d5", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d6, "pll2_d6", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d7, "pll2_d7", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll2_d8, "pll2_d8", "pll2",
+	BASE_TYPE_APBS, APBS_PLL2_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll3
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d1, "pll3_d1", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d2, "pll3_d2", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d3, "pll3_d3", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d4, "pll3_d4", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d5, "pll3_d5", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d6, "pll3_d6", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d7, "pll3_d7", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll3_d8, "pll3_d8", "pll3",
+	BASE_TYPE_APBS, APBS_PLL3_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll4
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d1, "pll4_d1", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d2, "pll4_d2", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d3, "pll4_d3", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d4, "pll4_d4", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d5, "pll4_d5", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d6, "pll4_d6", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d7, "pll4_d7", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll4_d8, "pll4_d8", "pll4",
+	BASE_TYPE_APBS, APBS_PLL4_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll5
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d1, "pll5_d1", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d2, "pll5_d2", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d3, "pll5_d3", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d4, "pll5_d4", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d5, "pll5_d5", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d6, "pll5_d6", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d7, "pll5_d7", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll5_d8, "pll5_d8", "pll5",
+	BASE_TYPE_APBS, APBS_PLL5_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll6
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d1, "pll6_d1", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d2, "pll6_d2", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d3, "pll6_d3", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d4, "pll6_d4", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d5, "pll6_d5", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d6, "pll6_d6", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d7, "pll6_d7", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll6_d8, "pll6_d8", "pll6",
+	BASE_TYPE_APBS, APBS_PLL6_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll7
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d1, "pll7_d1", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d2, "pll7_d2", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d3, "pll7_d3", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d4, "pll7_d4", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d5, "pll7_d5", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d6, "pll7_d6", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d7, "pll7_d7", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll7_d8, "pll7_d8", "pll7",
+	BASE_TYPE_APBS, APBS_PLL7_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll8
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d1, "pll8_d1", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(0), BIT(0), 0x0,
+	1, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d2, "pll8_d2", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(1), BIT(1), 0x0,
+	2, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d3, "pll8_d3", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(2), BIT(2), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d4, "pll8_d4", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(3), BIT(3), 0x0,
+	4, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d5, "pll8_d5", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(4), BIT(4), 0x0,
+	5, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d6, "pll8_d6", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(5), BIT(5), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d7, "pll8_d7", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(6), BIT(6), 0x0,
+	7, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll8_d8, "pll8_d8", "pll8",
+	BASE_TYPE_APBS, APBS_PLL8_SWCR2,
+	BIT(7), BIT(7), 0x0,
+	8, 1, 0);
+
+//pll1_d8
+static SPACEMIT_CCU_GATE(pll1_d8_307p2, "pll1_d8_307p2", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(13), BIT(13), 0x0,
+	0);
+static SPACEMIT_CCU_FACTOR(pll1_d32_76p8, "pll1_d32_76p8", "pll1_d8_307p2",
+	4, 1);
+static SPACEMIT_CCU_FACTOR(pll1_d40_61p44, "pll1_d40_61p44", "pll1_d8_307p2",
+	5, 1);
+static SPACEMIT_CCU_FACTOR(pll1_d16_153p6, "pll1_d16_153p6", "pll1_d8",
+	2, 1);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d24_102p4, "pll1_d24_102p4", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(12), BIT(12), 0x0,
+	3, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d48_51p2, "pll1_d48_51p2", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(7), BIT(7), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d48_51p2_ap, "pll1_d48_51p2_ap", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(11), BIT(11), 0x0,
+	6, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_m3d128_57p6, "pll1_m3d128_57p6", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(8), BIT(8), 0x0,
+	16, 3, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d96_25p6, "pll1_d96_25p6", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(4), BIT(4), 0x0,
+	12, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d192_12p8, "pll1_d192_12p8", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(3), BIT(3), 0x0,
+	24, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d192_12p8_wdt, "pll1_d192_12p8_wdt", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(19), BIT(19), 0x0,
+	24, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d384_6p4, "pll1_d384_6p4", "pll1_d8",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(2), BIT(2), 0x0,
+	48, 1, 0);
+static SPACEMIT_CCU_FACTOR(pll1_d768_3p2, "pll1_d768_3p2", "pll1_d384_6p4",
+	2, 1);
+static SPACEMIT_CCU_FACTOR(pll1_d1536_1p6, "pll1_d1536_1p6", "pll1_d384_6p4",
+	4, 1);
+static SPACEMIT_CCU_FACTOR(pll1_d3072_0p8, "pll1_d3072_0p8", "pll1_d384_6p4",
+	8, 1);
+//pll1_d7
+static SPACEMIT_CCU_FACTOR(pll1_d7_351p08, "pll1_d7_351p08", "pll1_d7",
+	1, 1);
+//pll1_d6
+static SPACEMIT_CCU_GATE(pll1_d6_409p6, "pll1_d6_409p6", "pll1_d6",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d12_204p8, "pll1_d12_204p8", "pll1_d6",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(5), BIT(5), 0x0,
+	2, 1, 0);
+//pll1_d5
+static SPACEMIT_CCU_GATE(pll1_d5_491p52, "pll1_d5_491p52", "pll1_d5",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(21), BIT(21), 0x0,
+	0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d10_245p76, "pll1_d10_245p76", "pll1_d5",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(18), BIT(18), 0x0,
+	2, 1, 0);
+//pll1_d4
+static SPACEMIT_CCU_GATE(pll1_d4_614p4, "pll1_d4_614p4", "pll1_d4",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(15), BIT(15), 0x0,
+	0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d52_47p26, "pll1_d52_47p26", "pll1_d4",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(10), BIT(10), 0x0,
+	13, 1, 0);
+static SPACEMIT_CCU_GATE_FACTOR(pll1_d78_31p5, "pll1_d78_31p5", "pll1_d4",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(6), BIT(6), 0x0,
+	39, 2, 0);
+//pll1_d3
+static SPACEMIT_CCU_GATE(pll1_d3_819p2, "pll1_d3_819p2", "pll1_d3",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(14), BIT(14), 0x0,
+	0);
+//pll1_d2
+static SPACEMIT_CCU_GATE(pll1_d2_1228p8, "pll1_d2_1228p8", "pll1_d2",
+	BASE_TYPE_MPMU, MPMU_ACGR,
+	BIT(16), BIT(16), 0x0,
+	0);
+
+//pll2_d5
+static SPACEMIT_CCU_FACTOR(pll2_66, "pll2_66", "pll2_d5", 9, 1);
+static SPACEMIT_CCU_FACTOR(pll2_33, "pll2_33", "pll2_66", 2, 1);
+static SPACEMIT_CCU_FACTOR(pll2_50, "pll2_50", "pll2_d5", 12, 1);
+static SPACEMIT_CCU_FACTOR(pll2_25, "pll2_25", "pll2_50", 2, 1);
+static SPACEMIT_CCU_FACTOR(pll2_20, "pll2_20", "pll2_d5", 30, 1);
+//pll2_d3
+static SPACEMIT_CCU_FACTOR(pll2_d24_125, "pll2_d24_125", "pll2_d3", 8, 1);
+static SPACEMIT_CCU_FACTOR(pll2_d120_25, "pll2_d120_25", "pll2_d3", 40, 1);
+
+//pll6_d5
+static SPACEMIT_CCU_FACTOR(pll6_80, "pll6_80", "pll6_d5", 8, 1);
+static SPACEMIT_CCU_FACTOR(pll6_40, "pll6_40", "pll6_d5", 16, 1);
+static SPACEMIT_CCU_FACTOR(pll6_20, "pll6_20", "pll6_d5", 32, 1);
+
+//mpmu
+static struct ccu_ddn_info uart_ddn_mask_info = {
+	.factor = 2,
+	.num_mask = 0x1fff,
+	.den_mask = 0x1fff,
+	.num_shift = 16,
+	.den_shift = 0,
+};
+static struct ccu_ddn_tbl slow_uart1_tbl[] = {
+	{.num = 125, .den = 24}, /*rate = parent_rate*24/125/2) */
+};
+static struct ccu_ddn_tbl slow_uart2_tbl[] = {
+	{.num = 6144, .den = 960},/*rate = parent_rate*960/6144/2) */
+};
+static SPACEMIT_CCU_DDN_GATE(slow_uart1_14p74, "slow_uart1_14p74", "pll1_d16_153p6",
+	&uart_ddn_mask_info, &slow_uart1_tbl, ARRAY_SIZE(slow_uart1_tbl),
+	BASE_TYPE_MPMU, MPMU_SUCCR, MPMU_ACGR, BIT(1),
+	0);
+static SPACEMIT_CCU_DDN_GATE(slow_uart2_48, "slow_uart2_48", "pll1_d4_614p4",
+	&uart_ddn_mask_info, &slow_uart2_tbl, ARRAY_SIZE(slow_uart2_tbl),
+	BASE_TYPE_MPMU, MPMU_SUCCR_1, MPMU_ACGR, BIT(1),
+	0);
+
+static const char * const apb_parent_names[] = {
+	"pll1_d96_25p6", "pll1_d48_51p2", "pll1_d96_25p6", "pll1_d24_102p4"
+};
+static SPACEMIT_CCU_MUX(apb_clk, "apb_clk", apb_parent_names,
+	BASE_TYPE_MPMU, MPMU_APBCSCR,
+	0, 2, 0);
+
+static SPACEMIT_CCU_GATE(wdt_clk, "wdt_clk", "pll1_d96_25p6",
+	BASE_TYPE_MPMU, MPMU_WDTPCR, BIT(1) | BIT(0), BIT(1) | BIT(0), 0, 0);
+
+static SPACEMIT_CCU_GATE(r_ipc_clk, "r_ipc_clk", "apb_clk",
+	BASE_TYPE_MPMU, MPMU_RIPCCR, BIT(0), BIT(0), 0, 0);
+
+//apbc
+static const char * const uart_parent_names[] = {
+	"pll1_m3d128_57p6", "slow_uart1_14p74", "slow_uart2_48"
+};
+static SPACEMIT_CCU_MUX_GATE(uart0_clk, "uart0_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART0_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart2_clk, "uart2_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART2_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart3_clk, "uart3_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART3_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart4_clk, "uart4_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART4_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart5_clk, "uart5_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART5_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart6_clk, "uart6_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART6_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart7_clk, "uart7_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART7_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart8_clk, "uart8_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART8_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart9_clk, "uart9_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART9_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(uart10_clk, "uart10_clk", uart_parent_names,
+	BASE_TYPE_APBC, APBC_UART10_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(gpio_clk, "gpio_clk", "vctcxo_24",
+	BASE_TYPE_APBC, APBC_GPIO_CLK_RST,
+	0x3, 0x3, 0x0,
+	0);
+static const char *pwm_parent_names[] = {
+	"pll1_d192_12p8", "osc_32k"
+};
+static SPACEMIT_CCU_MUX_GATE(pwm0_clk, "pwm0_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM0_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm1_clk, "pwm1_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM1_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm2_clk, "pwm2_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM2_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm3_clk, "pwm3_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM3_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm4_clk, "pwm4_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM4_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm5_clk, "pwm5_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM5_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm6_clk, "pwm6_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM6_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm7_clk, "pwm7_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM7_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm8_clk, "pwm8_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM8_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm9_clk, "pwm9_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM9_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm10_clk, "pwm10_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM10_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm11_clk, "pwm11_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM11_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm12_clk, "pwm12_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM12_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm13_clk, "pwm13_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM13_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm14_clk, "pwm14_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM14_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm15_clk, "pwm15_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM15_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm16_clk, "pwm16_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM16_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm17_clk, "pwm17_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM17_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm18_clk, "pwm18_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM18_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(pwm19_clk, "pwm19_clk", pwm_parent_names,
+	BASE_TYPE_APBC, APBC_PWM19_CLK_RST,
+	4, 3, 0x2, 0x2, 0x0,
+	0);
+
+static const char *spi_parent_names[] = {
+	"pll1_d384_6p4", "pll1_d192_12p8", "pll1_d96_25p6", "pll1_d48_51p2",
+	"pll1_d768_3p2", "pll1_d1536_1p6", "pll1_d3072_0p8", "vctcxo_1"
+};
+static SPACEMIT_CCU_MUX_GATE(spi0_clk, "spi0_clk", spi_parent_names,
+	BASE_TYPE_APBC, APBC_SSP0_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(spi1_clk, "spi1_clk", spi_parent_names,
+	BASE_TYPE_APBC, APBC_SSP1_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(spi3_clk, "spi3_clk", spi_parent_names,
+	BASE_TYPE_APBC, APBC_SSP3_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(rtc_clk, "rtc_clk", "osc_32k",
+	BASE_TYPE_APBC, APBC_RTC_CLK_RST,
+	0x83, 0x83, 0x0, 0);
+static const char *twsi_parent_names[] = {
+	"pll1_d78_31p5", "pll1_d48_51p2", "pll1_d40_61p44"
+};
+static SPACEMIT_CCU_MUX_GATE(twsi0_clk, "twsi0_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI0_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(twsi1_clk, "twsi1_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI1_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(twsi2_clk, "twsi2_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI2_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(twsi4_clk, "twsi4_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI4_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(twsi5_clk, "twsi5_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI5_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(twsi6_clk, "twsi6_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI6_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(twsi8_clk, "twsi8_clk", twsi_parent_names,
+	BASE_TYPE_APBC, APBC_TWSI8_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static const char *timer_parent_names[] = {
+	"pll1_d192_12p8", "osc_32k", "pll1_d384_6p4", "vctcxo_3", "vctcxo_1"
+};
+static SPACEMIT_CCU_MUX_GATE(timers0_clk, "timers0_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS0_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers1_clk, "timers1_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS1_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers2_clk, "timers2_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS2_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers3_clk, "timers3_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS3_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers4_clk, "timers4_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS4_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers5_clk, "timers5_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS5_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers6_clk, "timers6_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS6_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(timers7_clk, "timers7_clk", timer_parent_names,
+	BASE_TYPE_APBC, APBC_TIMERS7_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(aib_clk, "aib_clk", "vctcxo_24",
+	BASE_TYPE_APBC, APBC_AIB_CLK_RST,
+	0x3, 0x3, 0x0, 0);
+static SPACEMIT_CCU_GATE(onewire_clk, "onewire_clk", "vctcxo_24",
+	BASE_TYPE_APBC, APBC_ONEWIRE_CLK_RST,
+	0x3, 0x3, 0x0, 0);
+
+static const char *sspa_parent_names[] = {
+	"pll1_d384_6p4", "pll1_d192_12p8", "pll1_d96_25p6", "pll1_d48_51p2",
+	"pll1_d768_3p2", "pll1_d1536_1p6", "pll1_d3072_0p8", "vctcxo_1"
+};
+static SPACEMIT_CCU_MUX_GATE(i2s0_clk, "i2s0_clk", sspa_parent_names,
+	BASE_TYPE_APBC, APBC_SSPA0_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(i2s1_clk, "i2s1_clk", sspa_parent_names,
+	BASE_TYPE_APBC, APBC_SSPA1_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(i2s2_clk, "i2s2_clk", sspa_parent_names,
+	BASE_TYPE_APBC, APBC_SSPA2_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(i2s3_clk, "i2s3_clk", sspa_parent_names,
+	BASE_TYPE_APBC, APBC_SSPA3_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(i2s4_clk, "i2s4_clk", sspa_parent_names,
+	BASE_TYPE_APBC, APBC_SSPA4_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_MUX_GATE(i2s5_clk, "i2s5_clk", sspa_parent_names,
+	BASE_TYPE_APBC, APBC_SSPA5_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(dro_clk, "dro_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_DRO_CLK_RST,
+	0x1, 0x1, 0x0, 0);
+static SPACEMIT_CCU_GATE(ir0_clk, "ir0_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_IR0_CLK_RST,
+	0x1, 0x1, 0x0, 0);
+static SPACEMIT_CCU_GATE(ir1_clk, "ir1_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_IR1_CLK_RST,
+	0x1, 0x1, 0x0, 0);
+static SPACEMIT_CCU_GATE(tsen_clk, "tsen_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_TSEN_CLK_RST,
+	0x3, 0x3, 0x0, 0);
+static SPACEMIT_CCU_GATE(ipc_ap2rcpu_clk, "ipc_ap2rcpu_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_IPC_AP2AUD_CLK_RST,
+	0x3, 0x3, 0x0, 0);
+
+static const char *can_parent_names[] = {
+	"pll6_20", "pll6_40", "pll6_80"
+};
+static SPACEMIT_CCU_MUX_GATE(can0_clk, "can0_clk", can_parent_names,
+	BASE_TYPE_APBC, APBC_CAN0_CLK_RST,
+	4, 3, BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(can0_bus_clk, "can0_bus_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_CAN0_CLK_RST,
+	BIT(0), BIT(0), 0x0, 0);
+static SPACEMIT_CCU_MUX_GATE(can1_clk, "can1_clk", can_parent_names,
+	BASE_TYPE_APBC, APBC_CAN1_CLK_RST,
+	4, 3, BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(can1_bus_clk, "can1_bus_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_CAN1_CLK_RST,
+	BIT(0), BIT(0), 0x0, 0);
+static SPACEMIT_CCU_MUX_GATE(can2_clk, "can2_clk", can_parent_names,
+	BASE_TYPE_APBC, APBC_CAN2_CLK_RST,
+	4, 3, BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(can2_bus_clk, "can2_bus_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_CAN2_CLK_RST,
+	BIT(0), BIT(0), 0x0, 0);
+static SPACEMIT_CCU_MUX_GATE(can3_clk, "can3_clk", can_parent_names,
+	BASE_TYPE_APBC, APBC_CAN3_CLK_RST,
+	4, 3, BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(can3_bus_clk, "can3_bus_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_CAN3_CLK_RST,
+	BIT(0), BIT(0), 0x0, 0);
+static SPACEMIT_CCU_MUX_GATE(can4_clk, "can4_clk", can_parent_names,
+	BASE_TYPE_APBC, APBC_CAN4_CLK_RST,
+	4, 3, BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(can4_bus_clk, "can4_bus_clk", "apb_clk",
+	BASE_TYPE_APBC, APBC_CAN4_CLK_RST,
+	BIT(0), BIT(0), 0x0, 0);
+
+//apmu
+static const char *axi_clk_parents[] = {
+	"pll1_d8_307p2", "pll1_d6_409p6"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(axi_clk, "axi_clk", axi_clk_parents,
+	BASE_TYPE_APMU, APMU_ACLK_CLK_CTRL,
+	1, 2, BIT(4),
+	0, 1,
+	0);
+
+static const char *cci550_clk_parents[] = {
+	"pll1_d10_245p76", "pll1_d6_409p6", "pll1_d4_614p4",
+	"pll1_d3_819p2", "pll7_d3", "pll2_d3", "pll1_d2_1228p8", "pll7_d2"
+};
+static SPACEMIT_CCU_MUX_FC_GATE(cci550_clk, "cci550_clk", cci550_clk_parents,
+	BASE_TYPE_APMU, APMU_CCI550_CLK_CTRL,
+	BIT(12),
+	0, 3,
+	BIT(13), BIT(13), 0,
+	0);
+
+static const char * const cpu_c0_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "pll3_d1"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c0_core_clk, "cpu_c0_core_clk", cpu_c0_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C0_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+
+static const char * const cpu_c1_pll_src_parent_names[] = {
+	"pll4_d1", "pll3_d1"
+};
+static SPACEMIT_CCU_MUX(cpu_c1_pll_src, "cpu_c1_pll_src", cpu_c1_pll_src_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C1_CLK_CTRL,
+	13, 1, 0);
+
+static const char * const cpu_c1_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "cpu_c1_pll_src"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c1_core_clk, "cpu_c1_core_clk", cpu_c1_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C1_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+static const char * const cpu_c2_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "pll5_d1"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c2_core_clk, "cpu_c2_core_clk", cpu_c2_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C2_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+
+static const char * const cpu_c3_pll_src_parent_names[] = {
+	"pll8_d1", "pll5_d1"
+};
+static SPACEMIT_CCU_MUX(cpu_c3_pll_src, "cpu_c3_pll_src", cpu_c3_pll_src_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C3_CLK_CTRL,
+	13, 1, 0);
+
+static const char * const cpu_c3_parent_names[] = {
+	"pll1_d3_819p2", "pll1_d5_491p52", "pll1_d4_614p4", "pll2_d3", "clk_dummy",
+	"pll1_d2_1228p8", "pll2_d2", "cpu_c3_pll_src"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(cpu_c3_core_clk, "cpu_c3_core_clk", cpu_c3_parent_names,
+	BASE_TYPE_APMU, APMU_CPU_C3_CLK_CTRL,
+	3, 3, BIT(12),
+	0, 3,
+	0);
+
+static const char * const ccic2phy_parent_names[] = {
+	"pll1_d24_102p4", "pll1_d48_51p2_ap"
+};
+static SPACEMIT_CCU_MUX_GATE(ccic2phy_clk, "ccic2phy_clk", ccic2phy_parent_names,
+	BASE_TYPE_APMU, APMU_CSI_CCIC2_CLK_RES_CTRL,
+	7, 1, BIT(5), BIT(5), 0x0,
+	0);
+static const char * const ccic3phy_parent_names[] = {
+	"pll1_d24_102p4", "pll1_d48_51p2_ap"
+};
+static SPACEMIT_CCU_MUX_GATE(ccic3phy_clk, "ccic3phy_clk", ccic3phy_parent_names,
+	BASE_TYPE_APMU, APMU_CSI_CCIC2_CLK_RES_CTRL,
+	31, 1, BIT(30), BIT(30), 0x0, 0);
+static const char * const csi_parent_names[] = {
+	 "pll1_d5_491p52", "pll1_d6_409p6", "pll1_d4_614p4", "pll1_d3_819p2",
+	 "pll2_d2", "pll2_d3", "pll2_d4", "pll1_d2_1228p8"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(csi_clk, "csi_clk", csi_parent_names,
+	BASE_TYPE_APMU, APMU_CSI_CCIC2_CLK_RES_CTRL,
+	20, 3, BIT(15),
+	16, 3, BIT(4), BIT(4), 0x0,
+	0);
+
+static const char * const isp_bus_parent_names[] = {
+	 "pll1_d6_409p6", "pll1_d5_491p52", "pll1_d4_614p4", "pll1_d10_245p76"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(isp_bus_clk, "isp_bus_clk", isp_bus_parent_names,
+	BASE_TYPE_APMU, APMU_ISP_CLK_RES_CTRL,
+	18, 3, BIT(23),
+	21, 2, BIT(17), BIT(17), 0x0,
+	0);
+
+static SPACEMIT_CCU_GATE(d1p_1228p8, "d1p_1228p8", "pll1_d2_1228p8",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(31), BIT(31), 0x0, 0);
+static SPACEMIT_CCU_GATE(d1p_819p2, "d1p_819p2", "pll1_d3_819p2",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(30), BIT(30), 0x0, 0);
+static SPACEMIT_CCU_GATE(d1p_614p4, "d1p_614p4", "pll1_d4_614p4",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(29), BIT(29), 0x0, 0);
+static SPACEMIT_CCU_GATE(d1p_491p52, "d1p_491p52", "pll1_d5_491p52",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(28), BIT(28), 0x0, 0);
+static SPACEMIT_CCU_GATE(d1p_409p6, "d1p_409p6", "pll1_d6_409p6",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(27), BIT(27), 0x0, 0);
+static SPACEMIT_CCU_GATE(d1p_307p2, "d1p_307p2", "pll1_d8_307p2",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(26), BIT(26), 0x0, 0);
+static SPACEMIT_CCU_GATE(d1p_245p76, "d1p_245p76", "pll1_d10_245p76",
+	BASE_TYPE_APMU, APMU_PMU_CLK_GATE_CTRL,
+	BIT(22), BIT(22), 0x0, 0);
+
+static const char * const v2d_parent_names[] = {
+	"pll1_d5_491p52", "pll2_d4", "pll1_d8_307p2", "pll1_d4_614p4",
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(v2d_clk, "v2d_clk", v2d_parent_names,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL1,
+	9, 3, BIT(28),
+	12, 2, BIT(8), BIT(8), 0x0,
+	0);
+static const char * const dsiesc_parent_names[] = {
+	"pll1_d48_51p2_ap", "pll1_d52_47p26", "pll1_d96_25p6", "pll1_d32_76p8"
+};
+static SPACEMIT_CCU_MUX_GATE(dsi_esc_clk, "dsi_esc_clk", dsiesc_parent_names,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL1,
+	0, 2, BIT(2), BIT(2), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(lcd_hclk, "lcd_hclk", "axi_clk",
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL1,
+	BIT(5), BIT(5), 0x0,
+	0);
+
+static const char * const lcddsc_parent_names[] = {
+	"pll1_d4_614p4", "pll1_d5_491p52", "pll1_d10_245p76", "pll7_d5", "pll2_d7",
+	"pll1_d6_409p6", "pll1_d48_51p2_ap", "pll2_d8"
+};
+static SPACEMIT_CCU_DIV2_FC_MUX_GATE(lcd_dsc_clk, "lcd_dsc_clk", lcddsc_parent_names,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL1, APMU_LCD_CLK_RES_CTRL2,
+	25, 3, BIT(26),
+	29, 3, BIT(14), BIT(14), 0x0,
+	0);
+
+static const char * const lcdpx_parent_names[] = {
+	"pll1_d4_614p4", "pll1_d5_491p52", "pll7_d5", "pll6_d6",
+	"pll2_d7", "pll2_d4", "pll1_d48_51p2_ap", "pll2_d8"
+};
+static SPACEMIT_CCU_DIV2_FC_MUX_GATE(lcd_pxclk, "lcd_pxclk", lcdpx_parent_names,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL1, APMU_LCD_CLK_RES_CTRL2,
+	17, 3, BIT(30),
+	21, 3, BIT(16), BIT(16), 0x0,
+	0);
+
+static const char * const lcd_mclk_parent_names[] = {
+	"pll1_d6_409p6", "pll1_d5_491p52", "pll1_d4_614p4", "pll1_d8_307p2"
+};
+static SPACEMIT_CCU_DIV2_FC_MUX_GATE(lcd_mclk, "lcd_mclk", lcd_mclk_parent_names,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL1, APMU_LCD_CLK_RES_CTRL2,
+	1, 4, BIT(29),
+	5, 3, BIT(0), BIT(0), 0x0,
+	0);
+
+static const char * const ccic_4x_parent_names[] = {
+	 "pll1_d5_491p52", "pll1_d6_409p6", "pll1_d4_614p4", "pll1_d3_819p2",
+	 "pll2_d2", "pll2_d3", "pll2_d4", "pll1_d2_1228p8"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(ccic_4x_clk, "ccic_4x_clk", ccic_4x_parent_names,
+	BASE_TYPE_APMU, APMU_CCIC_CLK_RES_CTRL,
+	18, 3, BIT(15),
+	23, 2, BIT(4), BIT(4), 0x0,
+	0);
+static const char * const ccic1phy_parent_names[] = {
+	"pll1_d24_102p4", "pll1_d48_51p2_ap"
+};
+static SPACEMIT_CCU_MUX_GATE(ccic1phy_clk, "ccic1phy_clk", ccic1phy_parent_names,
+	BASE_TYPE_APMU, APMU_CCIC_CLK_RES_CTRL,
+	7, 1, BIT(5), BIT(5), 0x0,
+	0);
+
+static const char * const sc2hclk_parents[] = {
+	 "pll1_d8_307p2", "pll1_d6_409p6", "pll1_d5_491p52", "pll2_d4"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(sc2_hclk, "sc2_hclk", sc2hclk_parents,
+	BASE_TYPE_APMU, APMU_CCIC_CLK_RES_CTRL,
+	10, 3, BIT(16),
+	8, 2, BIT(3), BIT(3), 0x0,
+	0);
+
+static SPACEMIT_CCU_GATE(sdh_axi_aclk, "sdh_axi_aclk", "axi_clk",
+	BASE_TYPE_APMU, APMU_SDH0_CLK_RES_CTRL,
+	BIT(3), BIT(3), 0x0,
+	0);
+static const char * const sdh01_parent_names[] = {"pll1_d6_409p6",
+	"pll1_d4_614p4", "pll2_d8", "pll2_d5", "clk_dummy", "clk_dummy", "pll1_dx"
+};
+
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(sdh0_clk, "sdh0_clk", sdh01_parent_names,
+	BASE_TYPE_APMU, APMU_SDH0_CLK_RES_CTRL,
+	8, 3, BIT(11),
+	5, 3, BIT(4), BIT(4), 0x0,
+	0);
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(sdh1_clk, "sdh1_clk", sdh01_parent_names,
+	BASE_TYPE_APMU, APMU_SDH1_CLK_RES_CTRL,
+	8, 3, BIT(11),
+	5, 3, BIT(4), BIT(4), 0x0,
+	0);
+
+static const char * const sdh2_parent_names[] = {"pll1_d6_409p6",
+	"pll1_d4_614p4", "pll2_d8", "pll1_d3_819p2", "clk_dummy", "clk_dummy", "pll1_dx"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(sdh2_clk, "sdh2_clk", sdh2_parent_names,
+	BASE_TYPE_APMU, APMU_SDH2_CLK_RES_CTRL,
+	8, 3, BIT(11),
+	5, 3, BIT(4), BIT(4), 0x0,
+	0);
+
+static SPACEMIT_CCU_GATE(usb2_bus_clk, "usb2_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_USB_CLK_RES_CTRL,
+	BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(usb3_porta_bus_clk, "usb3_porta_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_USB_CLK_RES_CTRL,
+	BIT(4), BIT(4), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(usb3_portb_bus_clk, "usb3_portb_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_USB_CLK_RES_CTRL,
+	BIT(8), BIT(8), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(usb3_portc_bus_clk, "usb3_portc_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_USB_CLK_RES_CTRL,
+	BIT(12), BIT(12), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(usb3_portd_bus_clk, "usb3_portd_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_USB_CLK_RES_CTRL,
+	BIT(16), BIT(16), 0x0,
+	0);
+static const char * const qspi_parent_names[] = {
+	"pll1_d6_409p6", "pll2_d8", "pll1_d8_307p2", "pll1_d10_245p76",
+	"clk_dummy", "pll1_dx", "pll1_d5_491p52", "clk_dummy"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(qspi_clk, "qspi_clk", qspi_parent_names,
+	BASE_TYPE_APMU, APMU_QSPI_CLK_RES_CTRL,
+	9, 3, BIT(12),
+	6, 3, BIT(4), BIT(4), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(qspi_bus_clk, "qspi_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_QSPI_CLK_RES_CTRL,
+	BIT(3), BIT(3), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(dma_clk, "dma_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_DMA_CLK_RES_CTRL,
+	BIT(3), BIT(3), 0x0,
+	0);
+
+static const char * const aes_wtm_parent_names[] = {
+	"pll1_d12_204p8", "pll1_d24_102p4"
+};
+static SPACEMIT_CCU_MUX_GATE(aes_wtm_clk, "aes_wtm_clk", aes_wtm_parent_names,
+	BASE_TYPE_APMU, APMU_AES_CLK_RES_CTRL,
+	6, 1, BIT(5), BIT(5), 0x0,
+	0);
+static const char * const vpu_parent_names[] = {
+	"pll1_d4_614p4", "pll1_d5_491p52", "pll1_d3_819p2", "pll1_d6_409p6",
+	"pll1_d2_1228p8", "pll2_d3", "pll2_d4", "pll2_d5"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(vpu_clk, "vpu_clk", vpu_parent_names,
+	BASE_TYPE_APMU, APMU_VPU_CLK_RES_CTRL,
+	13, 3, BIT(21),
+	10, 3,
+	BIT(3), BIT(3), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(dtc_clk, "dtc_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_DTC_CLK_RES_CTRL,
+	BIT(3), BIT(3), 0x0,
+	0);
+static const char * const gpu_parent_names[] = {
+	"pll1_d4_614p4", "pll1_d5_491p52", "pll1_d3_819p2", "pll1_d6_409p6",
+	"pll1_d2_1228p8", "pll2_d3", "pll2_d4", "pll2_d5"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(gpu_clk, "gpu_clk", gpu_parent_names,
+	BASE_TYPE_APMU, APMU_GPU_CLK_RES_CTRL,
+	12, 3, BIT(15),
+	18, 3,
+	BIT(4), BIT(4), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(mc_ahb_clk, "mc_ahb_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_PMUA_MC_CTRL,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static const char * const top_dclk_parents[] = {
+	"pll1_d8_307p2", "pll1_d6_409p6", "pll3_d4", "pll6_d5",
+	"pll7_d4", "pll6_d4", "pll7_d3", "pll6_d3"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(top_dclk, "top_dclk", top_dclk_parents,
+	BASE_TYPE_APMU, APMU_TOP_DCLK_CTRL,
+	5, 3, BIT(8),
+	2, 3,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static const char * const ucie_parents[] = {
+	"pll1_d8_307p2", "pll1_d6_409p6", "pll3_d4",
+	"pll6_d5", "pll7_d4", "pll6_d4"
+};
+static SPACEMIT_CCU_MUX_GATE(ucie_clk, "ucie_clk", ucie_parents,
+	BASE_TYPE_APMU, APMU_UCIE_CTRL,
+	4, 3, 0x1, 0x1, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(ucie_sbclk, "ucie_sbclk", "axi_clk",
+	BASE_TYPE_APMU, APMU_UCIE_CTRL,
+	BIT(8), BIT(8), 0x0,
+	0);
+static const char * const rcpu_clk_parents[] = {
+	 "pll1_aud_245p7", "pll1_d8_307p2", "pll1_d5_491p52", "pll1_d6_409p6"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(rcpu_clk, "rcpu_clk", rcpu_clk_parents,
+	BASE_TYPE_APMU, APMU_RCPU_CLK_RES_CTRL,
+	4, 3, BIT(15),
+	7, 3,
+	BIT(12), BIT(12), 0x0,
+	0);
+
+static const char * const dsi4ln2_dsi_esc_parents[] = {
+	"pll1_d48_51p2_ap", "pll1_d52_47p26", "pll1_d96_25p6", "pll1_d32_76p8"
+};
+static SPACEMIT_CCU_MUX_GATE(dsi4ln2_dsi_esc_clk, "dsi4ln2_dsi_esc_clk", dsi4ln2_dsi_esc_parents,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL3,
+	0, 1, BIT(2), BIT(2), 0x0,
+	0);
+
+static const char * const dsi4ln2_lcd_dsc_parents[] = {
+	"pll1_d4_614p4", "pll1_d5_491p52", "pll7_d5", "pll6_d6",
+	"pll2_d7", "pll1_d6_409p6", "pll1_d48_51p2_ap"
+};
+static SPACEMIT_CCU_DIV2_FC_MUX_GATE(dsi4ln2_lcd_dsc_clk, "dsi4ln2_lcd_dsc_clk", dsi4ln2_lcd_dsc_parents,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL3, APMU_LCD_CLK_RES_CTRL4,
+	25, 3, BIT(26),
+	29, 3, BIT(14), BIT(14), 0x0,
+	0);
+
+static const char * const dsi4ln2_lcdpx_parents[] = {
+	"pll1_d4_614p4", "pll1_d5_491p52", "pll7_d5", "pll6_d6",
+	"pll2_d7", "pll2_d4", "pll1_d48_51p2_ap", "pll2_d8"
+};
+static SPACEMIT_CCU_DIV2_FC_MUX_GATE(dsi4ln2_lcd_pxclk, "dsi4ln2_lcd_pxclk", dsi4ln2_lcdpx_parents,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL3, APMU_LCD_CLK_RES_CTRL4,
+	17, 4, BIT(30),
+	21, 3, BIT(16), BIT(16), 0x0,
+	0);
+
+static const char * const dsi4ln2_lcd_mclk_parents[] = {
+	"pll1_d6_409p6", "pll1_d5_491p52", "pll1_d4_614p4", "pll1_d8_307p2"
+};
+static SPACEMIT_CCU_DIV2_FC_MUX_GATE(dsi4ln2_lcd_mclk, "dsi4ln2_lcd_mclk", dsi4ln2_lcd_mclk_parents,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL3, APMU_LCD_CLK_RES_CTRL4,
+	1, 4, BIT(29),
+	5, 3, BIT(0), BIT(0), 0x0,
+	0);
+
+static const char * const dpu_aclk_parents[] = {
+	 "pll1_d6_409p6", "pll1_d5_491p52", "pll1_d4_614p4", "pll1_d8_307p2", "pll2_d4"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(dsi4ln2_dpu_aclk, "dsi4ln2_dpu_aclk", dpu_aclk_parents,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL5,
+	2, 3, BIT(30),
+	5, 3,
+	BIT(1), BIT(1), 0x0,
+	0);
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(dpu_aclk, "dpu_aclk", dpu_aclk_parents,
+	BASE_TYPE_APMU, APMU_LCD_CLK_RES_CTRL5,
+	17, 3, BIT(31),
+	20, 3,
+	BIT(16), BIT(16), 0x0,
+	0);
+
+static const char * const ufs_aclk_parents[] = {
+	 "pll1_d5_491p52", "pll1_d6_409p6", "pll2_d6", "pll2_d5"
+};
+static SPACEMIT_CCU_DIV_FC_MUX_GATE(ufs_aclk, "ufs_aclk", ufs_aclk_parents,
+	BASE_TYPE_APMU, APMU_UFS_CLK_RES_CTRL,
+	5, 3, BIT(8),
+	2, 3,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static SPACEMIT_CCU_FACTOR(ufs_refclk, "ufs_refclk", "pll1_d64_38p4", 2, 1);
+
+static const char * const edp0_pclk_parents[] = {
+	"lcd_pxclk", "clk_dummy"
+};
+static SPACEMIT_CCU_MUX_GATE(edp0_pxclk, "edp0_pxclk", edp0_pclk_parents,
+	BASE_TYPE_APMU, APMU_LCD_EDP_CTRL,
+	2, 1, BIT(1), BIT(1), 0x0,
+	0);
+static const char * const edp1_pclk_parents[] = {
+	"dsi4ln2_lcd_pxclk", "clk_dummy"
+};
+static SPACEMIT_CCU_MUX_GATE(edp1_pxclk, "edp1_pxclk", edp1_pclk_parents,
+	BASE_TYPE_APMU, APMU_LCD_EDP_CTRL,
+	18, 1, BIT(17), BIT(17), 0x0,
+	0);
+
+static SPACEMIT_CCU_GATE(pciea_clk, "pciea_clk", "pll2_d6",
+	BASE_TYPE_APMU, APMU_PCIE_CLK_RES_CTRL_A,
+	0x7, 0x7, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(pcieb_clk, "pcieb_clk", "pll2_d6",
+	BASE_TYPE_APMU, APMU_PCIE_CLK_RES_CTRL_B,
+	0x7, 0x7, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(pciec_clk, "pciec_clk", "pll2_d6",
+	BASE_TYPE_APMU, APMU_PCIE_CLK_RES_CTRL_C,
+	0x7, 0x7, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(pcied_clk, "pcied_clk", "pll2_d6",
+	BASE_TYPE_APMU, APMU_PCIE_CLK_RES_CTRL_D,
+	0x7, 0x7, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(pciee_clk, "pciee_clk", "pll2_d6",
+	BASE_TYPE_APMU, APMU_PCIE_CLK_RES_CTRL_E,
+	0x7, 0x7, 0x0,
+	0);
+
+static const char * const emac_1588_parents[] = {
+	"vctcxo_24", "pll2_d24_125"
+};
+static SPACEMIT_CCU_GATE(emac0_bus_clk, "emac0_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_EMAC0_CLK_RES_CTRL,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(emac0_ref_clk, "emac0_ref_clk", "pll2_d120_25",
+	BASE_TYPE_APMU, APMU_EMAC0_CLK_RES_CTRL,
+	BIT(14), 0x0, BIT(14),
+	0);
+static SPACEMIT_CCU_MUX(emac0_1588_clk, "emac0_1588_clk", emac_1588_parents,
+	BASE_TYPE_APMU, APMU_EMAC0_CLK_RES_CTRL,
+	15, 1, 0);
+static SPACEMIT_CCU_GATE(emac0_rgmii_tx_clk, "emac0_rgmii_tx_clk", "pll2_d24_125",
+	BASE_TYPE_APMU, APMU_EMAC0_CLK_RES_CTRL,
+	BIT(8), BIT(8), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(emac1_bus_clk, "emac1_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_EMAC1_CLK_RES_CTRL,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(emac1_ref_clk, "emac1_ref_clk", "pll2_d120_25",
+	BASE_TYPE_APMU, APMU_EMAC1_CLK_RES_CTRL,
+	BIT(14), 0x0, BIT(14),
+	0);
+static SPACEMIT_CCU_MUX(emac1_1588_clk, "emac1_1588_clk", emac_1588_parents,
+	BASE_TYPE_APMU, APMU_EMAC1_CLK_RES_CTRL,
+	15, 1, 0);
+static SPACEMIT_CCU_GATE(emac1_rgmii_tx_clk, "emac1_rgmii_tx_clk", "pll2_d24_125",
+	BASE_TYPE_APMU, APMU_EMAC1_CLK_RES_CTRL,
+	BIT(8), BIT(8), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(emac2_bus_clk, "emac2_bus_clk", "axi_clk",
+	BASE_TYPE_APMU, APMU_EMAC2_CLK_RES_CTRL,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(emac2_ref_clk, "emac2_ref_clk", "pll2_d120_25",
+	BASE_TYPE_APMU, APMU_EMAC2_CLK_RES_CTRL,
+	BIT(14), 0x0, BIT(14),
+	0);
+static SPACEMIT_CCU_MUX(emac2_1588_clk, "emac2_1588_clk", emac_1588_parents,
+	BASE_TYPE_APMU, APMU_EMAC2_CLK_RES_CTRL,
+	15, 1, 0);
+static SPACEMIT_CCU_GATE(emac2_rgmii_tx_clk, "emac2_rgmii_tx_clk", "pll2_d24_125",
+	BASE_TYPE_APMU, APMU_EMAC2_CLK_RES_CTRL,
+	BIT(8), BIT(8), 0x0,
+	0);
+
+static const char * const espi_sclk_src_parents[] = {
+	"pll2_20", "pll2_25", "pll2_33", "pll2_50", "pll2_66"
+};
+static SPACEMIT_CCU_MUX(espi_sclk_src, "espi_sclk_src", espi_sclk_src_parents,
+	BASE_TYPE_APMU, APMU_ESPI_CLK_RES_CTRL,
+	4, 3, 0);
+
+static const char * const espi_sclk_parents[] = {
+	"clk_dummy", "espi_sclk_src"
+};
+static SPACEMIT_CCU_MUX_GATE(espi_sclk, "espi_sclk", espi_sclk_parents,
+	BASE_TYPE_APMU, APMU_ESPI_CLK_RES_CTRL,
+	7, 1, BIT(3), BIT(3), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(espi_mclk, "espi_mclk", "axi_clk",
+	BASE_TYPE_APMU, APMU_ESPI_CLK_RES_CTRL,
+	BIT(1), BIT(1), 0x0,
+	0);
+
+static SPACEMIT_CCU_FACTOR(cam_src1_clk, "cam_src1_clk", "pll1_d6_409p6", 15, 1);
+static SPACEMIT_CCU_FACTOR(cam_src2_clk, "cam_src2_clk", "pll2_d5", 25, 1);
+static SPACEMIT_CCU_FACTOR(cam_src3_clk, "cam_src3_clk", "pll2_d6", 20, 1);
+static SPACEMIT_CCU_FACTOR(cam_src4_clk, "cam_src4_clk", "pll1_d6_409p6", 16, 1);
+
+static const char * const isim_vclk_parents[] = {
+	"cam_src1_clk", "cam_src2_clk", "cam_src3_clk", "cam_src4_clk"
+};
+static SPACEMIT_CCU_DIV_MUX_GATE(isim_vclk_out0, "isim_vclk_out0", isim_vclk_parents,
+	BASE_TYPE_APMU, APMU_SNR_ISIM_VCLK_CTRL,
+	3, 4, 1, 2,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_DIV_MUX_GATE(isim_vclk_out1, "isim_vclk_out1", isim_vclk_parents,
+	BASE_TYPE_APMU, APMU_SNR_ISIM_VCLK_CTRL,
+	11, 4, 9, 2,
+	BIT(8), BIT(8), 0x0,
+	0);
+static SPACEMIT_CCU_DIV_MUX_GATE(isim_vclk_out2, "isim_vclk_out2", isim_vclk_parents,
+	BASE_TYPE_APMU, APMU_SNR_ISIM_VCLK_CTRL,
+	19, 4, 17, 2,
+	BIT(16), BIT(16), 0x0,
+	0);
+static SPACEMIT_CCU_DIV_MUX_GATE(isim_vclk_out3, "isim_vclk_out3", isim_vclk_parents,
+	BASE_TYPE_APMU, APMU_SNR_ISIM_VCLK_CTRL,
+	27, 4, 25, 2,
+	BIT(24), BIT(24), 0x0,
+	0);
+
+//dciu
+static SPACEMIT_CCU_GATE(hdma_clk, "hdma_clk", "axi_clk",
+	BASE_TYPE_DCIU, DCIU_DMASYS_CLK_EN,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(dma350_clk, "dma350_clk", "axi_clk",
+	BASE_TYPE_DCIU, DCIU_DMASYS_SDMA_CLK_EN,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(c2_tcm_pipe_clk, "c2_tcm_pipe_clk", "axi_clk",
+	BASE_TYPE_DCIU, DCIU_C2_TCM_PIPE_CLK,
+	BIT(0), BIT(0), 0x0,
+	0);
+static SPACEMIT_CCU_GATE(c3_tcm_pipe_clk, "c3_tcm_pipe_clk", "axi_clk",
+	BASE_TYPE_DCIU, DCIU_C3_TCM_PIPE_CLK,
+	BIT(0), BIT(0), 0x0,
+	0);
+
+//rcpu
+static const char * const rt24_core_parents[] = {
+	"rcpu_clk", "pll1_d4_614p4", "pll1_d5_491p52"
+};
+static SPACEMIT_CCU_DIV_FC_MUX(rt24_core0_clk, "rt24_core0_clk", rt24_core_parents,
+	BASE_TYPE_RCPU, RCPU5_RT24_CORE0_CLK_CTRL,
+	0, 2, BIT(8),
+	4, 2,
+	0);
+static SPACEMIT_CCU_DIV_FC_MUX(rt24_core1_clk, "rt24_core1_clk", rt24_core_parents,
+	BASE_TYPE_RCPU, RCPU5_RT24_CORE1_CLK_CTRL,
+	0, 2, BIT(8),
+	4, 2,
+	0);
+
+//apbc2
+static const char * const uart1_sec_parent_names[] = {
+	"pll1_m3d128_57p6", "slow_uart1_14p74", "slow_uart2_48"
+};
+static SPACEMIT_CCU_MUX_GATE(uart1_sec_clk, "uart1_sec_clk", uart1_sec_parent_names,
+	BASE_TYPE_APBC2, APBC2_UART1_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+
+static const char *ssp2_sec_parent_names[] = {
+	"pll1_d384_6p4", "pll1_d192_12p8", "pll1_d96_25p6", "pll1_d48_51p2",
+	"pll1_d768_3p2", "pll1_d1536_1p6", "pll1_d3072_0p8", "vctcxo_1"
+};
+static SPACEMIT_CCU_MUX_GATE(ssp2_sec_clk, "ssp2_sec_clk", ssp2_sec_parent_names,
+	BASE_TYPE_APBC2, APBC2_SSP2_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static const char *twsi3_sec_parent_names[] = {
+	"pll1_d78_31p5", "pll1_d48_51p2", "pll1_d40_61p44"
+};
+static SPACEMIT_CCU_MUX_GATE(twsi3_sec_clk, "twsi3_sec_clk", twsi3_sec_parent_names,
+	BASE_TYPE_APBC2, APBC2_TWSI3_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(rtc_sec_clk, "rtc_sec_clk", "osc_32k",
+	BASE_TYPE_APBC2, APBC2_RTC_CLK_RST,
+	0x83, 0x83, 0x0, 0);
+static const char *timer_sec_parent_names[] = {
+	"pll1_d192_12p8", "osc_32k", "pll1_d384_6p4", "vctcxo_3", "vctcxo_1"
+};
+static SPACEMIT_CCU_MUX_GATE(timers_sec_clk, "timers_sec_clk", timer_sec_parent_names,
+	BASE_TYPE_APBC2, APBC2_TIMERS_CLK_RST,
+	4, 3, 0x3, 0x3, 0x0,
+	0);
+static SPACEMIT_CCU_GATE(gpio_sec_clk, "gpio_sec_clk", "vctcxo_24",
+	BASE_TYPE_APBC2, APBC2_GPIO_CLK_RST,
+	0x3, 0x3, 0x0,
+	0);
+
+static struct spacemit_clk_table spacemit_k3_clks = {
+	.clks	= {
+		[CLK_PLL1_2457P6]	= &pll1_2457p6_vco.common.clk,
+		[CLK_PLL2]		= &pll2.common.clk,
+		[CLK_PLL3]		= &pll3.common.clk,
+		[CLK_PLL4]		= &pll4.common.clk,
+		[CLK_PLL5]		= &pll5.common.clk,
+		[CLK_PLL6]		= &pll6.common.clk,
+		[CLK_PLL7]		= &pll7.common.clk,
+		[CLK_PLL8]		= &pll8.common.clk,
+		[CLK_PLL1_D2]		= &pll1_d2.common.clk,
+		[CLK_PLL1_D3]		= &pll1_d3.common.clk,
+		[CLK_PLL1_D4]		= &pll1_d4.common.clk,
+		[CLK_PLL1_D5]		= &pll1_d5.common.clk,
+		[CLK_PLL1_D6]		= &pll1_d6.common.clk,
+		[CLK_PLL1_D7]		= &pll1_d7.common.clk,
+		[CLK_PLL1_D8]		= &pll1_d8.common.clk,
+		[CLK_PLL1_DX]		= &pll1_dx.common.clk,
+		[CLK_PLL1_D64]		= &pll1_d64_38p4.common.clk,
+		[CLK_PLL1_D10_AUD]	= &pll1_aud_245p7.common.clk,
+		[CLK_PLL1_D100_AUD]	= &pll1_aud_24p5.common.clk,
+		[CLK_PLL2_D1]		= &pll2_d1.common.clk,
+		[CLK_PLL2_D2]		= &pll2_d2.common.clk,
+		[CLK_PLL2_D3]		= &pll2_d3.common.clk,
+		[CLK_PLL2_D4]		= &pll2_d4.common.clk,
+		[CLK_PLL2_D5]		= &pll2_d5.common.clk,
+		[CLK_PLL2_D6]		= &pll2_d6.common.clk,
+		[CLK_PLL2_D7]		= &pll2_d7.common.clk,
+		[CLK_PLL2_D8]		= &pll2_d8.common.clk,
+		[CLK_PLL2_66]		= &pll2_66.common.clk,
+		[CLK_PLL2_33]		= &pll2_33.common.clk,
+		[CLK_PLL2_50]		= &pll2_50.common.clk,
+		[CLK_PLL2_25]		= &pll2_25.common.clk,
+		[CLK_PLL2_20]		= &pll2_20.common.clk,
+		[CLK_PLL2_D24_125]	= &pll2_d24_125.common.clk,
+		[CLK_PLL2_D120_25]	= &pll2_d120_25.common.clk,
+		[CLK_PLL3_D1]		= &pll3_d1.common.clk,
+		[CLK_PLL3_D2]		= &pll3_d2.common.clk,
+		[CLK_PLL3_D3]		= &pll3_d3.common.clk,
+		[CLK_PLL3_D4]		= &pll3_d4.common.clk,
+		[CLK_PLL3_D5]		= &pll3_d5.common.clk,
+		[CLK_PLL3_D6]		= &pll3_d6.common.clk,
+		[CLK_PLL3_D7]		= &pll3_d7.common.clk,
+		[CLK_PLL3_D8]		= &pll3_d8.common.clk,
+		[CLK_PLL4_D1]		= &pll4_d1.common.clk,
+		[CLK_PLL4_D2]		= &pll4_d2.common.clk,
+		[CLK_PLL4_D3]		= &pll4_d3.common.clk,
+		[CLK_PLL4_D4]		= &pll4_d4.common.clk,
+		[CLK_PLL4_D5]		= &pll4_d5.common.clk,
+		[CLK_PLL4_D6]		= &pll4_d6.common.clk,
+		[CLK_PLL4_D7]		= &pll4_d7.common.clk,
+		[CLK_PLL4_D8]		= &pll4_d8.common.clk,
+		[CLK_PLL5_D1]		= &pll5_d1.common.clk,
+		[CLK_PLL5_D2]		= &pll5_d2.common.clk,
+		[CLK_PLL5_D3]		= &pll5_d3.common.clk,
+		[CLK_PLL5_D4]		= &pll5_d4.common.clk,
+		[CLK_PLL5_D5]		= &pll5_d5.common.clk,
+		[CLK_PLL5_D6]		= &pll5_d6.common.clk,
+		[CLK_PLL5_D7]		= &pll5_d7.common.clk,
+		[CLK_PLL5_D8]		= &pll5_d8.common.clk,
+		[CLK_PLL6_D1]		= &pll6_d1.common.clk,
+		[CLK_PLL6_D2]		= &pll6_d2.common.clk,
+		[CLK_PLL6_D3]		= &pll6_d3.common.clk,
+		[CLK_PLL6_D4]		= &pll6_d4.common.clk,
+		[CLK_PLL6_D5]		= &pll6_d5.common.clk,
+		[CLK_PLL6_D6]		= &pll6_d6.common.clk,
+		[CLK_PLL6_D7]		= &pll6_d7.common.clk,
+		[CLK_PLL6_D8]		= &pll6_d8.common.clk,
+		[CLK_PLL6_80]		= &pll6_80.common.clk,
+		[CLK_PLL6_40]		= &pll6_40.common.clk,
+		[CLK_PLL6_20]		= &pll6_20.common.clk,
+		[CLK_PLL7_D1]		= &pll7_d1.common.clk,
+		[CLK_PLL7_D2]		= &pll7_d2.common.clk,
+		[CLK_PLL7_D3]		= &pll7_d3.common.clk,
+		[CLK_PLL7_D4]		= &pll7_d4.common.clk,
+		[CLK_PLL7_D5]		= &pll7_d5.common.clk,
+		[CLK_PLL7_D6]		= &pll7_d6.common.clk,
+		[CLK_PLL7_D7]		= &pll7_d7.common.clk,
+		[CLK_PLL7_D8]		= &pll7_d8.common.clk,
+		[CLK_PLL8_D1]		= &pll8_d1.common.clk,
+		[CLK_PLL8_D2]		= &pll8_d2.common.clk,
+		[CLK_PLL8_D3]		= &pll8_d3.common.clk,
+		[CLK_PLL8_D4]		= &pll8_d4.common.clk,
+		[CLK_PLL8_D5]		= &pll8_d5.common.clk,
+		[CLK_PLL8_D6]		= &pll8_d6.common.clk,
+		[CLK_PLL8_D7]		= &pll8_d7.common.clk,
+		[CLK_PLL8_D8]		= &pll8_d8.common.clk,
+		//MPMU
+		[CLK_PLL1_307P2]	= &pll1_d8_307p2.common.clk,
+		[CLK_PLL1_76P8]		= &pll1_d32_76p8.common.clk,
+		[CLK_PLL1_61P44]	= &pll1_d40_61p44.common.clk,
+		[CLK_PLL1_153P6]	= &pll1_d16_153p6.common.clk,
+		[CLK_PLL1_102P4]	= &pll1_d24_102p4.common.clk,
+		[CLK_PLL1_51P2]		= &pll1_d48_51p2.common.clk,
+		[CLK_PLL1_51P2_AP]	= &pll1_d48_51p2_ap.common.clk,
+		[CLK_PLL1_57P6]		= &pll1_m3d128_57p6.common.clk,
+		[CLK_PLL1_25P6]		= &pll1_d96_25p6.common.clk,
+		[CLK_PLL1_12P8]		= &pll1_d192_12p8.common.clk,
+		[CLK_PLL1_12P8_WDT]	= &pll1_d192_12p8_wdt.common.clk,
+		[CLK_PLL1_6P4]		= &pll1_d384_6p4.common.clk,
+		[CLK_PLL1_3P2]		= &pll1_d768_3p2.common.clk,
+		[CLK_PLL1_1P6]		= &pll1_d1536_1p6.common.clk,
+		[CLK_PLL1_0P8]		= &pll1_d3072_0p8.common.clk,
+		[CLK_PLL1_351]		= &pll1_d7_351p08.common.clk,
+		[CLK_PLL1_409P6]	= &pll1_d6_409p6.common.clk,
+		[CLK_PLL1_204P8]	= &pll1_d12_204p8.common.clk,
+		[CLK_PLL1_491]		= &pll1_d5_491p52.common.clk,
+		[CLK_PLL1_245P76]	= &pll1_d10_245p76.common.clk,
+		[CLK_PLL1_614]		= &pll1_d4_614p4.common.clk,
+		[CLK_PLL1_47P26]	= &pll1_d52_47p26.common.clk,
+		[CLK_PLL1_31P5]		= &pll1_d78_31p5.common.clk,
+		[CLK_PLL1_819]		= &pll1_d3_819p2.common.clk,
+		[CLK_PLL1_1228]		= &pll1_d2_1228p8.common.clk,
+		[CLK_APB]			= &apb_clk.common.clk,
+		[CLK_SLOW_UART1]	= &slow_uart1_14p74.common.clk,
+		[CLK_SLOW_UART2]	= &slow_uart2_48.common.clk,
+		[CLK_WDT] 		= &wdt_clk.common.clk,
+		[CLK_RIPC] 		= &r_ipc_clk.common.clk,
+		//APBC
+		[CLK_UART1]		= &uart0_clk.common.clk,
+		[CLK_UART2]		= &uart2_clk.common.clk,
+		[CLK_UART3]		= &uart3_clk.common.clk,
+		[CLK_UART4]		= &uart4_clk.common.clk,
+		[CLK_UART5]		= &uart5_clk.common.clk,
+		[CLK_UART6]		= &uart6_clk.common.clk,
+		[CLK_UART7]		= &uart7_clk.common.clk,
+		[CLK_UART8]		= &uart8_clk.common.clk,
+		[CLK_UART9]		= &uart9_clk.common.clk,
+		[CLK_UART10]		= &uart10_clk.common.clk,
+		[CLK_GPIO]		= &gpio_clk.common.clk,
+		[CLK_PWM0]		= &pwm0_clk.common.clk,
+		[CLK_PWM1]		= &pwm1_clk.common.clk,
+		[CLK_PWM2]		= &pwm2_clk.common.clk,
+		[CLK_PWM3]		= &pwm3_clk.common.clk,
+		[CLK_PWM4]		= &pwm4_clk.common.clk,
+		[CLK_PWM5]		= &pwm5_clk.common.clk,
+		[CLK_PWM6]		= &pwm6_clk.common.clk,
+		[CLK_PWM7]		= &pwm7_clk.common.clk,
+		[CLK_PWM8]		= &pwm8_clk.common.clk,
+		[CLK_PWM9]		= &pwm9_clk.common.clk,
+		[CLK_PWM10]		= &pwm10_clk.common.clk,
+		[CLK_PWM11]		= &pwm11_clk.common.clk,
+		[CLK_PWM12]		= &pwm12_clk.common.clk,
+		[CLK_PWM13]		= &pwm13_clk.common.clk,
+		[CLK_PWM14]		= &pwm14_clk.common.clk,
+		[CLK_PWM15]		= &pwm15_clk.common.clk,
+		[CLK_PWM16]		= &pwm16_clk.common.clk,
+		[CLK_PWM17]		= &pwm17_clk.common.clk,
+		[CLK_PWM18]		= &pwm18_clk.common.clk,
+		[CLK_PWM19]		= &pwm19_clk.common.clk,
+		[CLK_SPI0]		= &spi0_clk.common.clk,
+		[CLK_SPI1]		= &spi1_clk.common.clk,
+		[CLK_SPI3]		= &spi3_clk.common.clk,
+		[CLK_RTC]		= &rtc_clk.common.clk,
+		[CLK_TWSI0]		= &twsi0_clk.common.clk,
+		[CLK_TWSI1]		= &twsi1_clk.common.clk,
+		[CLK_TWSI2]		= &twsi2_clk.common.clk,
+		[CLK_TWSI4]		= &twsi4_clk.common.clk,
+		[CLK_TWSI5]		= &twsi5_clk.common.clk,
+		[CLK_TWSI6]		= &twsi6_clk.common.clk,
+		[CLK_TWSI8]		= &twsi8_clk.common.clk,
+		[CLK_TIMERS0]		= &timers0_clk.common.clk,
+		[CLK_TIMERS1]		= &timers1_clk.common.clk,
+		[CLK_TIMERS2]		= &timers2_clk.common.clk,
+		[CLK_TIMERS3]		= &timers3_clk.common.clk,
+		[CLK_TIMERS4]		= &timers4_clk.common.clk,
+		[CLK_TIMERS5]		= &timers5_clk.common.clk,
+		[CLK_TIMERS6]		= &timers6_clk.common.clk,
+		[CLK_TIMERS7]		= &timers7_clk.common.clk,
+		[CLK_AIB]		= &aib_clk.common.clk,
+		[CLK_ONEWIRE]		= &onewire_clk.common.clk,
+		[CLK_I2S0]		= &i2s0_clk.common.clk,
+		[CLK_I2S1]		= &i2s1_clk.common.clk,
+		[CLK_I2S2]		= &i2s2_clk.common.clk,
+		[CLK_I2S3]		= &i2s3_clk.common.clk,
+		[CLK_I2S4]		= &i2s4_clk.common.clk,
+		[CLK_I2S5]		= &i2s5_clk.common.clk,
+		[CLK_DRO]		= &dro_clk.common.clk,
+		[CLK_IR0]		= &ir0_clk.common.clk,
+		[CLK_IR1]		= &ir1_clk.common.clk,
+		[CLK_TSEN]		= &tsen_clk.common.clk,
+		[CLK_IPC_AP2RCPU]	= &ipc_ap2rcpu_clk.common.clk,
+		[CLK_CAN0]		= &can0_clk.common.clk,
+		[CLK_CAN1]		= &can1_clk.common.clk,
+		[CLK_CAN2]		= &can2_clk.common.clk,
+		[CLK_CAN3]		= &can3_clk.common.clk,
+		[CLK_CAN4]		= &can4_clk.common.clk,
+		[CLK_CAN0_BUS]		= &can0_bus_clk.common.clk,
+		[CLK_CAN1_BUS]		= &can1_bus_clk.common.clk,
+		[CLK_CAN2_BUS]		= &can2_bus_clk.common.clk,
+		[CLK_CAN3_BUS]		= &can3_bus_clk.common.clk,
+		[CLK_CAN4_BUS]		= &can4_bus_clk.common.clk,
+		//APMU
+		[CLK_AXICLK]		= &axi_clk.common.clk,
+		[CLK_CCI550]		= &cci550_clk.common.clk,
+		[CLK_CPU_C1_PLL_SRC]	= &cpu_c1_pll_src.common.clk,
+		[CLK_CPU_C3_PLL_SRC]	= &cpu_c3_pll_src.common.clk,
+		[CLK_CPU_C0_CORE]	= &cpu_c0_core_clk.common.clk,
+		[CLK_CPU_C1_CORE]	= &cpu_c1_core_clk.common.clk,
+		[CLK_CPU_C2_CORE]	= &cpu_c2_core_clk.common.clk,
+		[CLK_CPU_C3_CORE]	= &cpu_c3_core_clk.common.clk,
+		[CLK_CCIC2PHY]		= &ccic2phy_clk.common.clk,
+		[CLK_CCIC3PHY]		= &ccic3phy_clk.common.clk,
+		[CLK_CSI]		= &csi_clk.common.clk,
+		[CLK_ISP_BUS]		= &isp_bus_clk.common.clk,
+		[CLK_D1P_1228P8]	= &d1p_1228p8.common.clk,
+		[CLK_D1P_819P2]		= &d1p_819p2.common.clk,
+		[CLK_D1P_614P4]		= &d1p_614p4.common.clk,
+		[CLK_D1P_491P52]	= &d1p_491p52.common.clk,
+		[CLK_D1P_409P6]		= &d1p_409p6.common.clk,
+		[CLK_D1P_307P2]		= &d1p_307p2.common.clk,
+		[CLK_D1P_245P76]	= &d1p_245p76.common.clk,
+		[CLK_V2D]		= &v2d_clk.common.clk,
+		[CLK_DSI_ESC]		= &dsi_esc_clk.common.clk,
+		[CLK_LCD_HCLK]		= &lcd_hclk.common.clk,
+		[CLK_LCD_DSC]		= &lcd_dsc_clk.common.clk,
+		[CLK_LCD_PXCLK]		= &lcd_pxclk.common.clk,
+		[CLK_LCD_MCLK]		= &lcd_mclk.common.clk,
+		[CLK_CCIC_4X]		= &ccic_4x_clk.common.clk,
+		[CLK_CCIC1PHY]		= &ccic1phy_clk.common.clk,
+		[CLK_SC2_HCLK]		= &sc2_hclk.common.clk,
+		[CLK_SDH_AXI]		= &sdh_axi_aclk.common.clk,
+		[CLK_SDH0] 		= &sdh0_clk.common.clk,
+		[CLK_SDH1]		= &sdh1_clk.common.clk,
+		[CLK_SDH2]		= &sdh2_clk.common.clk,
+		[CLK_USB2_BUS]		= &usb2_bus_clk.common.clk,
+		[CLK_USB3_PORTA_BUS]	= &usb3_porta_bus_clk.common.clk,
+		[CLK_USB3_PORTB_BUS]	= &usb3_portb_bus_clk.common.clk,
+		[CLK_USB3_PORTC_BUS]	= &usb3_portc_bus_clk.common.clk,
+		[CLK_USB3_PORTD_BUS]	= &usb3_portd_bus_clk.common.clk,
+		[CLK_QSPI]		= &qspi_clk.common.clk,
+		[CLK_QSPI_BUS]		= &qspi_bus_clk.common.clk,
+		[CLK_DMA]		= &dma_clk.common.clk,
+		[CLK_AES_WTM]		= &aes_wtm_clk.common.clk,
+		[CLK_VPU]		= &vpu_clk.common.clk,
+		[CLK_DTC]		= &dtc_clk.common.clk,
+		[CLK_GPU]		= &gpu_clk.common.clk,
+		[CLK_MC_AHB]		= &mc_ahb_clk.common.clk,
+		[CLK_TOP_DCLK]		= &top_dclk.common.clk,
+		[CLK_UCIE]		= &ucie_clk.common.clk,
+		[CLK_UCIE_SBCLK]	= &ucie_sbclk.common.clk,
+		[CLK_RCPU]		= &rcpu_clk.common.clk,
+		[CLK_DSI4LN2_DSI_ESC]	= &dsi4ln2_dsi_esc_clk.common.clk,
+		[CLK_DSI4LN2_LCD_DSC]	= &dsi4ln2_lcd_dsc_clk.common.clk,
+		[CLK_DSI4LN2_LCD_PXCLK]	= &dsi4ln2_lcd_pxclk.common.clk,
+		[CLK_DSI4LN2_LCD_MCLK]	= &dsi4ln2_lcd_mclk.common.clk,
+		[CLK_DSI4LN2_DPU_ACLK]	= &dsi4ln2_dpu_aclk.common.clk,
+		[CLK_DPU_ACLK]		= &dpu_aclk.common.clk,
+		[CLK_UFS_ACLK]		= &ufs_aclk.common.clk,
+		[CLK_UFS_REFCLK]	= &ufs_refclk.common.clk,
+		[CLK_EDP0_PXCLK]	= &edp0_pxclk.common.clk,
+		[CLK_EDP1_PXCLK]	= &edp1_pxclk.common.clk,
+		[CLK_PCIEA]		= &pciea_clk.common.clk,
+		[CLK_PCIEB]		= &pcieb_clk.common.clk,
+		[CLK_PCIEC]		= &pciec_clk.common.clk,
+		[CLK_PCIED]		= &pcied_clk.common.clk,
+		[CLK_PCIEE]		= &pciee_clk.common.clk,
+		[CLK_EMAC0_BUS]		= &emac0_bus_clk.common.clk,
+		[CLK_EMAC0_REF]		= &emac0_ref_clk.common.clk,
+		[CLK_EMAC0_1588]	= &emac0_1588_clk.common.clk,
+		[CLK_EMAC0_RGMII_TX]	= &emac0_rgmii_tx_clk.common.clk,
+		[CLK_EMAC1_BUS]		= &emac1_bus_clk.common.clk,
+		[CLK_EMAC1_REF]		= &emac1_ref_clk.common.clk,
+		[CLK_EMAC1_1588]	= &emac1_1588_clk.common.clk,
+		[CLK_EMAC1_RGMII_TX]	= &emac1_rgmii_tx_clk.common.clk,
+		[CLK_EMAC2_BUS]		= &emac2_bus_clk.common.clk,
+		[CLK_EMAC2_REF]		= &emac2_ref_clk.common.clk,
+		[CLK_EMAC2_1588]	= &emac2_1588_clk.common.clk,
+		[CLK_EMAC2_RGMII_TX]	= &emac2_rgmii_tx_clk.common.clk,
+		[CLK_ESPI_SCLK_SRC]	= &espi_sclk_src.common.clk,
+		[CLK_ESPI_SCLK]		= &espi_sclk.common.clk,
+		[CLK_ESPI_MCLK]		= &espi_mclk.common.clk,
+		[CLK_CAM_SRC1]		= &cam_src1_clk.common.clk,
+		[CLK_CAM_SRC2]		= &cam_src2_clk.common.clk,
+		[CLK_CAM_SRC3]		= &cam_src3_clk.common.clk,
+		[CLK_CAM_SRC4]		= &cam_src4_clk.common.clk,
+		[CLK_ISIM_VCLK0]	= &isim_vclk_out0.common.clk,
+		[CLK_ISIM_VCLK1]	= &isim_vclk_out1.common.clk,
+		[CLK_ISIM_VCLK2]	= &isim_vclk_out2.common.clk,
+		[CLK_ISIM_VCLK3]	= &isim_vclk_out3.common.clk,
+		//DCIU
+		[CLK_HDMA]		= &hdma_clk.common.clk,
+		[CLK_DMA350]		= &dma350_clk.common.clk,
+		[CLK_C2_TCM_PIPE]	= &c2_tcm_pipe_clk.common.clk,
+		[CLK_C3_TCM_PIPE]	= &c3_tcm_pipe_clk.common.clk,
+		//RCPU
+		[CLK_RCPU_RT24_CORE0]	= &rt24_core0_clk.common.clk,
+		[CLK_RCPU_RT24_CORE1]	= &rt24_core1_clk.common.clk,
+		//APBC2
+		[CLK_SEC_UART1]		= &uart1_sec_clk.common.clk,
+		[CLK_SEC_SSP2]		= &ssp2_sec_clk.common.clk,
+		[CLK_SEC_TWSI3]		= &twsi3_sec_clk.common.clk,
+		[CLK_SEC_RTC]		= &rtc_sec_clk.common.clk,
+		[CLK_SEC_TIMERS0]	= &timers_sec_clk.common.clk,
+		[CLK_SEC_GPIO]		= &gpio_sec_clk.common.clk,
+	},
+	.num = CLK_MAX_NO,
+};
+#endif
+
+struct spacemit_clk_init_rate init_rate_tbl[] = {
+	{CLK_AXICLK, 307200000},
+	{CLK_APB, 102400000},
+	{CLK_SLOW_UART1, 14745600},
+};
+
+static inline const struct clk_ops *ccu_clk_dev_ops(struct udevice *dev)
+{
+	return (const struct clk_ops *)dev->driver->ops;
+}
+
+ulong ccu_clk_get_rate(struct clk *clk)
+{
+	const struct clk_ops *ops;
+	struct clk *c = spacemit_k3_clks.clks[clk->id];
+
+	if (!clk_valid(c))
+		return 0;
+	ops = ccu_clk_dev_ops(c->dev);
+	if(ops->get_rate)
+		return ops->get_rate(c);
+	return 0;
+}
+
+ulong ccu_clk_round_rate(struct clk *clk, unsigned long rate)
+{
+	const struct clk_ops *ops;
+	struct clk *c = spacemit_k3_clks.clks[clk->id];
+
+	if (!clk_valid(c))
+		return 0;
+	ops = ccu_clk_dev_ops(c->dev);
+	if(ops->round_rate)
+		return ops->round_rate(c, rate);
+	return 0;
+}
+
+int ccu_clk_set_parent(struct clk *clk, struct clk *parent)
+{
+	const struct clk_ops *ops;
+	struct clk *c = spacemit_k3_clks.clks[clk->id];
+	struct clk *p = spacemit_k3_clks.clks[parent->id];
+
+	if (!clk_valid(c))
+		return 0;
+	ops = ccu_clk_dev_ops(c->dev);
+	if(ops->set_parent)
+		return ops->set_parent(c, p);
+	return 0;
+}
+
+int ccu_clk_disable(struct clk *clk)
+{
+	const struct clk_ops *ops;
+	struct clk *c = spacemit_k3_clks.clks[clk->id];
+
+	if (!clk_valid(c))
+		return 0;
+	ops = ccu_clk_dev_ops(c->dev);
+	if(ops->disable)
+		return ops->disable(c);
+	return 0;
+}
+
+ulong ccu_clk_set_rate(struct clk *clk, unsigned long rate)
+{
+	const struct clk_ops *ops;
+	struct clk *c = spacemit_k3_clks.clks[clk->id];
+
+	if (!clk_valid(c))
+		return 0;
+	ops = ccu_clk_dev_ops(c->dev);
+	if(ops->set_rate)
+		return ops->set_rate(c, rate);
+	return 0;
+}
+
+int ccu_clk_enable(struct clk *clk)
+{
+	const struct clk_ops *ops;
+	struct clk *c = spacemit_k3_clks.clks[clk->id];
+
+	if (!clk_valid(c))
+		return 0;
+	ops = ccu_clk_dev_ops(c->dev);
+	if(ops->enable)
+		return ops->enable(c);
+	return 0;
+}
+
+const struct clk_ops ccu_clk_ops = {
+	.get_rate = ccu_clk_get_rate,
+	.round_rate = ccu_clk_round_rate,
+	.set_parent = ccu_clk_set_parent,
+	.disable = ccu_clk_disable,
+	.set_rate = ccu_clk_set_rate,
+	.enable = ccu_clk_enable,
+#ifdef CONFIG_SPL_BUILD
+	.of_xlate = ccu_of_xlate,
+#endif
+};
+
+int ccu_common_init(struct clk * clk, struct spacemit_ccu_clk *clk_info, struct spacemit_clk_table *clks)
+{
+	struct ccu_common *common = clk_to_ccu_common(clk);
+	struct ccu_plla *pll = clk_to_ccu_plla(clk);
+	int ret;
+
+	if (!common)
+		return -1;
+
+	switch(common->base_type){
+	case BASE_TYPE_MPMU:
+		common->base = clk_info->mpmu_base;
+		break;
+	case BASE_TYPE_APMU:
+		common->base = clk_info->apmu_base;
+		break;
+	case BASE_TYPE_APBC:
+		common->base = clk_info->apbc_base;
+		break;
+	case BASE_TYPE_APBS:
+		common->base = clk_info->apbs_base;
+		break;
+	case BASE_TYPE_CIU:
+		common->base = clk_info->ciu_base;
+		break;
+	case BASE_TYPE_DCIU:
+		common->base = clk_info->dciu_base;
+		break;
+	case BASE_TYPE_DDRC:
+		common->base = clk_info->ddrc_base;
+		break;
+	case BASE_TYPE_AUDC:
+		common->base = clk_info->audio_ctrl_base;
+		break;
+	case BASE_TYPE_APBC2:
+		common->base = clk_info->apbc2_base;
+		break;
+	case BASE_TYPE_RCPU:
+		common->base = clk_info->rcpu_base;
+		break;
+	default:
+		common->base = clk_info->apbc_base;
+		break;
+
+	}
+	common->clk_tbl = clks;
+	if(common->is_pll)
+		pll->pll.lock_base = clk_info->mpmu_base;
+
+	if(common->parent_name == NULL && common->parent_names != NULL)
+		common->parent_name = common->parent_names[ccu_mix_get_parent(clk)];
+
+	ret = clk_register(clk, common->driver_name, common->name, common->parent_name);
+
+	return 0;
+}
+
+int spacemit_ccu_probe(struct spacemit_ccu_clk *clk_info,
+		    struct spacemit_clk_table *clks)
+{
+	int i;
+
+#ifdef CONFIG_SPL_BUILD
+	for (i = CLK_PLL1_2457P6_SPL; i < clks->num ; i++) {
+#else
+	for (i = CLK_PLL1_2457P6; i < clks->num ; i++) {
+#endif
+		struct clk *clk = clks->clks[i];
+
+		if (!clk)
+			continue;
+
+#ifdef CONFIG_SPL_BUILD
+		if(clk->id >= CLK_VCTCXO_24_SPL)
+#else
+		if(clk->id >= CLK_VCTCXO_24)
+#endif
+			continue;
+
+		clk->id = i;
+		ccu_common_init(clk, clk_info, clks);
+	}
+#ifndef CONFIG_SPL_BUILD
+	//init pll2 freq
+	if (clk_info->pll2_freq) {
+		struct clk *clk =clks->clks[CLK_PLL2];
+		if (clk)
+			clk_set_rate(clk, clk_info->pll2_freq);
+	}
+
+	//init clk default rate
+	for (i = 0; i < ARRAY_SIZE(init_rate_tbl); i++) {
+		struct clk *clk =clks->clks[init_rate_tbl[i].clk_id];
+		if (!clk)
+			continue;
+
+		clk_set_rate(clk, init_rate_tbl[i].dft_rate);
+	}
+#endif
+	return 0;
+}
+
+static inline void ccu_clk_dm(ulong id, struct clk *clk)
+{
+	if (!IS_ERR(clk)){
+		clk->id = id;
+		spacemit_k3_clks.clks[id] = clk;
+	}
+}
+
+static int spacemit_k3_ccu_probe(struct udevice *dev)
+{
+	int ret = 0;
+	struct spacemit_ccu_clk *clk_info = &k3_clock_controller;
+	struct spacemit_clk_table *clks = &spacemit_k3_clks;
+
+	pr_debug("init clock start \n");
+
+	clk_info->mpmu_base = (void __iomem *)dev_remap_addr_index(dev, 0);
+	if (!clk_info->mpmu_base) {
+		pr_err("failed to map mpmu registers\n");
+		goto out;
+	}
+
+	clk_info->apmu_base = (void __iomem *)dev_remap_addr_index(dev, 1);
+	if (!clk_info->apmu_base) {
+		pr_err("failed to map apmu registers\n");
+		goto out;
+	}
+
+	clk_info->apbc_base = (void __iomem *)dev_remap_addr_index(dev, 2);
+	if (!clk_info->apbc_base) {
+		pr_err("failed to map apbc registers\n");
+		goto out;
+	}
+
+	clk_info->apbs_base = (void __iomem *)dev_remap_addr_index(dev, 3);
+	if (!clk_info->apbs_base) {
+		pr_err("failed to map apbs registers\n");
+		goto out;
+	}
+#ifndef CONFIG_SPL_BUILD
+	clk_info->ciu_base = (void __iomem *)dev_remap_addr_index(dev, 4);
+	if (!clk_info->ciu_base) {
+		pr_err("failed to map ciu registers\n");
+		goto out;
+	}
+
+	clk_info->dciu_base = (void __iomem *)dev_remap_addr_index(dev, 5);
+	if (!clk_info->dciu_base) {
+		pr_err("failed to map dragon ciu registers\n");
+		goto out;
+	}
+
+	clk_info->ddrc_base = (void __iomem *)dev_remap_addr_index(dev, 6);
+	if (!clk_info->ddrc_base) {
+		pr_err("failed to map ddrc registers\n");
+		goto out;
+	}
+
+	clk_info->apbc2_base = (void __iomem *)dev_remap_addr_index(dev, 7);
+	if (!clk_info->apbc2_base) {
+		pr_err("failed to map apbc2 registers\n");
+		goto out;
+	}
+
+	clk_info->rcpu_base = (void __iomem *)dev_remap_addr_index(dev, 8);
+	if (!clk_info->rcpu_base) {
+		pr_err("failed to map rcpu registers\n");
+		goto out;
+	}
+#endif
+#ifdef CONFIG_SPL_BUILD
+	clk_get_by_name(dev, "vctcxo_24", &vctcxo_24);
+	ccu_clk_dm(CLK_VCTCXO_24_SPL, dev_get_clk_ptr(vctcxo_24.dev));
+	clk_get_by_name(dev, "vctcxo_3", &vctcxo_3);
+	ccu_clk_dm(CLK_VCTCXO_3_SPL, dev_get_clk_ptr(vctcxo_3.dev));
+	clk_get_by_name(dev, "vctcxo_1", &vctcxo_1);
+	ccu_clk_dm(CLK_VCTCXO_1_SPL, dev_get_clk_ptr(vctcxo_1.dev));
+	clk_get_by_name(dev, "pll1_vco", &pll1_vco);
+	ccu_clk_dm(CLK_PLL1_SPL, dev_get_clk_ptr(pll1_vco.dev));
+	clk_get_by_name(dev, "osc_32k", &osc_32k);
+	ccu_clk_dm(OSC_32K_SPL, dev_get_clk_ptr(osc_32k.dev));
+	clk_get_by_name(dev, "clk_dummy", &clk_dummy);
+	ccu_clk_dm(CLK_DUMMY_SPL, dev_get_clk_ptr(clk_dummy.dev));
+#else
+	clk_get_by_name(dev, "vctcxo_24", &vctcxo_24);
+	ccu_clk_dm(CLK_VCTCXO_24, dev_get_clk_ptr(vctcxo_24.dev));
+	clk_get_by_name(dev, "vctcxo_3", &vctcxo_3);
+	ccu_clk_dm(CLK_VCTCXO_3, dev_get_clk_ptr(vctcxo_3.dev));
+	clk_get_by_name(dev, "vctcxo_1", &vctcxo_1);
+	ccu_clk_dm(CLK_VCTCXO_1, dev_get_clk_ptr(vctcxo_1.dev));
+	clk_get_by_name(dev, "pll1_vco", &pll1_vco);
+	ccu_clk_dm(CLK_PLL1, dev_get_clk_ptr(pll1_vco.dev));
+	clk_get_by_name(dev, "osc_32k", &osc_32k);
+	ccu_clk_dm(OSC_32K, dev_get_clk_ptr(osc_32k.dev));
+	clk_get_by_name(dev, "clk_dummy", &clk_dummy);
+	ccu_clk_dm(CLK_DUMMY, dev_get_clk_ptr(clk_dummy.dev));
+#endif
+
+	ret = spacemit_ccu_probe(clk_info, clks);
+	pr_debug("init clock finish ret=%d \n", ret);
+	if (!ret)
+		return 0;
+out:
+	return -1;
+}
+
+static const struct udevice_id ccu_clk_ids[] = {
+	{ .compatible = "spacemit,k3-ccu" },
+	{ },
+};
+
+U_BOOT_DRIVER(spacemit_k3_ccu) = {
+	.name = "k3-ccu",
+	.id = UCLASS_CLK,
+	.of_match = ccu_clk_ids,
+	.ops = &ccu_clk_ops,
+	.probe = spacemit_k3_ccu_probe,
+};

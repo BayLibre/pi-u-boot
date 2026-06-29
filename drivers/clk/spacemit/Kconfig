@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0
+config SPACEMIT_K3_CCU
+	bool "Clock support for SpacemiT K3 (X100) SoC"
+	depends on TARGET_SPACEMIT_K3
+	select CLK
+	select CLK_CCF
+	help
+	  Enable the clock controller unit (CCU) driver for the SpacemiT
+	  K3 (X100) SoC. Provides the PLLs, muxes, dividers and gates for
+	  the CPU clusters, the interconnect (topd/axi/cci550) and the
+	  peripheral clocks.

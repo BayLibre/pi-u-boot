@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright (c) 2025-2026 Spacemit, Inc
+
+config SPACEMIT_K3_DDR
+	bool "SpacemiT K3 (X100) DDR controller and PHY init"
+	depends on TARGET_SPACEMIT_K3
+	default y if TARGET_SPACEMIT_K3
+	help
+	  Enable the SpacemiT K3 (X100) DDR driver. It runs in the SPL/XPL
+	  phase: it brings up the Synopsys DDR controller and PHY, runs DDR
+	  training (LPDDR4X / LPDDR5) and supports the quick-boot path that
+	  restores a previously saved training result. The large opaque
+	  register/timing tables are carried verbatim from the vendor BSP.

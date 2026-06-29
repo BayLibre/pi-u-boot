@@ -339,6 +339,13 @@ void fastboot_data_complete(char *response)
  */
 static void __maybe_unused flash(char *cmd_parameter, char *response)
 {
+	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_SPI) &&
+	    fastboot_spi_flash_has_part(cmd_parameter)) {
+		fastboot_spi_flash_write(cmd_parameter, fastboot_buf_addr,
+					 image_size, response);
+		return;
+	}
+
 	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_BLOCK))
 		fastboot_block_flash_write(cmd_parameter, fastboot_buf_addr,
 					   image_size, response);
@@ -350,10 +357,6 @@ static void __maybe_unused flash(char *cmd_parameter, char *response)
 	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_NAND))
 		fastboot_nand_flash_write(cmd_parameter, fastboot_buf_addr,
 					  image_size, response);
-
-	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_SPI))
-		fastboot_spi_flash_write(cmd_parameter, fastboot_buf_addr,
-					 image_size, response);
 }
 
 /**
@@ -367,6 +370,12 @@ static void __maybe_unused flash(char *cmd_parameter, char *response)
  */
 static void __maybe_unused erase(char *cmd_parameter, char *response)
 {
+	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_SPI) &&
+	    fastboot_spi_flash_has_part(cmd_parameter)) {
+		fastboot_spi_flash_erase(cmd_parameter, response);
+		return;
+	}
+
 	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_BLOCK))
 		fastboot_block_erase(cmd_parameter, response);
 
@@ -375,9 +384,6 @@ static void __maybe_unused erase(char *cmd_parameter, char *response)
 
 	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_NAND))
 		fastboot_nand_erase(cmd_parameter, response);
-
-	if (CONFIG_IS_ENABLED(FASTBOOT_FLASH_SPI))
-		fastboot_spi_flash_erase(cmd_parameter, response);
 }
 
 /**

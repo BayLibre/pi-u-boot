@@ -57,6 +57,19 @@ static int raw_part_get_info_by_name(const char *name,
 	return 0;
 }
 
+bool fastboot_spi_flash_has_part(const char *part_name)
+{
+	char env_desc_name[23 + PART_NAME_LEN + 1];
+
+	if (!part_name)
+		return false;
+
+	strcpy(env_desc_name, "fastboot_raw_partition_");
+	strlcat(env_desc_name, part_name, sizeof(env_desc_name));
+
+	return env_get(env_desc_name) != NULL;
+}
+
 static int fastboot_spi_flash_probe(void)
 {
 	unsigned int bus = CONFIG_SF_DEFAULT_BUS;

@@ -39,4 +39,12 @@ void fastboot_spi_flash_write(const char *cmd, void *download_buffer,
  * @response: Pointer to fastboot response buffer
  */
 void fastboot_spi_flash_erase(const char *cmd, char *response);
+
+/**
+ * fastboot_spi_flash_has_part() - Check if a name maps to a raw SPI partition
+ *
+ * @part_name: Partition name from a fastboot flash/erase command
+ * Return: true if a fastboot_raw_partition_<name> env var is defined
+ */
+bool fastboot_spi_flash_has_part(const char *part_name);
 #endif

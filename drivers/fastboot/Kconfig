@@ -128,15 +128,21 @@ config FASTBOOT_FLASH_NAND
 	bool "FASTBOOT on NAND"
 	depends on MTD_RAW_NAND && CMD_MTDPARTS
 
-config FASTBOOT_FLASH_SPI
-	bool "FASTBOOT on SPI flash"
-	depends on DM_SPI_FLASH
-
 config FASTBOOT_FLASH_BLOCK
 	bool "FASTBOOT on block device"
 	depends on BLK
 
 endchoice
+
+config FASTBOOT_FLASH_SPI
+	bool "Also route FASTBOOT to SPI flash by raw partition"
+	depends on DM_SPI_FLASH
+	help
+	  Route fastboot flash/erase of any partition that has a matching
+	  fastboot_raw_partition_<name> environment variable to SPI-NOR,
+	  alongside the primary flash provider selected above (e.g. eMMC).
+	  Lets a board keep its bootloader on SPI-NOR while Android lives on
+	  eMMC.
 
 config FASTBOOT_FLASH_MMC_DEV
 	int "Define FASTBOOT MMC FLASH default device"

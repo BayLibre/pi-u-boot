@@ -654,6 +654,13 @@ config MMC_SDHCI_F_SDH30
 	  If you have a controller with this interface, say Y here.
 	  If unsure, say N.
 
+config MMC_SDHCI_K1X
+	bool "SDHCI support for the Spacemit SD/MMC Controller"
+	depends on DM_MMC && BLK
+	depends on MMC_SDHCI
+	help
+	  Support for Spacemit K1x/K3 SDHCI host controller on RISCV SoCs platform
+
 config MMC_SDHCI_MSM
 	bool "Qualcomm SDHCI controller"
 	depends on MMC_SDHCI && ARCH_SNAPDRAGON

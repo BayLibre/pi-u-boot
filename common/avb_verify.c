@@ -386,52 +386,61 @@ static unsigned long mmc_write(struct mmc_part *part, lbaint_t start,
 static struct mmc_part *get_partition(AvbOps *ops, const char *partition)
 {
 	int ret;
-	u8 dev_num;
-	int part_num = 0;
+	int dev_num;
+	enum uclass_id uclass_id;
 	struct mmc_part *part;
-	struct blk_desc *mmc_blk;
+	struct blk_desc *blk;
 
 	part = malloc(sizeof(struct mmc_part));
 	if (!part)
 		return NULL;
 
 	dev_num = get_boot_device(ops);
-	part->mmc = find_mmc_device(dev_num);
-	if (!part->mmc) {
-		printf("%s: no MMC device at slot %x\n", __func__, dev_num);
-		goto err;
-	}
+	uclass_id = get_boot_uclass_id(ops);
 
-	ret = mmc_init(part->mmc);
-	if (ret) {
-		printf("%s: MMC initialization failed, err = %d\n",
-		       __func__, ret);
-		goto err;
-	}
+	if (uclass_id == UCLASS_MMC) {
+		part->mmc = find_mmc_device(dev_num);
+		if (!part->mmc) {
+			printf("%s: no MMC device at slot %x\n", __func__,
+			       dev_num);
+			goto err;
+		}
 
-	if (IS_MMC(part->mmc)) {
-		ret = mmc_switch_part(part->mmc, part_num);
+		ret = mmc_init(part->mmc);
 		if (ret) {
-			printf("%s: MMC part switch failed, err = %d\n",
+			printf("%s: MMC initialization failed, err = %d\n",
 			       __func__, ret);
 			goto err;
 		}
+
+		if (IS_MMC(part->mmc)) {
+			ret = mmc_switch_part(part->mmc, 0);
+			if (ret) {
+				printf("%s: MMC part switch failed, err = %d\n",
+				       __func__, ret);
+				goto err;
+			}
+		}
+
+		blk = mmc_get_blk_desc(part->mmc);
+	} else {
+		part->mmc = NULL;
+		blk = blk_get_devnum_by_uclass_id(uclass_id, dev_num);
 	}
 
-	mmc_blk = mmc_get_blk_desc(part->mmc);
-	if (!mmc_blk) {
+	if (!blk) {
 		printf("%s: failed to obtain block descriptor\n", __func__);
 		goto err;
 	}
 
-	ret = part_get_info_by_name(mmc_blk, partition, &part->info);
+	ret = part_get_info_by_name(blk, partition, &part->info);
 	if (ret < 0) {
 		printf("%s: can't find partition '%s'\n", __func__, partition);
 		goto err;
 	}
 
 	part->dev_num = dev_num;
-	part->mmc_blk = mmc_blk;
+	part->mmc_blk = blk;
 
 	return part;
 err:
@@ -1032,7 +1041,7 @@ free_name:
  * AVB2.0 AvbOps alloc/initialisation/free
  * ============================================================================
  */
-AvbOps *avb_ops_alloc(int boot_device)
+AvbOps *avb_ops_alloc_by_uclass(enum uclass_id uclass_id, int boot_device)
 {
 	struct AvbOpsData *ops_data;
 
@@ -1056,8 +1065,14 @@ AvbOps *avb_ops_alloc(int boot_device)
 #endif
 	ops_data->ops.get_size_of_partition = get_size_of_partition;
 	ops_data->mmc_dev = boot_device;
+	ops_data->uclass_id = uclass_id;
 
 	return &ops_data->ops;
+}
+
+AvbOps *avb_ops_alloc(int boot_device)
+{
+	return avb_ops_alloc_by_uclass(UCLASS_MMC, boot_device);
 }
 
 void avb_ops_free(AvbOps *ops)

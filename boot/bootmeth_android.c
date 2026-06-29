@@ -52,16 +52,19 @@ struct android_priv {
 
 static int android_check(struct udevice *dev, struct bootflow_iter *iter)
 {
-	/* This only works on mmc devices */
-	if (bootflow_iter_check_mmc(iter))
-		return log_msg_ret("mmc", -ENOTSUPP);
+	const struct udevice *media = dev_get_parent(iter->dev);
+	enum uclass_id id = device_get_uclass_id(media);
+
+	/* This only works on mmc or scsi (UFS) devices */
+	if (id != UCLASS_MMC && id != UCLASS_SCSI)
+		return log_msg_ret("blk", -ENOTSUPP);
 
 	/*
 	 * This only works on whole devices, as multiple
 	 * partitions are needed to boot Android
 	 */
 	if (iter->part != 0)
-		return log_msg_ret("mmc part", -ENOTSUPP);
+		return log_msg_ret("part", -ENOTSUPP);
 
 	return 0;
 }
@@ -227,7 +230,8 @@ static int android_read_bootflow(struct udevice *dev, struct bootflow *bflow)
 	if (ret < 0)
 		return log_msg_ret("part", ret);
 
-	ret = bcb_find_partition_and_load("mmc", desc->devnum, BCB_PART_NAME);
+	ret = bcb_find_partition_and_load(blk_get_uclass_name(desc->uclass_id),
+					  desc->devnum, BCB_PART_NAME);
 	if (ret < 0)
 		return log_msg_ret("bcb load", ret);
 
@@ -435,7 +439,7 @@ static int run_avb_verification(struct bootflow *bflow)
 	bool unlocked = false;
 	int ret;
 
-	avb_ops = avb_ops_alloc(desc->devnum);
+	avb_ops = avb_ops_alloc_by_uclass(desc->uclass_id, desc->devnum);
 	if (!avb_ops)
 		return log_msg_ret("avb ops", -ENOMEM);
 

@@ -7,6 +7,7 @@
 #define _AVB_VERIFY_H
 
 #include <../lib/libavb/libavb.h>
+#include <dm/uclass-id.h>
 #include <mapmem.h>
 #include <mmc.h>
 
@@ -25,6 +26,7 @@ enum avb_boot_state {
 struct AvbOpsData {
 	struct AvbOps ops;
 	int mmc_dev;
+	enum uclass_id uclass_id;
 	enum avb_boot_state boot_state;
 #ifdef CONFIG_OPTEE_TA_AVB
 	struct udevice *tee;
@@ -45,6 +47,7 @@ enum mmc_io_type {
 };
 
 AvbOps *avb_ops_alloc(int boot_device);
+AvbOps *avb_ops_alloc_by_uclass(enum uclass_id uclass_id, int boot_device);
 void avb_ops_free(AvbOps *ops);
 
 char *avb_set_state(AvbOps *ops, enum avb_boot_state boot_state);
@@ -95,6 +98,19 @@ static inline int get_boot_device(AvbOps *ops)
 	}
 
 	return -1;
+}
+
+static inline enum uclass_id get_boot_uclass_id(AvbOps *ops)
+{
+	struct AvbOpsData *data;
+
+	if (ops) {
+		data = ops->user_data;
+		if (data)
+			return data->uclass_id;
+	}
+
+	return UCLASS_MMC;
 }
 
 #endif /* _AVB_VERIFY_H */

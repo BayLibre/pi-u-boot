@@ -11,6 +11,7 @@
 #include <fb_block.h>
 #include <fb_mmc.h>
 #include <fb_nand.h>
+#include <fb_spacemit.h>
 #include <fb_spi_flash.h>
 #include <part.h>
 #include <stdlib.h>
@@ -45,6 +46,7 @@ static void oem_partconf(char *, char *);
 static void oem_bootbus(char *, char *);
 static void oem_console(char *, char *);
 static void oem_board(char *, char *);
+static void oem_ec(char *, char *);
 static void run_ucmd(char *, char *);
 static void run_acmd(char *, char *);
 
@@ -127,6 +129,10 @@ static const struct {
 	[FASTBOOT_COMMAND_ACMD] = {
 		.command = "ACmd",
 		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_UUU_SUPPORT, (run_acmd), (NULL))
+	},
+	[FASTBOOT_COMMAND_OEM_EC] = {
+		.command = "oem ec",
+		.dispatch = CONFIG_IS_ENABLED(FASTBOOT_FLASH, (oem_ec), (NULL))
 	},
 };
 
@@ -594,4 +600,16 @@ void __weak fastboot_oem_board(char *cmd_parameter, void *data, u32 size, char *
 static void __maybe_unused oem_board(char *cmd_parameter, char *response)
 {
 	fastboot_oem_board(cmd_parameter, (void *)fastboot_buf_addr, image_size, response);
+}
+
+/**
+ * oem_ec() - Execute the OEM ec command (CrosEC RW firmware update)
+ *
+ * @cmd_parameter: Pointer to command parameter
+ * @response: Pointer to fastboot response buffer
+ */
+static void __maybe_unused oem_ec(char *cmd_parameter, char *response)
+{
+	fastboot_oem_flash_ec(cmd_parameter, (void *)fastboot_buf_addr,
+			      image_size, response);
 }

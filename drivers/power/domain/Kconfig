@@ -62,6 +62,14 @@ config IMX8MP_MEDIAMIX_BLKCTRL
 	help
 	  Enable support for manipulating NXP i.MX8MP on-SoC MEDIAMIX block controller.
 
+config K3_POWER_DOMAIN
+	bool "Enable the K3 Power domain driver"
+	depends on POWER_DOMAIN
+	select REGMAP
+	select SYSCON
+	help
+	  Generic power domain implementation for K3 devices.
+
 config MTK_POWER_DOMAIN
 	bool "Enable the MediaTek power domain driver"
 	depends on POWER_DOMAIN && ARCH_MEDIATEK

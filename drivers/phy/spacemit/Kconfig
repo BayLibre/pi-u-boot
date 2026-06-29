@@ -22,3 +22,9 @@ config SPL_PHY_SPACEMIT_K3_USB3
 	help
 	  USB3 and PCIE Combo PHY Support for Spacemit k3 Soc in SPL
 
+config PHY_SPACEMIT_PCIE
+	bool "Spacemit K3 PCIe PHY driver"
+	depends on PHY
+	help
+	  Support for the Spacemit k3 PCIe PHY used by the DesignWare based
+	  PCIe host controller.

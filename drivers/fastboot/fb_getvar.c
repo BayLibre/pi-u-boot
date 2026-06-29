@@ -76,7 +76,7 @@ static const struct {
 		.dispatch = getvar_has_slot,
 		.list = false
 #endif
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC) || CONFIG_IS_ENABLED(FASTBOOT_FLASH_BLOCK)
 	}, {
 		.variable = "partition-type",
 		.dispatch = getvar_partition_type,
@@ -233,6 +233,7 @@ fail:
 
 static void __maybe_unused getvar_partition_type(char *part_name, char *response)
 {
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
 	int r;
 	struct blk_desc *dev_desc;
 	struct disk_partition part_info;
@@ -247,6 +248,20 @@ static void __maybe_unused getvar_partition_type(char *part_name, char *response
 		else
 			fastboot_okay(fs_get_type_name(), response);
 	}
+#elif CONFIG_IS_ENABLED(FASTBOOT_FLASH_BLOCK)
+	struct blk_desc *dev_desc;
+	struct disk_partition part_info;
+
+	/*
+	 * 'fastboot format:<fs>' supplies the fs type, so just confirm the
+	 * partition exists; the host then queries partition-size and formats.
+	 */
+	if (fastboot_block_get_part_info(part_name, &dev_desc, &part_info,
+					 response) >= 0)
+		fastboot_okay("raw", response);
+#else
+	fastboot_fail("partition type unsupported", response);
+#endif
 }
 
 static void __maybe_unused getvar_partition_size(char *part_name, char *response)

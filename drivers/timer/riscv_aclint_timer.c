@@ -10,6 +10,7 @@
 #include <dm.h>
 #include <timer.h>
 #include <asm/io.h>
+#include <asm/csr.h>
 #include <dm/device-internal.h>
 #include <linux/err.h>
 
@@ -21,8 +22,13 @@
 
 static u64 notrace riscv_aclint_timer_get_count(struct udevice *dev)
 {
-	return readq((void __iomem *)MTIME_REG(dev_get_priv(dev),
-					       dev_get_driver_data(dev)));
+	/*
+	 * The SpacemiT X100 CLINT cannot service a 64-bit MMIO read of mtime
+	 * (clint,has-no-64bit-mmio): readq() returns a frozen value, so every
+	 * udelay()/get_timer() spins forever (e.g. in the DDR training). Read
+	 * the time CSR instead, exactly like the vendor SiFive CLINT driver.
+	 */
+	return csr_read(CSR_TIME);
 }
 
 #if CONFIG_IS_ENABLED(RISCV_MMODE) && IS_ENABLED(CONFIG_TIMER_EARLY)
@@ -40,8 +46,7 @@ unsigned long notrace timer_early_get_rate(void)
  */
 u64 notrace timer_early_get_count(void)
 {
-	return readq((void __iomem *)MTIME_REG(RISCV_MMODE_TIMERBASE,
-					       RISCV_MMODE_TIMEROFF));
+	return csr_read(CSR_TIME);
 }
 #endif
 
@@ -58,8 +63,7 @@ ulong timer_get_boot_us(void)
 		timer_get_count(gd->timer, &ticks);
 	} else {
 		rate = RISCV_MMODE_TIMER_FREQ;
-		ticks = readq((void __iomem *)MTIME_REG(RISCV_MMODE_TIMERBASE,
-							RISCV_MMODE_TIMEROFF));
+		ticks = csr_read(CSR_TIME);
 	}
 
 	/* Below is converted from time(us) = (tick / rate) * 10000000 */

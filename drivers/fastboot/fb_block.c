@@ -84,8 +84,14 @@ static lbaint_t fb_block_write(struct blk_desc *block_dev, lbaint_t start,
 			if (!erase_buf) {
 				blks_written = blk_derase(block_dev, blk, cur_blkcnt);
 
-				/* Allocate erase buffer if erase is not implemented */
-				if ((long)blks_written == -ENOSYS) {
+				/*
+				 * SCSI/UFS advertises .erase but often refuses
+				 * WRITE SAME; fall back to zero-fill on any erase
+				 * failure (-ENOSYS, error, or short count), not
+				 * just a missing op.
+				 */
+				if ((long)blks_written < 0 ||
+				    blks_written < cur_blkcnt) {
 					erase_buf_blks = min_t(long, blkcnt,
 							       FASTBOOT_MAX_BLOCKS_SOFT_ERASE);
 					erase_buf = malloc(erase_buf_blks * block_dev->blksz);

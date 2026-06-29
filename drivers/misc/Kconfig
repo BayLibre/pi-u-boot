@@ -105,6 +105,13 @@ config SPL_SPACEMIT_K1X_EFUSE
 	help
 	  This enable efuse read support in SPL, on Spacemit K1x SoCs.
 
+config HWMON_SENSORS_CTF2301
+	bool "Sensylink CTF2301"
+	depends on DM_I2C
+	help
+	  If you say yes here you get support for the Sensylink CTF2301
+	  sensor chip found on SpacemiT K3 boards.
+
 config ROCKCHIP_EFUSE
         bool "Rockchip e-fuse support"
 	depends on MISC

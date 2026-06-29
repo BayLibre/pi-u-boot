@@ -717,4 +717,13 @@ config SYNQUACER_SPI
 	  be used to access the SPI interface and SPI NOR flash on platforms
 	  embedding this HS-SPI IP core.
 
+config K1X_QSPI
+	bool "Spacemit K1X/K3 QSPI driver"
+	depends on DM_SPI && SPI_MEM
+	help
+	  Enable the Spacemit K1X/K3 QSPI controller driver. This controller
+	  drives the SPI NOR flash used as boot media on Spacemit K-series
+	  SoCs through the spi-mem interface, supporting single/dual/quad
+	  buswidths and AHB-mapped fast reads.
+
 endif # menu "SPI Support"

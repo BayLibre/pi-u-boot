@@ -91,6 +91,10 @@ void fastboot_okay(const char *reason, char *response)
  */
 int __weak fastboot_set_reboot_flag(enum fastboot_reboot_reason reason)
 {
+#if defined(CONFIG_XPL_BUILD)
+	/* SPL fastboot is download-only and has no BCB command support */
+	return -ENOSYS;
+#else
 	int ret;
 	static const char * const boot_cmds[] = {
 		[FASTBOOT_REBOOT_REASON_BOOTLOADER] = "bootonce-bootloader",
@@ -126,6 +130,7 @@ int __weak fastboot_set_reboot_flag(enum fastboot_reboot_reason reason)
 out:
 	bcb_reset();
 	return ret;
+#endif
 }
 
 /**
@@ -150,6 +155,7 @@ void (*fastboot_get_progress_callback(void))(const char *)
  */
 void fastboot_boot(void)
 {
+#if !defined(CONFIG_XPL_BUILD)
 	char *s;
 
 	s = env_get("fastboot_bootcmd");
@@ -174,6 +180,7 @@ void fastboot_boot(void)
 		 */
 		do_reset(NULL, 0, 0, NULL);
 	}
+#endif
 }
 
 /**

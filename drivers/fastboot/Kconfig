@@ -17,6 +17,14 @@ config FASTBOOT
 	  commands to be executed on request. The CMDLINE option is required
 	  for anything other than simply booting the OS.
 
+config SPL_FASTBOOT
+	bool "Enable fastboot support in SPL"
+	depends on SPL
+	help
+	  Build the fastboot protocol core (command/getvar/buffer handling) into
+	  the SPL. This is used together with SPL_FASTBOOT_LOAD so the SPL can
+	  receive the next-stage image over a fastboot USB gadget.
+
 config USB_FUNCTION_FASTBOOT
 	bool "Enable USB fastboot gadget"
 	depends on USB_GADGET

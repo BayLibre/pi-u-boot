@@ -75,11 +75,10 @@ static int ab_control_default(struct bootloader_control *abc)
  * @abc: pointer to pointer to bootloader_control data
  * @offset: boot_control struct offset
  *
- * This function allocates and returns an integer number of disk blocks,
- * based on the block size of the passed device to help performing a
- * read-modify-write operation on the boot_control struct.
- * The boot_control struct offset (2 KiB) must be a multiple of the device
- * block size, for simplicity.
+ * This function allocates a bootloader_control struct and fills it from disk.
+ * The struct lives at a 2 KiB offset which need not be a multiple of the
+ * device block size: the block(s) covering it are read and the struct is
+ * copied out from the in-block offset.
  *
  * Return: 0 on success and a negative on error
  */
@@ -88,34 +87,40 @@ static int ab_control_create_from_disk(struct blk_desc *dev_desc,
 				       struct bootloader_control **abc,
 				       ulong offset)
 {
-	ulong abc_offset, abc_blocks, ret;
+	ulong abc_offset, abc_blocks, sub_offset, ret;
+	void *buf;
 
 	abc_offset = offset +
 		     offsetof(struct bootloader_message_ab, slot_suffix);
-	if (abc_offset % part_info->blksz) {
-		log_err("ANDROID: Boot control block not block aligned.\n");
-		return -EINVAL;
-	}
+	sub_offset = abc_offset % part_info->blksz;
 	abc_offset /= part_info->blksz;
 
-	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control),
+	abc_blocks = DIV_ROUND_UP(sub_offset + sizeof(struct bootloader_control),
 				  part_info->blksz);
 	if (abc_offset + abc_blocks > part_info->size) {
 		log_err("ANDROID: boot control partition too small. Need at least %lu blocks but have " LBAF " blocks.\n",
 			abc_offset + abc_blocks, part_info->size);
 		return -EINVAL;
 	}
-	*abc = malloc_cache_aligned(abc_blocks * part_info->blksz);
-	if (!*abc)
+	buf = malloc_cache_aligned(abc_blocks * part_info->blksz);
+	if (!buf)
 		return -ENOMEM;
 
 	ret = blk_dread(dev_desc, part_info->start + abc_offset, abc_blocks,
-			*abc);
+			buf);
 	if (IS_ERR_VALUE(ret)) {
 		log_err("ANDROID: Could not read from boot ctrl partition\n");
-		free(*abc);
+		free(buf);
 		return -EIO;
 	}
+
+	*abc = malloc(sizeof(struct bootloader_control));
+	if (!*abc) {
+		free(buf);
+		return -ENOMEM;
+	}
+	memcpy(*abc, (u8 *)buf + sub_offset, sizeof(struct bootloader_control));
+	free(buf);
 
 	log_debug("ANDROID: Loaded ABC, %lu blocks\n", abc_blocks);
 
@@ -127,8 +132,7 @@ static int ab_control_create_from_disk(struct blk_desc *dev_desc,
  *
  * @dev_desc: Device where we should write the boot_control struct
  * @part_info: Partition on the 'dev_desc' where to write
- * @abc Pointer to the boot control struct and the extra bytes after
- *      it up to the nearest block boundary
+ * @abc: Pointer to the boot control struct to write back
  * @offset: boot_control struct offset
  *
  * Store back to the same location it was read from with
@@ -140,20 +144,36 @@ static int ab_control_store(struct blk_desc *dev_desc,
 			    const struct disk_partition *part_info,
 			    struct bootloader_control *abc, ulong offset)
 {
-	ulong abc_offset, abc_blocks, ret;
+	ulong abc_offset, abc_blocks, sub_offset, ret;
+	void *buf;
 
-	if (offset % part_info->blksz) {
-		log_err("ANDROID: offset not block aligned\n");
-		return -EINVAL;
-	}
-
-	abc_offset = (offset +
-		      offsetof(struct bootloader_message_ab, slot_suffix)) /
-		     part_info->blksz;
-	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control),
+	abc_offset = offset +
+		     offsetof(struct bootloader_message_ab, slot_suffix);
+	sub_offset = abc_offset % part_info->blksz;
+	abc_offset /= part_info->blksz;
+	abc_blocks = DIV_ROUND_UP(sub_offset + sizeof(struct bootloader_control),
 				  part_info->blksz);
+
+	buf = malloc_cache_aligned(abc_blocks * part_info->blksz);
+	if (!buf)
+		return -ENOMEM;
+
+	/*
+	 * Read-modify-write: the struct may share its first/last block with
+	 * other data when the 2 KiB offset is not block-aligned (4 KiB devices),
+	 * so preserve the surrounding bytes.
+	 */
+	ret = blk_dread(dev_desc, part_info->start + abc_offset, abc_blocks,
+			buf);
+	if (IS_ERR_VALUE(ret)) {
+		log_err("ANDROID: Could not read the misc partition\n");
+		free(buf);
+		return -EIO;
+	}
+	memcpy((u8 *)buf + sub_offset, abc, sizeof(struct bootloader_control));
 	ret = blk_dwrite(dev_desc, part_info->start + abc_offset, abc_blocks,
-			 abc);
+			 buf);
+	free(buf);
 	if (IS_ERR_VALUE(ret)) {
 		log_err("ANDROID: Could not write back the misc partition\n");
 		return -EIO;

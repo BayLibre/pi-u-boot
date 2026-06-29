@@ -105,6 +105,12 @@ config PWM_TEGRA
 	  32KHz clock is supported by the driver but the duty cycle is
 	  configurable.
 
+config PWM_PXA
+	bool "Enable support for PXA PWM"
+	depends on DM_PWM
+	help
+	  This PWM is found on the SpacemiT K1x/K3 and other SoCs.
+
 config PWM_STM32
 	bool "Enable support for STM32 PWM"
 	depends on MFD_STM32_TIMERS

@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Copyright (C) 2025-2026, Spacemit
+ *
+ * binman description for the SpacemiT K3 (X100) U-Boot FIT (u-boot.itb).
+ * The SPL (M-mode, after DDR init) loads this FIT, which carries the OpenSBI
+ * fw_dynamic firmware, U-Boot proper as a loadable and the K3 control FDT.
+ * Boot chain: SPL -> u-boot.itb -> OpenSBI (M-mode) -> U-Boot proper (S-mode).
+ */
+
+#include <config.h>
+
+/*
+ * Tag the nodes the SPL (XPL) needs with "bootph-all" so fdtgrep keeps them
+ * in the filtered SPL device tree. Upstream U-Boot uses the standardized
+ * bootph-* markers (bootph-all = every phase, bootph-pre-ram = SPL); the
+ * vendor 2022.10 tree used the old "u-boot,dm-spl", which this fdtgrep
+ * ignores. Without these the SPL DTB is stripped to the root node, the DM
+ * console never binds (silent SPL) and the DDR UCLASS_RAM probe finds no
+ * controller node.
+ */
+&soc {
+	bootph-all;
+};
+
+&uart0 {
+	bootph-all;
+};
+
+&dram {
+	bootph-all;
+};
+
+&usb3_porta_u2phy {
+	bootph-all;
+};
+
+&usb3_porta_u3phy {
+	bootph-all;
+};
+
+&usb3_porta {
+	bootph-all;
+	/*
+	 * The K3 reset controller shares the CCU register base (d4050000) and is
+	 * deliberately kept out of the SPL (probing it there disturbs the DDR
+	 * clock), so RESET_USB3_PORTA has no provider in the SPL. The BROM already
+	 * brought this port out of reset to download the FSBL over USB, so drop
+	 * the reset dependency here; otherwise dwc3-generic's reset_get_bulk()
+	 * fails and the fastboot gadget never probes.
+	 */
+	/delete-property/ resets;
+	/delete-property/ reset-names;
+};
+
+&qspi {
+	bootph-all;
+
+	flash@0 {
+		bootph-all;
+	};
+};
+
+&sdhci0 {
+	bootph-all;
+};
+
+&sdhci2 {
+	bootph-all;
+};
+
+&ufs {
+	bootph-all;
+};
+
+&i2c8 {
+	bootph-all;
+};
+
+&spm8821 {
+	bootph-all;
+
+	regulators {
+		bootph-all;
+	};
+};
+
+&dcdc_1 {
+	bootph-all;
+};
+
+&dcdc_3 {
+	bootph-all;
+};
+
+&ldo_1 {
+	bootph-all;
+};
+
+/ {
+	binman: binman {
+		multiple-images;
+	};
+};
+
+&binman {
+	itb {
+		filename = "u-boot.itb";
+
+		fit {
+			description = "Configuration to load OpenSBI before U-Boot";
+			#address-cells = <2>;
+			fit,fdt-list = "of-list";
+
+			images {
+				uboot {
+					description = "U-Boot";
+					type = "standalone";
+					os = "U-Boot";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <CONFIG_TEXT_BASE>;
+
+					uboot_blob: u-boot-nodtb {
+					};
+				};
+
+				opensbi {
+					description = "OpenSBI fw_dynamic Firmware";
+					type = "firmware";
+					os = "opensbi";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <CONFIG_SPL_OPENSBI_LOAD_ADDR>;
+					entry = /bits/ 64 <CONFIG_SPL_OPENSBI_LOAD_ADDR>;
+
+					opensbi_blob: opensbi {
+						filename = "fw_dynamic.bin";
+						missing-msg = "opensbi";
+					};
+				};
+
+				@fdt-SEQ {
+					fit,operation = "gen-fdt-nodes";
+					description = "NAME";
+					type = "flat_dt";
+					compression = "none";
+				};
+			};
+
+			configurations {
+				default = "@conf-DEFAULT-SEQ";
+
+				@conf-SEQ {
+					description = "NAME";
+					firmware = "opensbi";
+					loadables = "uboot";
+					fdt = "fdt-SEQ";
+				};
+			};
+		};
+	};
+};

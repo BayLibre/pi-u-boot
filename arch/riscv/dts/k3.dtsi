@@ -1,0 +1,1033 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Copyright (C) 2025-2026, Spacemit
+ *
+ * SpacemiT K3 (X100) SoC base device tree for the upstream port.
+ *
+ * This describes the SoC. Board files (e.g. k3-pico-itx.dts) include it and
+ * enable / override the peripherals their hardware wires up.
+ *
+ * The same DTB is consumed by two phases:
+ *  - The SPL (XPL, M-mode FSBL) is fed the fdtgrep-filtered copy that keeps
+ *    only the nodes tagged "bootph-*". The SPL needs the boot UART (for the DM
+ *    console) and the DDR controller (UCLASS_RAM probe brings up DRAM).
+ *  - U-Boot proper (S-mode, after OpenSBI) uses the full tree to bind its
+ *    console and report memory.
+ *
+ * DDR init needs none of the clock/reset/pinctrl nodes: the controller is
+ * clocked by the BROM and the driver only reads its two register banks plus
+ * the "part-number" fallback (see drivers/ddr/spacemit/k3/ddr_init.c).
+ */
+
+#include <dt-bindings/clock/spacemit-k3-clock.h>
+#include <dt-bindings/reset/spacemit-k3-reset.h>
+#include <dt-bindings/pinctrl/k3-pinctrl.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "SpacemiT K3";
+	compatible = "spacemit,k3";
+
+	aliases {
+		serial0 = &uart0;
+		mmc0 = &sdhci0;
+		mmc2 = &sdhci2;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c6 = &i2c6;
+		i2c8 = &i2c8;
+		spi0 = &qspi;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200";
+	};
+
+	cpus {
+		bootph-all;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <24000000>;
+		clocks = <&ccu CLK_TOP_DCLK>,
+			 <&ccu CLK_AXICLK>,
+			 <&ccu CLK_CCI550>,
+			 <&ccu CLK_CPU_C0_CORE>,
+			 <&ccu CLK_CPU_C1_CORE>,
+			 <&ccu CLK_CPU_C2_CORE>,
+			 <&ccu CLK_CPU_C3_CORE>,
+			 <&ccu CLK_PLL3>,
+			 <&ccu CLK_PLL4>,
+			 <&ccu CLK_PLL5>,
+			 <&ccu CLK_PLL8>,
+			 <&ccu CLK_PLL3_D1>,
+			 <&ccu CLK_CPU_C1_PLL_SRC>,
+			 <&ccu CLK_PLL5_D1>,
+			 <&ccu CLK_CPU_C3_PLL_SRC>;
+		clock-names = "topd", "axi", "cci", "cluster0", "cluster1", "cluster2", "cluster3",
+			       "pll3", "pll4", "pll5", "pll8", "pll_src3", "clt1_pll_src", "pll_src5", "clt3_pll_src";
+		topd_frequency = <800000000>;
+		axi_frequency =  <307000000>;
+		cci_frequency =  <1228000000>;
+		cluster0_frequency = <2200000000>;
+		cluster1_frequency = <2200000000>;
+		cluster2_frequency = <1800000000>;
+		cluster3_frequency = <1800000000>;
+
+		cpu_0: cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_1: cpu@1 {
+			device_type = "cpu";
+			reg = <1>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu1_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_2: cpu@2 {
+			device_type = "cpu";
+			reg = <2>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu2_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_3: cpu@3 {
+			device_type = "cpu";
+			reg = <3>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu3_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_4: cpu@4 {
+			device_type = "cpu";
+			reg = <4>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu4_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_5: cpu@5 {
+			device_type = "cpu";
+			reg = <5>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu5_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_6: cpu@6 {
+			device_type = "cpu";
+			reg = <6>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu6_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+
+		cpu_7: cpu@7 {
+			device_type = "cpu";
+			reg = <7>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa-base = "rv64i";
+			riscv,cbom-block-size = <64>;
+			mmu-type = "riscv,sv39";
+
+			cpu7_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	memory@100000000 {
+		device_type = "memory";
+		reg = <0x1 0x02000000 0x0 0x7e000000>;
+	};
+
+	vctcxo_24: vctcxo_24 {
+		bootph-all;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "vctcxo_24";
+	};
+
+	vctcxo_3: vctcxo_3 {
+		bootph-all;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <3000000>;
+		clock-output-names = "vctcxo_3";
+	};
+
+	vctcxo_1: vctcxo_1 {
+		bootph-all;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <1000000>;
+		clock-output-names = "vctcxo_1";
+	};
+
+	pll1_vco: pll1_vco {
+		bootph-all;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24576000>;
+		clock-output-names = "pll1_vco";
+	};
+
+	osc_32k: osc_32k {
+		bootph-all;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32000>;
+		clock-output-names = "osc_32k";
+	};
+
+	clk_dummy: clk_dummy {
+		bootph-all;
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <0>;
+		clock-output-names = "clk_dummy";
+	};
+
+	soc: soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "simple-bus";
+		ranges;
+
+		uart0: serial@d4017000 {
+			compatible = "ns16550";
+			reg = <0x0 0xd4017000 0x0 0x100>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			clock-frequency = <14745600>;
+			status = "disabled";
+		};
+
+		ccu: clock-controller@d4050000 {
+			bootph-pre-ram;
+			compatible = "spacemit,k3-ccu";
+			reg = <0x0 0xd4050000 0x0 0x209c>,
+			      <0x0 0xd4282800 0x0 0x400>,
+			      <0x0 0xd4015000 0x0 0x1000>,
+			      <0x0 0xd4090000 0x0 0x1000>,
+			      <0x0 0xd4282c00 0x0 0x400>,
+			      <0x0 0xd8440000 0x0 0x98>,
+			      <0x0 0xc0000000 0x0 0x4280>,
+			      <0x0 0xf0610000 0x0 0x20>,
+			      <0x0 0xc0880000 0x0 0xd100>;
+			reg-names = "mpmu", "apmu", "apbc", "apbs", "ciu", "dciu", "ddrc", "apbc2", "rcpu";
+			clocks = <&vctcxo_24>, <&vctcxo_3>, <&vctcxo_1>, <&pll1_vco>,
+				 <&osc_32k>, <&clk_dummy>;
+			clock-names = "vctcxo_24", "vctcxo_3", "vctcxo_1", "pll1_vco",
+				      "osc_32k", "clk_dummy";
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		reset: reset-controller@d4050000 {
+			bootph-all;
+			compatible = "spacemit,k3-reset";
+			reg = <0x0 0xd4050000 0x0 0x209c>,
+			      <0x0 0xd4282800 0x0 0x400>,
+			      <0x0 0xd4015000 0x0 0x1000>,
+			      <0x0 0xd4090000 0x0 0x1000>,
+			      <0x0 0xd4282c00 0x0 0x400>,
+			      <0x0 0xd8440000 0x0 0x98>,
+			      <0x0 0xc0000000 0x0 0x4280>,
+			      <0x0 0xf0610000 0x0 0x20>,
+			      <0x0 0xc0880000 0x0 0xd100>;
+			reg-names = "mpmu", "apmu", "apbc", "apbs", "ciu", "dciu", "ddrc", "apbc2", "rcpu";
+			#reset-cells = <1>;
+			status = "okay";
+		};
+
+		gpio: gpio@d4019000 {
+			compatible = "spacemit,k3-gpio";
+			reg = <0x0 0xd4019000 0x0 0x800>;
+			gpio-controller;
+			gpio-count = <128>;
+			#gpio-cells = <2>;
+			clocks = <&ccu CLK_GPIO>;
+			status = "okay";
+		};
+
+		pinctrl: pinctrl@d401e000 {
+			bootph-all;
+			compatible = "pinctrl-single";
+			reg = <0x0 0xd401e000 0x0 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#pinctrl-cells = <2>;
+			#gpio-range-cells = <3>;
+			pinctrl-single,register-width = <32>;
+			pinctrl-single,function-mask = <0xff77>;
+
+			range: gpio-range {
+				#pinctrl-single,gpio-range-cells = <3>;
+			};
+
+			pinctrl_qspi: qspi_grp {
+				bootph-all;
+				power-source = <1800>;
+				pinctrl-single,pins = <
+					K3_PADCONF(QSPI_DAT3, MUX_MODE0, (EDGE_NONE | PULL_DIS | PAD_DS8)) /* qspi_d3 */
+					K3_PADCONF(QSPI_DAT2, MUX_MODE0, (EDGE_NONE | PULL_DIS | PAD_DS8)) /* qspi_d2 */
+					K3_PADCONF(QSPI_DAT1, MUX_MODE0, (EDGE_NONE | PULL_DIS | PAD_DS8)) /* qspi_d1 */
+					K3_PADCONF(QSPI_DAT0, MUX_MODE0, (EDGE_NONE | PULL_DIS | PAD_DS8)) /* qspi_d0 */
+					K3_PADCONF(QSPI_CLK, MUX_MODE0, (EDGE_NONE | PULL_DIS | PAD_DS8)) /* qspi_clk */
+				>;
+			};
+
+			pinctrl_qspi_cs0: qspi_cs0_grp {
+				bootph-all;
+				power-source = <1800>;
+				pinctrl-single,pins = <
+					K3_PADCONF(QSPI_CS0, MUX_MODE0, (EDGE_NONE | PULL_UP | PAD_DS8)) /* qspi_cs0 */
+				>;
+			};
+
+			pinctrl_i2c8: i2c8_grp {
+				bootph-all;
+				power-source = <1800>;
+				pinctrl-single,pins = <
+					K3_PADCONF(PWR_SCL, MUX_MODE0, (EDGE_NONE | PULL_UP | PAD_DS0)) /* pwr_scl */
+					K3_PADCONF(PWR_SDA, MUX_MODE0, (EDGE_NONE | PULL_UP | PAD_DS0)) /* pwr_sda */
+				>;
+			};
+
+			pinctrl_espi0: espi0_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_91, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_d0 */
+					K3_PADCONF(GPIO_92, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_d1 */
+					K3_PADCONF(GPIO_93, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_d2 */
+					K3_PADCONF(GPIO_94, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_d3 */
+					K3_PADCONF(GPIO_95, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_cs */
+					K3_PADCONF(GPIO_96, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_clk */
+					K3_PADCONF(GPIO_97, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_resetn */
+					K3_PADCONF(GPIO_98, MUX_MODE4, (EDGE_NONE | PULL_UP | PAD_DS8)) /* espi_alert */
+				>;
+			};
+
+			pinctrl_i2c1_3: i2c1_3_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_102, MUX_MODE6, (EDGE_NONE | PULL_UP | PAD_DS0)) /* i2c1_scl */
+					K3_PADCONF(GPIO_103, MUX_MODE6, (EDGE_NONE | PULL_UP | PAD_DS0)) /* i2c1_sda */
+				>;
+			};
+
+			pinctrl_i2c2_1: i2c2_1_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_46, MUX_MODE5, (EDGE_NONE | PULL_UP | PAD_DS0)) /* i2c2_scl */
+					K3_PADCONF(GPIO_47, MUX_MODE5, (EDGE_NONE | PULL_UP | PAD_DS0)) /* i2c2_sda */
+				>;
+			};
+
+			pinctrl_gmac0: gmac0_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_00, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_rxdv */
+					K3_PADCONF(GPIO_01, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_rx_d0 */
+					K3_PADCONF(GPIO_02, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_rx_d1 */
+					K3_PADCONF(GPIO_03, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_rx_clk */
+					K3_PADCONF(GPIO_04, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_rx_d2 */
+					K3_PADCONF(GPIO_05, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_rx_d3 */
+					K3_PADCONF(GPIO_06, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_tx_d0 */
+					K3_PADCONF(GPIO_07, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_tx_d1 */
+					K3_PADCONF(GPIO_08, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_tx_clk */
+					K3_PADCONF(GPIO_09, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_tx_d2 */
+					K3_PADCONF(GPIO_10, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_tx_d3 */
+					K3_PADCONF(GPIO_11, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_tx_en */
+					K3_PADCONF(GPIO_12, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_mdc */
+					K3_PADCONF(GPIO_13, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_mdio */
+					K3_PADCONF(GPIO_14, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_int_n */
+					K3_PADCONF(GPIO_20, MUX_MODE1, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* gmac0_clk_ref */
+				>;
+			};
+
+			pinctrl_pcie0_1: pcie0_1_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_79, MUX_MODE5, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* PCIeA_perstn */
+					K3_PADCONF(GPIO_80, MUX_MODE5, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* PCIeA_waken */
+					K3_PADCONF(GPIO_81, MUX_MODE5, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* PCIeA_clkreqn */
+				>;
+			};
+
+			pinctrl_pcie1_1: pcie1_1_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_88, MUX_MODE4, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* PCIeB_perstn */
+					K3_PADCONF(GPIO_89, MUX_MODE4, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* PCIeB_waken */
+					K3_PADCONF(GPIO_90, MUX_MODE4, (EDGE_NONE | PULL_DIS | PAD_DS4)) /* PCIeB_clkreqn */
+				>;
+			};
+		};
+
+		/*
+		 * DDR controller. Two register banks (ddrc0, ddrc1). The driver
+		 * (compatible "spacemit,snps-lp45") runs LPDDR4X/LPDDR5 training
+		 * in the SPL. "part-number" is the fallback used when the board
+		 * TLV-EEPROM is unavailable (it is on this port).
+		 */
+		dram: ddr@cb000000 {
+			compatible = "spacemit,snps-lp45";
+			part-number = "MT62F1G32D2DS";
+			reg = <0x0 0xcb000000 0x0 0x00400000>,
+			      <0x0 0xcc000000 0x0 0x00400000>;
+			reg-names = "ddrc0", "ddrc1";
+			status = "okay";
+		};
+
+		/*
+		 * USB3 Port A, used by the BROM as the USB-download (--dfu)
+		 * controller. The SPL brings up the DWC3 gadget here to receive
+		 * u-boot.itb over fastboot.
+		 */
+		usb3_porta_u2phy: phy@cad20000 {
+			compatible = "spacemit,usb2-phy";
+			reg = <0x0 0xcad20000 0x0 0x200>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		usb3_porta_u3phy: phy@cad30000 {
+			compatible = "spacemit,k3-usb3-phy";
+			reg = <0x0 0xcad30000 0x0 0x200>,
+			      <0x0 0xd4282800 0x0 0x114>,
+			      <0x0 0xd4090000 0x0 0x200>;
+			reg-names = "puphy",
+				    "spacemit,syscon-apmu",
+				    "spacemit,syscon-apb-spare";
+			phy-nums = <1>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		usb3_porta: usb3@0 {
+			bootph-all;
+			compatible = "spacemit,k3-dwc3";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			resets = <&reset RESET_USB3_PORTA>;
+			reset-names = "ctl_rst";
+			clocks = <&ccu CLK_USB3_PORTA_BUS>;
+			clock-names = "bus";
+			ranges;
+			status = "disabled";
+
+			dwc3@cad00000 {
+				bootph-all;
+				reg = <0x0 0xcad00000 0x0 0x10000>;
+				dr_mode = "peripheral";
+				maximum-speed = "high-speed";
+				/*
+				 * this breaks FPGA usb,
+				 * set utmi_wide if running on FPGA
+				 */
+				phy_type = "utmi";
+				snps,dis_enblslpm_quirk;
+				snps,dis_u2_susphy_quirk;
+				snps,dis_u3_susphy_quirk;
+				snps,del_phy_power_chg_quirk;
+				snps,dis-tx-ipgap-linecheck-quirk;
+				snps,parkmode-disable-ss-quirk;
+				phys = <&usb3_porta_u3phy>, <&usb3_porta_u2phy>;
+				phy-names = "usb3-phy", "usb2-phy";
+			};
+		};
+
+		/*
+		 * USB3 Port D, exposed as a TypeC (USB3/DP/Power) port on the
+		 * board. Host mode. Used by U-Boot proper only.
+		 */
+		usb3_portd_u2phy: phy@81b00000 {
+			compatible = "spacemit,usb2-phy";
+			reg = <0x0 0x81b00000 0x0 0x200>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		usb3_portd_u3phy: phy@82100000 {
+			compatible = "spacemit,k3-usb3-phy";
+			reg = <0x0 0x82100000 0x0 0x200>,
+			      <0x0 0xd4282800 0x0 0x114>,
+			      <0x0 0xd4090000 0x0 0x200>;
+			reg-names = "puphy",
+				    "spacemit,syscon-apmu",
+				    "spacemit,syscon-apb-spare";
+			combo-usb-bit = <0>;
+			phy-nums = <1>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		usb3_portd: usb3@3 {
+			compatible = "spacemit,k3-dwc3";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			resets = <&reset RESET_USB3_PORTD>;
+			reset-names = "ctl_rst";
+			clocks = <&ccu CLK_USB3_PORTD_BUS>;
+			clock-names = "bus";
+			ranges;
+			status = "disabled";
+
+			dwc3@81a00000 {
+				reg = <0x0 0x81a00000 0x0 0x10000>;
+				dr_mode = "host";
+				phys = <&usb3_portd_u3phy>, <&usb3_portd_u2phy>;
+				phy-names = "usb3-phy", "usb2-phy";
+				phy_type = "utmi";
+				snps,dis_enblslpm_quirk;
+				snps,dis_u2_susphy_quirk;
+				snps,dis_u3_susphy_quirk;
+				snps,del_phy_power_chg_quirk;
+				snps,dis-tx-ipgap-linecheck-quirk;
+				snps,parkmode-disable-ss-quirk;
+			};
+		};
+
+		/*
+		 * USB2.0 host controller (DWC3 in host mode), exposed as an
+		 * XHCI controller for USB mass-storage / keyboard from U-Boot
+		 * proper. Not used by the SPL (no bootph tag).
+		 */
+		usb2_host_u2phy: phy@c0a20000 {
+			compatible = "spacemit,usb2-phy";
+			reg = <0x0 0xc0a20000 0x0 0x200>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		usb2_host: usb2@0 {
+			compatible = "spacemit,k3-dwc3";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			resets = <&reset RESET_USB2>;
+			reset-names = "ctl_rst";
+			clocks = <&ccu CLK_USB2_BUS>;
+			clock-names = "bus";
+			ranges;
+			status = "disabled";
+
+			dwc3@c0a00000 {
+				reg = <0x0 0xc0a00000 0x0 0x10000>;
+				phys = <&usb2_host_u2phy>;
+				phy-names = "usb2-phy";
+				dr_mode = "host";
+				maximum-speed = "high-speed";
+				phy_type = "utmi";
+				snps,dis_enblslpm_quirk;
+				snps,dis_u2_susphy_quirk;
+				snps,dis-del-phy-power-chg-quirk;
+				snps,dis-tx-ipgap-linecheck-quirk;
+			};
+		};
+
+		/*
+		 * Gigabit ethernet (DesignWare EQOS). No matching driver in this
+		 * tree yet (compatible "spacemit,k3-dwmac-eqos"); the node is kept
+		 * for board completeness and will simply not bind.
+		 */
+		eth0: ethernet@cac80000 {
+			compatible = "spacemit,k3-dwmac-eqos";
+			reg = <0x0 0xcac80000 0x0 0x00002000>;
+			apmu-base-reg = <0xd4282800>;
+			ctrl-reg = <0x3e4>;
+			dline-reg = <0x3e8>;
+			clocks = <&ccu CLK_EMAC0_BUS>;
+			clock-names = "master_bus_clk";
+			resets = <&reset RESET_EMAC0>;
+			reset-names = "mac_reset";
+			status = "disabled";
+		};
+
+		/*
+		 * PCIe combo PHYs. PHY0/1 are 2-lane, PHY2-5 are 1-lane. Each
+		 * shares the apb_spare register block used for rcal trim.
+		 */
+		pcie_phy0: pcie-phy0@81d00000 {
+			compatible = "spacemit,k3-pcie-phy";
+			reg = <0x0 0x81d00000 0x0 0x1000>,
+			      <0x0 0xd4090178 0x0 0x8>;
+			reg-names = "phy", "apb_spare";
+
+			spacemit,phy-id = <0>;
+			spacemit,num-lanes = <2>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		pcie_phy1: pcie-phy1@81e00000 {
+			compatible = "spacemit,k3-pcie-phy";
+			reg = <0x0 0x81e00000 0x0 0x1000>,
+			      <0x0 0xd4090178 0x0 0x8>;
+			reg-names = "phy", "apb_spare";
+
+			spacemit,phy-id = <1>;
+			spacemit,num-lanes = <2>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		pcie_phy2: pcie-phy2@81f00000 {
+			compatible = "spacemit,k3-pcie-phy";
+			reg = <0x0 0x81f00000 0x0 0x400>,
+			      <0x0 0xd4090178 0x0 0x8>;
+			reg-names = "phy", "apb_spare";
+
+			spacemit,phy-id = <2>;
+			spacemit,num-lanes = <1>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		pcie_phy3: pcie-phy3@82000000 {
+			compatible = "spacemit,k3-pcie-phy";
+			reg = <0x0 0x82000000 0x0 0x400>,
+			      <0x0 0xd4090178 0x0 0x8>;
+			reg-names = "phy", "apb_spare";
+
+			spacemit,phy-id = <3>;
+			spacemit,num-lanes = <1>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		pcie_phy4: pcie-phy4@82100000 {
+			compatible = "spacemit,k3-pcie-phy";
+			reg = <0x0 0x82100000 0x0 0x400>,
+			      <0x0 0xd4090178 0x0 0x8>;
+			reg-names = "phy", "apb_spare";
+
+			spacemit,phy-id = <4>;
+			spacemit,num-lanes = <1>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		pcie_phy5: pcie-phy5@82200000 {
+			compatible = "spacemit,k3-pcie-phy";
+			reg = <0x0 0x82200000 0x0 0x400>,
+			      <0x0 0xd4090178 0x0 0x8>;
+			reg-names = "phy", "apb_spare";
+
+			spacemit,phy-id = <5>;
+			spacemit,num-lanes = <1>;
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		/*
+		 * PCIe DesignWare root complexes. NVMe boot storage attaches
+		 * here (boot priority 2, after UFS). Used by U-Boot proper only.
+		 */
+		pcie0_rc: pcie@80000000 {
+			compatible = "spacemit,k3-pcie";
+			reg = <0x0 0x80000000 0x0 0x00001000>, /* dbi */
+			      <0x0 0x80100000 0x0 0x00001000>, /* dbi2 */
+			      <0x0 0x80300000 0x0 0x00003f20>, /* atu registers */
+			      <0x11 0x00000000 0x0 0x00010000>, /* config space */
+			      <0x0 0xd42829f0 0x0 0x00000008>, /* k3 soc config addr */
+			      <0x0 0x82900000 0x0 0x00001000>; /* phy ahb */
+			reg-names = "dbi", "dbi2", "atu", "config", "app", "phy_ahb";
+
+			spacemit,pcie-mgmt = <0xd42829d8>;
+			clocks = <&ccu CLK_PCIEA>;
+			resets = <&reset RESET_PCIE_PORTA>;
+			reset-names = "pcie-reset";
+
+			spacemit,pcie-port = <0>;
+			bus-range = <0x00 0xff>;
+			max-link-speed = <3>;
+			num-lanes = <2>;
+
+			phys = <&pcie_phy0>;
+			phy-names = "pcie-phy0";
+
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00010000 0x11 0x00010000 0x0 0x00100000>,
+				 <0x02000000 0x0 0x00110000 0x11 0x00110000 0x0 0x7fef0000>,
+				 <0x43000000 0x18 0x00000000 0x18 0x00000000 0x1 0x00000000>;
+			linux,pci-domain = <0>;
+			status = "disabled";
+		};
+
+		pcie1_rc: pcie@80400000 {
+			compatible = "spacemit,k3-pcie";
+			reg = <0x0 0x80400000 0x0 0x00001000>, /* dbi */
+			      <0x0 0x80500000 0x0 0x00001000>, /* dbi2 */
+			      <0x0 0x80700000 0x0 0x00003f20>, /* atu registers */
+			      <0x11 0x80000000 0x0 0x00010000>, /* config space */
+			      <0x0 0xd42829d0 0x0 0x00000008>, /* k3 soc config addr */
+			      <0x0 0x82c00000 0x0 0x00001000>; /* phy ahb */
+			reg-names = "dbi", "dbi2", "atu", "config", "app", "phy_ahb";
+
+			spacemit,pcie-mgmt = <0xd42829d8>;
+			clocks = <&ccu CLK_PCIEB>;
+			resets = <&reset RESET_PCIE_PORTB>;
+			reset-names = "pcie-reset";
+
+			spacemit,pcie-port = <1>;
+			bus-range = <0x00 0xff>;
+			max-link-speed = <3>;
+			num-lanes = <2>;
+
+			phys = <&pcie_phy1>;
+			phy-names = "pcie-phy0";
+
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00010000 0x11 0x80010000 0x0 0x00100000>,
+				 <0x02000000 0x0 0x80110000 0x11 0x80110000 0x0 0x7fef0000>,
+				 <0x43000000 0x16 0x00000000 0x16 0x00000000 0x1 0x00000000>;
+			linux,pci-domain = <1>;
+			status = "disabled";
+		};
+
+		pcie2_rc: pcie@80800000 {
+			compatible = "spacemit,k3-pcie";
+			reg = <0x0 0x80800000 0x0 0x00001000>, /* dbi */
+			      <0x0 0x80900000 0x0 0x00001000>, /* dbi2 */
+			      <0x0 0x80b00000 0x0 0x00003f20>, /* atu registers */
+			      <0x12 0x00000000 0x0 0x00010000>, /* config space */
+			      <0x0 0xd42829c8 0x0 0x00000008>, /* k3 soc config addr */
+			      <0x0 0x82d00000 0x0 0x00001000>; /* phy ahb */
+			reg-names = "dbi", "dbi2", "atu", "config", "app", "phy_ahb";
+
+			spacemit,pcie-mgmt = <0xd42829d8>;
+			clocks = <&ccu CLK_PCIEC>;
+			resets = <&reset RESET_PCIE_PORTC>;
+			reset-names = "pcie-reset";
+
+			spacemit,pcie-port = <2>;
+			bus-range = <0x00 0xff>;
+			max-link-speed = <3>;
+			num-lanes = <2>;
+
+			phys = <&pcie_phy2>, <&pcie_phy3>;
+			phy-names = "pcie-phy0", "pcie-phy1";
+
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00000000 0x12 0x00010000 0x0 0x00100000>,
+				 <0x02000000 0x0 0x00110000 0x12 0x00110000 0x0 0x7fef0000>,
+				 <0x43000000 0x15 0x00000000 0x15 0x00000000 0x1 0x00000000>;
+			linux,pci-domain = <2>;
+			status = "disabled";
+		};
+
+		pcie3_rc: pcie@80c00000 {
+			compatible = "spacemit,k3-pcie";
+			reg = <0x0 0x80c00000 0x0 0x00001000>, /* dbi */
+			      <0x0 0x80d00000 0x0 0x00001000>, /* dbi2 */
+			      <0x0 0x80f00000 0x0 0x00003f20>, /* atu registers */
+			      <0x12 0x80000000 0x0 0x00010000>, /* config space */
+			      <0x0 0xd42829e0 0x0 0x00000008>, /* k3 soc config addr */
+			      <0x0 0x82a00000 0x0 0x00001000>; /* phy ahb */
+			reg-names = "dbi", "dbi2", "atu", "config", "app", "phy_ahb";
+
+			spacemit,pcie-mgmt = <0xd42829d8>;
+			clocks = <&ccu CLK_PCIED>;
+			resets = <&reset RESET_PCIE_PORTD>;
+			reset-names = "pcie-reset";
+
+			spacemit,pcie-port = <3>;
+			bus-range = <0x00 0xff>;
+			max-link-speed = <3>;
+			num-lanes = <1>;
+
+			phys = <&pcie_phy4>;
+			phy-names = "pcie-phy0";
+
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00010000 0x12 0x80010000 0x0 0x100000>,
+				 <0x02000000 0x0 0x80110000 0x12 0x80110000 0x0 0x3fef0000>,
+				 <0x43000000 0x14 0x00000000 0x14 0x00000000 0x1 0x00000000>;
+			linux,pci-domain = <3>;
+			status = "disabled";
+		};
+
+		pcie4_rc: pcie@81000000 {
+			compatible = "spacemit,k3-pcie";
+			reg = <0x0 0x81000000 0x0 0x00001000>, /* dbi */
+			      <0x0 0x81100000 0x0 0x00001000>, /* dbi2 */
+			      <0x0 0x81300000 0x0 0x00003f20>, /* atu registers */
+			      <0x12 0xc0000000 0x0 0x00010000>, /* config space */
+			      <0x0 0xd42829e8 0x0 0x00000008>, /* k3 soc config addr */
+			      <0x0 0x82b00000 0x0 0x00001000>; /* phy ahb */
+			reg-names = "dbi", "dbi2", "atu", "config", "app", "phy_ahb";
+
+			spacemit,pcie-mgmt = <0xd42829d8>;
+			clocks = <&ccu CLK_PCIEE>;
+			resets = <&reset RESET_PCIE_PORTE>;
+			reset-names = "pcie-reset";
+
+			spacemit,pcie-port = <4>;
+			bus-range = <0x00 0xff>;
+			max-link-speed = <3>;
+			num-lanes = <1>;
+
+			phys = <&pcie_phy5>;
+			phy-names = "pcie-phy0";
+
+			device_type = "pci";
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x01000000 0x0 0x00000000 0x12 0xc0010000 0x0 0x00100000>,
+				 <0x02000000 0x0  0xc0110000 0x12 0xc0110000 0x0 0x3fef0000>,
+				 <0x43000000 0x13 0x00000000 0x13 0x00000000 0x1 0x00000000>;
+			linux,pci-domain = <4>;
+			status = "disabled";
+		};
+
+		/* PWM (fan / backlight controller). */
+		pwm18: pwm@d4022800 {
+			compatible = "spacemit,k1x-pwm";
+			reg = <0x0 0xd4022800 0x0 0x10>;
+			#pwm-cells = <2>;
+			clocks = <&ccu CLK_PWM18>;
+			resets = <&reset RESET_PWM18>;
+			k1x,pwm-disable-fd;
+			status = "okay";
+		};
+
+		/*
+		 * QSPI controller + NOR flash. Primary BROM boot medium. The
+		 * memory-mapped read window (qspi-mmap) starts at 0xb8000000.
+		 */
+		qspi: spi@d420c000 {
+			compatible = "spacemit,k3-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x0 0xd420c000 0x0 0x1000>,
+			      <0x0 0xb8000000 0x0 0x4100000>;
+			reg-names = "qspi-base", "qspi-mmap";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_qspi &pinctrl_qspi_cs0>;
+			qspi-sfa1ad = <0x4000000>;
+			qspi-sfa2ad = <0x100000>;
+			qspi-sfb1ad = <0x100000>;
+			qspi-sfb2ad = <0x100000>;
+			qspi-pmuap-reg = <0xd4282860>;
+			qspi-mpmu-acgr-reg = <0xd4051024>;
+			qspi-ahbread = <0>;
+			qspi-freq = <26500000>;
+			qspi-id = <4>;
+			clocks = <&ccu CLK_QSPI>, <&ccu CLK_QSPI_BUS>;
+			clock-names = "qspi_clk", "qspi_bus_clk";
+			resets = <&reset RESET_QSPI>, <&reset RESET_QSPI_BUS>;
+			reset-names = "qspi_reset", "qspi_bus_reset";
+			spi-max-frequency = <81300000>;
+			status = "disabled";
+		};
+
+		/* SD card slot */
+		sdhci0: mmc@d4280000 {
+			compatible = "spacemit,k3-sdhci";
+			reg = <0x0 0xd4280000 0x0 0x200>;
+			resets = <&reset RESET_SDH_AXI>, <&reset RESET_SDH0>;
+			reset-names = "sdh_axi", "sdh0";
+			clocks = <&ccu CLK_SDH0>, <&ccu CLK_SDH_AXI>;
+			clock-names = "sdh-io", "sdh-core";
+			bus-width = <4>;
+			broken-cd;
+			no-1-8-v;
+			cap-sd-highspeed;
+			sdh-phy-module = <0>;
+			status = "okay";
+		};
+
+		/* eMMC */
+		sdhci2: mmc@d4281000 {
+			compatible = "spacemit,k3-sdhci";
+			reg = <0x0 0xd4281000 0x0 0x200>;
+			resets = <&reset RESET_SDH_AXI>, <&reset RESET_SDH2>;
+			reset-names = "sdh_axi", "sdh2";
+			clocks = <&ccu CLK_SDH2>, <&ccu CLK_SDH_AXI>;
+			clock-names = "sdh-io", "sdh-core";
+			bus-width = <8>;
+			non-removable;
+			mmc-hs400-1_8v;
+			mmc-hs400-enhanced-strobe;
+			sdh-phy-module = <1>;
+			status = "okay";
+		};
+
+		/* UFS host controller - super/rootfs storage */
+		ufs: ufs@c0e00000 {
+			compatible = "spacemit,k3-ufshci";
+			reg = <0x0 0xc0e00000 0x0 0x30000>;
+			clocks = <&ccu CLK_UFS_ACLK>, <&ccu CLK_UFS_REFCLK>;
+			clock-names = "aclk", "refclk";
+			resets = <&reset RESET_UFS_ACLK>;
+			reset-names = "aclk_reset";
+			ref-clk-freq = <19200000>;
+			status = "disabled";
+		};
+
+		/* eFuse - identity / secure-boot key material */
+		efuse: fuse@f0702800 {
+			compatible = "spacemit,k3-efuse";
+			reg = <0x0 0xf0702800 0x0 0x400>;
+			resets = <&reset RESET_AES_WTM>;
+			reset-names = "aes_reset";
+			clocks = <&ccu CLK_AES_WTM>;
+			clock-names = "aes_core_wtm";
+			status = "disabled";
+		};
+
+		/* General-purpose I2C (TWSI) controllers. */
+		i2c1: i2c@d4011000 {
+			compatible = "spacemit,i2c";
+			reg = <0x0 0xd4011000 0x0 0x38>;
+			clocks = <&ccu CLK_TWSI1>;
+			resets = <&reset RESET_TWSI1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@d4012000 {
+			compatible = "spacemit,i2c";
+			reg = <0x0 0xd4012000 0x0 0x38>;
+			clocks = <&ccu CLK_TWSI2>;
+			resets = <&reset RESET_TWSI2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@d4018800 {
+			compatible = "spacemit,i2c";
+			reg = <0x0 0xd4018800 0x0 0x38>;
+			clocks = <&ccu CLK_TWSI6>;
+			resets = <&reset RESET_TWSI6>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "okay";
+		};
+
+		/* PMU I2C - hosts the system PMIC */
+		i2c8: i2c@d401d800 {
+			compatible = "spacemit,i2c", "spacemit,k1-i2c";
+			reg = <0x0 0xd401d800 0x0 0x38>;
+			clocks = <&ccu CLK_TWSI8>;
+			resets = <&reset RESET_TWSI8>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_i2c8>;
+			status = "disabled";
+		};
+
+		espi0: espi@cac8c000 {
+			compatible = "spacemit,k2-espi";
+			reg = <0x0 0xcac8c000 0x0 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_espi0>;
+			clocks = <&ccu CLK_ESPI_SCLK_SRC>, <&ccu CLK_ESPI_SCLK>, <&ccu CLK_ESPI_MCLK>;
+			clock-names = "sclk_src", "sclk", "mclk";
+			resets = <&reset RESET_ESPI>;
+			reset-names = "espi_reset";
+			assigned-clocks = <&ccu CLK_ESPI_SCLK>;
+			assigned-clock-parents = <&ccu CLK_ESPI_SCLK_SRC>;
+			pr_io_base = <0x86000000>;
+			pr-mem-base0 = <0x84000000>;
+			pr-mem-base1 = <0xcac8c000>;
+			operating-frequency = <20>;
+			io-mode = "single";
+			alert-mode = "io1";
+			alert-type = "open-drain";
+			vwire-channel-enable;
+			oob-channel-enable;
+			peripheral-channel-enable;
+			status = "disabled";
+		};
+	};
+};

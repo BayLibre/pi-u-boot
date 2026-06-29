@@ -1190,6 +1190,21 @@ config SPL_NOR_SUPPORT
 	  a memory-mapped device makes it very easy to access. Loading from
 	  NOR is typically achieved with just a memcpy().
 
+config SPL_MTD_SUPPORT
+	bool "Support MTD drivers"
+	help
+	  Enable support for MTD (Memory Technology Device) within SPL. MTD
+	  provides a block interface over raw NAND and can also be used with
+	  SPI flash, letting SPL load U-Boot from supported MTD devices.
+
+config SPL_MTD_LOAD
+	bool "Support loading the next stage from an MTD device"
+	depends on SPL_MTD_SUPPORT
+	help
+	  Enable loading the next stage (U-Boot or otherwise) from an MTD
+	  device (SPI-NOR/NAND) in SPL, resolving the partition by name at
+	  runtime.
+
 config SPL_XIP_SUPPORT
 	bool "Support XIP"
 	help

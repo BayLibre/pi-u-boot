@@ -1,0 +1,27 @@
+menuconfig ESPI
+	bool "Enhanced SPI (eSPI) support"
+	help
+	  Enable support for Enhanced Serial Peripheral Interface (eSPI).
+	  eSPI is designed to replace the Low Pin Count (LPC) bus for
+	  communication between processors and embedded controllers.
+
+if ESPI
+
+config DM_ESPI
+	bool "Enable Driver Model for eSPI drivers"
+	depends on DM
+	help
+	  Enable driver model for eSPI. The eSPI interface provides
+	  methods to access eSPI buses and attached devices. The uclass
+	  interface is defined in include/espi.h. This allows eSPI
+	  controllers to be configured through device tree properties.
+
+config ESPI_SPACEMIT_K3
+	bool "SpacemiT K3 eSPI controller"
+	depends on DM_ESPI
+	help
+	  Enable the SpacemiT K3 eSPI controller driver. This driver can be
+	  used to access eSPI devices on platforms embedding this SpacemiT
+	  IP core. Supports Peripheral, VWire, OOB, and Flash channels.
+
+endif

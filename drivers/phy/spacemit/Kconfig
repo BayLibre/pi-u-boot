@@ -10,3 +10,15 @@ config SPL_PHY_SPACEMIT_K1X_USB2
 	help
 	  Support for Spacemit k1-x USB 2 PHY in SPL
 
+config PHY_SPACEMIT_K3_USB3
+	bool "Spacemit K3 USB3/PCIE/Combo PHY driver"
+	depends on PHY
+	help
+	  USB3 and PCIE Combo PHY Support for Spacemit k3 Soc
+
+config SPL_PHY_SPACEMIT_K3_USB3
+	bool "Spacemit K3 USB3/PCIE/Combo PHY driver in SPL"
+	depends on SPL_PHY
+	help
+	  USB3 and PCIE Combo PHY Support for Spacemit k3 Soc in SPL
+

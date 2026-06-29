@@ -726,4 +726,12 @@ config K1X_QSPI
 	  SoCs through the spi-mem interface, supporting single/dual/quad
 	  buswidths and AHB-mapped fast reads.
 
+config K1X_SPI
+	bool "Spacemit K1X/K3 SSP SPI driver"
+	depends on DM_SPI
+	help
+	  Enable the Spacemit K1X/K3 SSP-based SPI master driver. This
+	  controller provides a generic SPI master interface using GPIO
+	  chip-select for peripherals on Spacemit K-series SoCs.
+
 endif # menu "SPI Support"

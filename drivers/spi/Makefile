@@ -44,6 +44,7 @@ obj-$(CONFIG_GXP_SPI) += gxp_spi.o
 obj-$(CONFIG_ICH_SPI) +=  ich.o
 obj-$(CONFIG_IPROC_QSPI) += iproc_qspi.o
 obj-$(CONFIG_K1X_QSPI) += k1x_qspi.o
+obj-$(CONFIG_K1X_SPI) += k1x_spi.o
 obj-$(CONFIG_KIRKWOOD_SPI) += kirkwood_spi.o
 obj-$(CONFIG_MESON_SPIFC) += meson_spifc.o
 obj-$(CONFIG_MESON_SPIFC_A1) += meson_spifc_a1.o

@@ -478,4 +478,13 @@ config PCIE_DW_IMX
 	  Say Y here if you want to enable DW PCIe controller support on
 	  iMX SoCs.
 
+config PCIE_DW_SPACEMIT
+	bool "Spacemit DesignWare based PCIe controller"
+	select PCIE_DW_COMMON
+	select PHY_SPACEMIT_PCIE
+	help
+	  Say Y here if you want to enable DW PCIe controller support on
+	  Spacemit k3 SoCs. This is required to use NVMe storage attached
+	  to the PCIe root complex.
+
 endif

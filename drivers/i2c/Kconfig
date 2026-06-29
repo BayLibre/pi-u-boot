@@ -576,6 +576,18 @@ config SPL_SYS_I2C_SANDBOX
 	  bus. Devices can be attached to the bus using the device tree
 	  which specifies the driver to use.  See sandbox.dts as an example.
 
+config SYS_I2C_SPACEMIT
+	bool "SPACEMIT I2C driver"
+	depends on DM_I2C
+	help
+	  Support for SPACEMIT I2C controllers.
+
+config SPL_SYS_I2C_SPACEMIT
+	bool "SPACEMIT I2C SPL driver"
+	depends on SPL_I2C && (SPL_DM_I2C || SPL_SYS_I2C_LEGACY)
+	help
+	  Support for SPACEMIT I2C controllers in SPL.
+
 config SYS_I2C_SH
 	bool "Legacy SuperH I2C interface"
 	depends on ARCH_RENESAS && SYS_I2C_LEGACY

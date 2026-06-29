@@ -46,6 +46,7 @@ obj-$(CONFIG_SYS_I2C_ROCKCHIP) += rk_i2c.o
 obj-$(CONFIG_SYS_I2C_RZ_RIIC) += rz_riic.o
 obj-$(CONFIG_SYS_I2C_S3C24X0) += s3c24x0_i2c.o exynos_hs_i2c.o
 obj-$(CONFIG_SYS_I2C_SANDBOX) += sandbox_i2c.o i2c-emul-uclass.o
+obj-$(CONFIG_$(PHASE_)SYS_I2C_SPACEMIT) += spacemit_i2c.o
 obj-$(CONFIG_SYS_I2C_SH) += sh_i2c.o
 obj-$(CONFIG_SYS_I2C_STM32F7) += stm32f7_i2c.o
 obj-$(CONFIG_SYS_I2C_SUN6I_P2WI) += sun6i_p2wi.o

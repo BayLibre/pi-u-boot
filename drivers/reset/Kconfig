@@ -277,5 +277,11 @@ config RESET_SPACEMIT_K1
 	  Support for SPACEMIT's K1 Reset system. Basic Assert/Deassert
 	  is supported.
 
+config RESET_SPACEMIT_K3
+	bool "SpacemiT K3 Reset Driver"
+	depends on TARGET_SPACEMIT_K3
+	help
+	  Enable the SpacemiT K3 reset controller driver.
+
 source "drivers/reset/stm32/Kconfig"
 endmenu

@@ -1402,6 +1402,15 @@ config SPL_RAM_DEVICE
 	  be already in memory when SPL takes over, e.g. loaded by the boot
 	  ROM.
 
+config SPL_FASTBOOT_LOAD
+	bool "Support fastboot in SPL to load image"
+	depends on SPL_FASTBOOT && SPL_USB_GADGET && USB_FUNCTION_FASTBOOT
+	help
+	  This feature enables fastboot in the SPL: it brings up a fastboot USB
+	  gadget so the host can download the next-stage image (a FIT) into RAM,
+	  which the SPL then parses and boots. Used by the SpacemiT K3 USB
+	  (BOOT_DEVICE_BOARD) download path.
+
 config SPL_PCI_DFU
 	bool "PCIe boot support"
 	depends on SPL_PCI_ENDPOINT

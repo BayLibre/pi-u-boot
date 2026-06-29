@@ -79,6 +79,15 @@ FIT_CIPHER_OBJS-$(CONFIG_TOOLS_LIBCRYPTO) := generated/boot/image-cipher.o
 HOSTCFLAGS_image-host.o += \
 	$(shell pkg-config --cflags libssl libcrypto 2> /dev/null || echo "")
 
+# Host-build workaround (not K3-specific): the generic host flags expose
+# U-Boot's include/ only via -idirafter, which is searched after /usr/include.
+# On a host with the legacy lzma-dev SDK installed, boot/image.c's
+# <lzma/LzmaDec.h> then resolves to /usr/include/lzma and clashes with U-Boot's
+# bundled lib/lzma. tools/lzma-include/ exposes only the bundled lzma shims via
+# a real -I (ahead of /usr/include) without shadowing libc headers. Drop this
+# once the stale lzma-dev package is removed from the build host.
+HOSTCFLAGS_generated/boot/image.o += -I$(srctree)/tools/lzma-include
+
 # The following files are synced with upstream DTC.
 # Use synced versions from scripts/dtc/libfdt/.
 LIBFDT_OBJS := $(addprefix libfdt/, fdt.o fdt_ro.o fdt_wip.o fdt_sw.o fdt_rw.o \

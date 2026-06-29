@@ -770,7 +770,7 @@ struct dwc3 {
 	/* device lock */
 	spinlock_t		lock;
 
-#if defined(__UBOOT__) && CONFIG_IS_ENABLED(DM_USB)
+#if defined(__UBOOT__) && (CONFIG_IS_ENABLED(DM_USB) || CONFIG_IS_ENABLED(DM_USB_GADGET))
 	struct udevice		*dev;
 #else
 	struct device		*dev;

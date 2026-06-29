@@ -1049,7 +1049,7 @@ int dm_usb_gadget_handle_interrupts(struct udevice *dev)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(PHY) && CONFIG_IS_ENABLED(DM_USB)
+#if CONFIG_IS_ENABLED(PHY) && (CONFIG_IS_ENABLED(DM_USB) || CONFIG_IS_ENABLED(DM_USB_GADGET))
 int dwc3_setup_phy(struct udevice *dev, struct phy_bulk *phys)
 {
 	int ret;
@@ -1079,7 +1079,7 @@ int dwc3_shutdown_phy(struct udevice *dev, struct phy_bulk *phys)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(DM_USB)
+#if CONFIG_IS_ENABLED(DM_USB) || CONFIG_IS_ENABLED(DM_USB_GADGET)
 void dwc3_of_parse(struct dwc3 *dwc)
 {
 	const u8 *tmp;

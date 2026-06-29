@@ -107,6 +107,12 @@ void __noreturn spl_invoke_opensbi(struct spl_image_info *spl_image)
 	opensbi_info.boot_hart = gd->arch.boot_hart;
 
 	opensbi_entry = (opensbi_entry_t)spl_image->entry_point;
+	/*
+	 * The K3 needs an explicit writeback of the SPL-loaded OpenSBI and
+	 * U-Boot image to DRAM before jumping, so the next stage sees a
+	 * coherent image.
+	 */
+	flush_dcache_range(0x100000000UL, 0x103000000UL);
 	invalidate_icache_all();
 
 #ifdef CONFIG_SPL_SMP

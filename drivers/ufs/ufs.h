@@ -46,6 +46,13 @@ struct ufs_pwr_mode_info {
 enum ufs_desc_def_size {
 	QUERY_DESC_DEVICE_DEF_SIZE		= 0x40,
 	QUERY_DESC_CONFIGURATION_DEF_SIZE	= 0x90,
+#ifdef CONFIG_SPACEMIT_K3_UFS
+	QUERY_DESC_CONFIGURATION_DEF_SIZE_NEW		= 0xE6,
+	QUERY_DESC_CONFIGURATION_DEF_SIZE_NEW_HEAD	= 0x16,
+	QUERY_DESC_CONFIGURATION_DEF_SIZE_HEAD		= 0x10,
+	QUERY_DESC_CONFIGURATION_DEF_SIZE_NEW_UNIT	= 0x1A,
+	QUERY_DESC_CONFIGURATION_DEF_SIZE_UNIT		= 0x10,
+#endif
 	QUERY_DESC_UNIT_DEF_SIZE		= 0x23,
 	QUERY_DESC_INTERCONNECT_DEF_SIZE	= 0x06,
 	QUERY_DESC_GEOMETRY_DEF_SIZE		= 0x48,
@@ -60,6 +67,10 @@ struct ufs_desc_size {
 	int interc_desc;
 	int unit_desc;
 	int conf_desc;
+#ifdef CONFIG_SPACEMIT_K3_UFS
+	int conf_head_desc;
+	int conf_unit_desc;
+#endif
 	int hlth_desc;
 };
 
@@ -396,6 +407,91 @@ enum device_desc_param {
 	DEVICE_DESC_PARAM_PRDCT_REV		= 0x2A,
 };
 
+#ifdef CONFIG_SPACEMIT_K3_UFS
+/* Config descriptor header parameters offsets in bytes*/
+enum config_desc_header_param {
+	CONFIG_DESC_HEADER_PARAM_LEN = 0x00,
+	CONFIG_DESC_HEADER_PARAM_DES_IDN = 0x01,
+	CONFIG_DESC_HEADER_PARAM_CONF_DESC_CONT = 0x02,
+	CONFIG_DESC_HEADER_PARAM_BOOT_EN = 0x03,
+	CONFIG_DESC_HEADER_PARAM_DES_ACC_EN = 0x04,
+	CONFIG_DESC_HEADER_PARAM_INIT_POWER_MODE = 0x05,
+	CONFIG_DESC_HEADER_PARAM_HIGH_PRI_LUN = 0x06,
+	CONFIG_DESC_HEADER_PARAM_SEC_REM_TYPE = 0x07,
+	CONFIG_DESC_HEADER_PARAM_INIT_ACT_ICC_LEV = 0x08,
+	CONFIG_DESC_HEADER_PARAM_PER_RTC_UPD = 0x09,
+	CONFIG_DESC_HEADER_PARAM_RSV1 = 0x0B,
+	CONFIG_DESC_HEADER_PARAM_RPMB_REG_EN = 0x0C,
+	CONFIG_DESC_HEADER_PARAM_RPMB_REG1_SIZE = 0x0D,
+	CONFIG_DESC_HEADER_PARAM_RPMB_REG2_SIZE = 0x0E,
+	CONFIG_DESC_HEADER_PARAM_RPMB_REG3_SIZE = 0x0F,
+	CONFIG_DESC_HEADER_PARAM_WB_BUF_PRE = 0x10,
+	CONFIG_DESC_HEADER_PARAM_WB_BUF_TYP = 0x11,
+	CONFIG_DESC_HEADER_PARAM_NUM_SHA_WB = 0x12,
+};
+
+/* Config descriptor unit parameters offsets in bytes*/
+enum config_desc_unit_param {
+	CONFIG_DESC_UNIT_PARAM_LU_EN = 0x00,
+	CONFIG_DESC_UNIT_PARAM_BOOT_LU_ID = 0x01,
+	CONFIG_DESC_UNIT_PARAM_LU_WRI_PRO = 0x02,
+	CONFIG_DESC_UNIT_PARAM_MEM_TYPE = 0x03,
+	CONFIG_DESC_UNIT_PARAM_NUM_ALLOC_UNIT = 0x04,
+	CONFIG_DESC_UNIT_PARAM_DATA_RELY = 0x08,
+	CONFIG_DESC_UNIT_PARAM_LOGIC_BLK_SIZE = 0x09,
+	CONFIG_DESC_UNIT_PARAM_PROVIS_TYPE = 0x0A,
+	CONFIG_DESC_UNIT_PARAM_CON_CAP = 0x0B,
+	CONFIG_DESC_UNIT_PARAM_RSV1 = 0x0D,
+	CONFIG_DESC_UNIT_PARAM_RSV2 = 0x10,
+	CONFIG_DESC_UNIT_PARAM_LUN_WB_BUF_ALLOC_UNIT = 0x16,
+};
+
+/* Geometry descriptor unit parameters offsets in bytes*/
+enum geometry_desc_param {
+	GEO_DESC_PARAM_LENGTH = 0x00,
+	GEO_DESC_PARAM_DESC_IDN = 0x01,
+	GEO_DESC_PARAM_MEDIA_TECH = 0x02,
+	GEO_DESC_PARAM_RSV1 = 0x03,
+	GEO_DESC_PARAM_TOTAL_RAW_DEV_CAP = 0x04,
+	GEO_DESC_PARAM_MAX_NUM_LUN = 0x0C,
+	GEO_DESC_PARAM_SEG_SIZE = 0x0D,
+	GEO_DESC_PARAM_ALLOC_UNIT_SIZE = 0x11,
+	GEO_DESC_PARAM_MIN_ADDR_BLK_SIZE = 0x12,
+	GEO_DESC_PARAM_OPT_READ_BLK_SIZE = 0x13,
+	GEO_DESC_PARAM_OPT_WRI_BLK_SIZE = 0x14,
+	GEO_DESC_PARAM_MAX_IN_BUF_SIZE = 0x15,
+	GEO_DESC_PARAM_MAX_OUT_BUF_SIZE = 0x16,
+	GEO_DESC_PARAM_RPMB_RW_SIZE = 0x17,
+	GEO_DESC_PARAM_DYNAMIC_CAP_RES = 0x18,
+	GEO_DESC_PARAM_DATA_ORDER = 0x19,
+	GEO_DESC_PARAM_MAX_CONTEXT_ID_NUM = 0x1A,
+	GEO_DESC_PARAM_SYS_DATA_TAG_UNIT_SIZE = 0x1B,
+	GEO_DESC_PARAM_SYS_DATA_TAG_RES_SIZE = 0x1C,
+	GEO_DESC_PARAM_SUPP_SEC_TYPE = 0x1D,
+	GEO_DESC_PARAM_SUP_MEM_TYPE = 0x1E,
+	GEO_DESC_PARAM_SYS_CODE_MAX_ALLOC = 0x20,
+	GEO_DESC_PARAM_SYS_CODE_CAP_ADJ_FAC = 0x24,
+	GEO_DESC_PARAM_NON_PER_MAX_ALLOC = 0x26,
+	GEO_DESC_PARAM_NON_PER_CAP_ADJ_FAC = 0x2A,
+	GEO_DESC_PARAM_ENH1_MAX_ALLOC = 0x2C,
+	GEO_DESC_PARAM_ENH1_CAP_ADJ_FAC = 0x30,
+	GEO_DESC_PARAM_ENH2_MAX_ALLOC = 0x32,
+	GEO_DESC_PARAM_ENH2_CAP_ADJ_FAC = 0x36,
+	GEO_DESC_PARAM_ENH3_MAX_ALLOC = 0x38,
+	GEO_DESC_PARAM_ENH3_CAP_ADJ_FAC = 0x3C,
+	GEO_DESC_PARAM_ENH4_MAX_ALLOC = 0x3E,
+	GEO_DESC_PARAM_ENH4_CAP_ADJ_FAC = 0x42,
+	GEO_DESC_PARAM_OPT_LOGIC_BLK_SIZE = 0x44,
+	GEO_DESC_PARAM_RSV2 = 0x48,
+	GEO_DESC_PARAM_RSV3 = 0x4D,
+	GEO_DESC_PARAM_WB_BUF_CAP = 0x4F,
+	GEO_DESC_PARAM_DEV_MAX_WB_LUN = 0x53,
+	GEO_DESC_PARAM_WB_CAP_ADJ_FAC = 0x54,
+	GEO_DESC_PARAM_SUPP_WB_BUF_USER_RED = 0x55,
+	GEO_DESC_PARAM_SUPP_WB_BUF_TYPE = 0x56,
+};
+#endif
+
 struct ufs_hba;
 
 enum {
@@ -528,7 +624,22 @@ struct ufs_hba_ops {
 				   enum ufs_notify_change_status);
 	int (*phy_initialization)(struct ufs_hba *hba);
 	int (*device_reset)(struct ufs_hba *hba);
+#ifdef CONFIG_SPACEMIT_K3_UFS
+	int (*set_ref_clk)(struct ufs_hba *hba);
+	int (*set_power_mode)(struct ufs_hba *hba);
+#endif
 };
+
+#ifdef CONFIG_SPACEMIT_K3_UFS
+/*
+ * UFS Reference Clock Frequency Values
+ * bRefClkFreq attribute values per UFS specification
+ */
+#define UFS_REF_CLK_FREQ_19_2_MHZ	0
+#define UFS_REF_CLK_FREQ_26_MHZ		1
+#define UFS_REF_CLK_FREQ_38_4_MHZ	2
+#define UFS_REF_CLK_FREQ_52_MHZ		3
+#endif
 
 enum ufshcd_quirks {
 	/* Interrupt aggregation support is broken */
@@ -808,5 +919,21 @@ static inline void ufshcd_rmwl(struct ufs_hba *hba, u32 mask, u32 val, u32 reg)
 }
 
 int ufshcd_probe(struct udevice *dev, struct ufs_hba_ops *hba_ops);
+
+#ifdef CONFIG_SPACEMIT_K3_UFS
+/* Functions exported from ufs-uclass.c for platform drivers */
+int ufshcd_get_max_pwr_mode(struct ufs_hba *hba);
+int ufshcd_change_power_mode(struct ufs_hba *hba,
+			     struct ufs_pa_layer_attr *pwr_mode);
+void ufshcd_print_pwr_info(struct ufs_hba *hba);
+int ufshcd_query_attr_retry(struct ufs_hba *hba,
+			    enum query_opcode opcode,
+			    enum attr_idn idn, u8 index, u8 selector,
+			    u32 *attr_val);
+int ufshcd_query_descriptor_retry(struct ufs_hba *hba,
+				  enum query_opcode opcode,
+				  enum desc_idn idn, u8 index,
+				  u8 selector, u8 *desc_buf, int *buf_len);
+#endif
 
 #endif

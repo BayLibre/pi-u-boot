@@ -108,7 +108,11 @@ static void ufshcd_init_pwr_info(struct ufs_hba *hba)
  * ufshcd_print_pwr_info - print power params as saved in hba
  * power info
  */
+#ifdef CONFIG_SPACEMIT_K3_UFS
+void ufshcd_print_pwr_info(struct ufs_hba *hba)
+#else
 static void ufshcd_print_pwr_info(struct ufs_hba *hba)
+#endif
 {
 	static const char * const names[] = {
 		"INVALID MODE",
@@ -1320,9 +1324,15 @@ out:
 /**
  * ufshcd_query_descriptor_retry - API function for sending descriptor requests
  */
+#ifdef CONFIG_SPACEMIT_K3_UFS
+int ufshcd_query_descriptor_retry(struct ufs_hba *hba, enum query_opcode opcode,
+				  enum desc_idn idn, u8 index, u8 selector,
+				  u8 *desc_buf, int *buf_len)
+#else
 static int ufshcd_query_descriptor_retry(struct ufs_hba *hba, enum query_opcode opcode,
 					 enum desc_idn idn, u8 index, u8 selector,
 					 u8 *desc_buf, int *buf_len)
+#endif
 {
 	int err;
 	int retries;
@@ -1927,7 +1937,11 @@ out:
 /**
  * ufshcd_get_max_pwr_mode - reads the max power mode negotiated with device
  */
+#ifdef CONFIG_SPACEMIT_K3_UFS
+int ufshcd_get_max_pwr_mode(struct ufs_hba *hba)
+#else
 static int ufshcd_get_max_pwr_mode(struct ufs_hba *hba)
+#endif
 {
 	struct ufs_pa_layer_attr *pwr_info = &hba->max_pwr_info.info;
 
@@ -1989,8 +2003,13 @@ static int ufshcd_get_max_pwr_mode(struct ufs_hba *hba)
 	return ufshcd_ops_get_max_pwr_mode(hba, &hba->max_pwr_info);
 }
 
+#ifdef CONFIG_SPACEMIT_K3_UFS
+int ufshcd_change_power_mode(struct ufs_hba *hba,
+			     struct ufs_pa_layer_attr *pwr_mode)
+#else
 static int ufshcd_change_power_mode(struct ufs_hba *hba,
 				    struct ufs_pa_layer_attr *pwr_mode)
+#endif
 {
 	int ret;
 
@@ -2099,6 +2118,20 @@ static int ufshcd_complete_dev_init(struct ufs_hba *hba)
 					      QUERY_FLAG_IDN_FDEVICEINIT,
 					      &flag_res);
 
+#ifdef CONFIG_SPACEMIT_K3_UFS
+	if (!err && !flag_res) {
+		/* Use platform-specific callback to set reference clock */
+		if (hba->ops && hba->ops->set_ref_clk) {
+			err = hba->ops->set_ref_clk(hba);
+			if (err == -EAGAIN)
+				return err;
+			/* Ignore other errors, continue with init */
+			if (err)
+				err = 0;
+		}
+	}
+#endif
+
 	if (err)
 		dev_err(hba->dev,
 			"%s reading fDeviceInit flag failed with error %d\n",
@@ -2151,6 +2184,21 @@ static int ufs_start(struct ufs_hba *hba)
 		return ret;
 	}
 
+#ifdef CONFIG_SPACEMIT_K3_UFS
+	/* Use platform-specific callback to set power mode */
+	if (hba->ops && hba->ops->set_power_mode) {
+		ret = hba->ops->set_power_mode(hba);
+		if (ret) {
+			dev_err(hba->dev, "%s: Failed setting power mode, err = %d\n",
+				__func__, ret);
+			return ret;
+		}
+	} else {
+		ufshcd_print_pwr_info(hba);
+	}
+
+	return 0;
+#else
 	ufshcd_set_dev_ref_clk(hba);
 
 	if (ufshcd_get_max_pwr_mode(hba)) {
@@ -2171,6 +2219,7 @@ static int ufs_start(struct ufs_hba *hba)
 	}
 
 	return 0;
+#endif
 }
 
 int ufshcd_probe(struct udevice *ufs_dev, struct ufs_hba_ops *hba_ops)

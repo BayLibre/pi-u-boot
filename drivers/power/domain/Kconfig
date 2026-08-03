@@ -62,14 +62,6 @@ config IMX8MP_MEDIAMIX_BLKCTRL
 	help
 	  Enable support for manipulating NXP i.MX8MP on-SoC MEDIAMIX block controller.
 
-config K3_POWER_DOMAIN
-	bool "Enable the K3 Power domain driver"
-	depends on POWER_DOMAIN
-	select REGMAP
-	select SYSCON
-	help
-	  Generic power domain implementation for K3 devices.
-
 config MTK_POWER_DOMAIN
 	bool "Enable the MediaTek power domain driver"
 	depends on POWER_DOMAIN && ARCH_MEDIATEK
@@ -148,6 +140,15 @@ config TI_POWER_DOMAIN
 	depends on POWER_DOMAIN && ARCH_K3
 	help
 	  Generic power domain implementation for TI K3 devices.
+
+config SPACEMIT_K3_POWER_DOMAIN
+	bool "Enable the SpacemiT K3 power domain driver"
+	depends on POWER_DOMAIN && TARGET_SPACEMIT_K3
+	select REGMAP
+	select SYSCON
+	help
+	  Power domain driver for the APMU power islands of the SpacemiT K3
+	  (X100): VPU, GPU, audio and the two LCD islands.
 
 config TI_OMAP_PRM_POWER_DOMAIN
 	bool "Enable the TI OMAP PRM power domain driver"

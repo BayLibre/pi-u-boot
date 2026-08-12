@@ -22,6 +22,7 @@
 #include <image.h>
 #include <malloc.h>
 #include <mapmem.h>
+#include <memalign.h>
 #include <part.h>
 #include <version.h>
 #include "bootmeth_android.h"
@@ -88,7 +89,7 @@ static int scan_boot_part(struct udevice *blk, struct android_priv *priv)
 
 	num_blks = DIV_ROUND_UP(sizeof(struct andr_boot_img_hdr_v0), desc->blksz);
 	bufsz = num_blks * desc->blksz;
-	buf = malloc(bufsz);
+	buf = malloc_cache_aligned(bufsz);
 	if (!buf)
 		return log_msg_ret("buf", -ENOMEM);
 
@@ -135,7 +136,7 @@ static int scan_vendor_boot_part(struct udevice *blk, struct android_priv *priv)
 
 	num_blks = DIV_ROUND_UP(sizeof(struct andr_vnd_boot_img_hdr), desc->blksz);
 	bufsz = num_blks * desc->blksz;
-	buf = malloc(bufsz);
+	buf = malloc_cache_aligned(bufsz);
 	if (!buf)
 		return log_msg_ret("buf", -ENOMEM);
 

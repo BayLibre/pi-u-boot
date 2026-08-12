@@ -48,12 +48,26 @@
 	"fastboot.has-slot:factory=no\0" \
 	"fastboot.has-slot:uboot_env=no\0"
 
+/*
+ * CONFIG_BOOTCOMMAND can be added to the default environment before
+ * CFG_EXTRA_ENV_SETTINGS (see include/env_default.h).
+ */
+#ifndef CONFIG_BOOTCOMMAND
+#define BOOT_FIT_BOOTCMD \
+	"bootcmd=run select_slot; run load_image; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0"
+#define BOOT_XT_BOOTCMD \
+	"bootcmd=run select_slot; run load_image; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr $opensbi_addr;\0"
+#else
+#define BOOT_FIT_BOOTCMD
+#define BOOT_XT_BOOTCMD
+#endif
+
 #ifdef CONFIG_RISCV_SMODE
 #define BOOT_FIT \
 	"loadkernel=ext4load ${boot_device} ${kernel_addr}  ${kernel_file}; md5sum ${kernel_addr} $filesize\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
 	"load_image=run loadkernel; run loadinitrd\0" \
-	"bootcmd=run select_slot; run load_image; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr;\0" \
+	BOOT_FIT_BOOTCMD \
 	"altbootcmd=run rollback; run rollback_finish; reset;\0"
 #else
 #define BOOT_FIT
@@ -66,7 +80,7 @@
 	"loadsbi=ext4load    ${boot_device} ${opensbi_addr} ${opensbi_file}\0" \
 	"loadinitrd=ext4load ${boot_device} ${initrd_addr}  ${initrd_file}; setenv initrd_size $filesize\0" \
 	"load_image=run loadfdt; run loadsbi; run loadkernel; run loadinitrd;\0" \
-	"bootcmd=run select_slot; run load_image; run set_bargs_pre; setenv bootargs ${barg_pre}; booti $kernel_addr $initrd_addr:$initrd_size $dtb_addr $opensbi_addr;\0"
+	BOOT_XT_BOOTCMD
 #else
 #define BOOT_XT
 #endif

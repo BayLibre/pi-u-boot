@@ -20,6 +20,7 @@
 #include <openssl/ssl.h>
 #include <openssl/evp.h>
 #include <openssl/engine.h>
+#include <ctype.h>
 
 static int rsa_err(const char *msg)
 {

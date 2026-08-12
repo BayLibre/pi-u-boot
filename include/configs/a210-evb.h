@@ -90,6 +90,42 @@
 	"set_nfsbootargs=setenv bootargs ip=${ipaddr}::${gatewayip}:${netmask}:myhostname:eth0:off nfsroot=${nfsroot},proto=tcp,nfsvers=4,rw ${barg_pre}\0" \
 	"boot_nfs=setenv autoload no; dhcp; run select_slot; setenv root_device /dev/nfs; run set_bargs_pre; run set_nfsbootargs; booti $kernel_addr - $dtb_addr\0"
 
+/*
+ * boot/bootmeth_android.c:boot_android_normal() stages the "vendor_boot"
+ * half of a v3+ Android boot image at env "vendor_boot_comp_addr_r"
+ * (ulong, via env_get_hex(), defaulting silently to 0 if unset). Address 0
+ * isn't valid DRAM on the A210 (DRAM starts at 0x80000000), so leaving this
+ * unset makes get_avendor_bootimg_addr() report an unmapped image and
+ * booting fails with "For boot header v3+ vendor boot image has to be
+ * provided". CONFIG_FASTBOOT_BUF_ADDR's region is reused here since it is
+ * only live during an active fastboot session, never during a normal boot.
+ *
+ * boot/image-android.c:android_image_get_ramdisk() similarly needs
+ * "ramdisk_addr_r" to assemble the final vendor+boot ramdisk before booting
+ * a v3+ image, and fails with "Invalid ramdisk_addr_r to copy ramdisk into"
+ * if unset. Reuses EVN_COMMON's initrd_addr, an already-valid A210 DRAM
+ * address used by the Linux-BSP boot flow, which sits comfortably above the
+ * kernel/vendor_boot staging areas.
+ *
+ * boot/image-fdt.c's Android branch first looks for a DTB embedded in
+ * vendor_boot's own DTB area (android_image_get_dtb_by_index(), selected by
+ * "adtb_idx", already correctly defaulting to 0); when that image doesn't
+ * carry one it falls back to the env var "fdtaddr", defaulting silently to
+ * 0 (=> "Device tree not found"). SPL/OpenSBI already load this board's DTB
+ * to 0x8c000000 before jumping to U-Boot (see the FIT's "fdt-*" subimage
+ * load address) and nothing overwrites it before Linux boots, so reuse it
+ * as the fallback until vendor_boot.img embeds its own DTB.
+ */
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+#define ANDROID_ENV_SETTINGS \
+	"vendor_boot_comp_addr_r=0x91000000\0" \
+	"init_boot_comp_addr_r=0x93000000\0" \
+	"ramdisk_addr_r=0x9e000000\0" \
+	"fdtaddr=0x8c000000\0"
+#else
+#define ANDROID_ENV_SETTINGS
+#endif
+
 #define CFG_EXTRA_ENV_SETTINGS \
 	EVN_COMMON \
 	EVN_PARTITION \
@@ -129,5 +165,6 @@
 	BOOT_FIT \
 	BOOT_XT \
 	BOOT_NFS \
+	ANDROID_ENV_SETTINGS \
 	"\0"
 #endif /* __CONFIG_A210_EVB_H */

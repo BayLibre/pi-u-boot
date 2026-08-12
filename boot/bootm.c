@@ -397,6 +397,7 @@ static int bootm_find_os(const char *cmd_name, const char *addr_fit)
 			vendor_boot_img = map_sysmem(get_avendor_bootimg_addr(), 0);
 		}
 		images.os.type = IH_TYPE_KERNEL;
+		images.os.arch = IH_ARCH_DEFAULT;
 		images.os.comp = android_image_get_kcomp(boot_img, vendor_boot_img);
 		images.os.os = IH_OS_LINUX;
 		images.os.end = android_image_get_end(boot_img, vendor_boot_img);
@@ -689,7 +690,8 @@ static int bootm_load_os(struct bootm_headers *images, int boot_progress)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_CMD_BOOTI) && images->os.arch == IH_ARCH_ARM64 &&
+	if (IS_ENABLED(CONFIG_CMD_BOOTI) &&
+	    (images->os.arch == IH_ARCH_ARM64 || images->os.arch == IH_ARCH_RISCV) &&
 	    images->os.os == IH_OS_LINUX) {
 		ulong relocated_addr;
 		ulong image_size;
@@ -697,7 +699,7 @@ static int bootm_load_os(struct bootm_headers *images, int boot_progress)
 
 		ret = booti_setup(load, &relocated_addr, &image_size, false);
 		if (ret) {
-			printf("Failed to prep arm64 kernel (err=%d)\n", ret);
+			printf("Failed to prep kernel image (err=%d)\n", ret);
 			return BOOTM_ERR_RESET;
 		}
 

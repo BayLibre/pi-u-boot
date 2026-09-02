@@ -9,6 +9,7 @@
 #include <bootstage.h>
 #include <bootm.h>
 #include <command.h>
+#include <cpu_func.h>
 #include <dm.h>
 #include <fdt_support.h>
 #include <hang.h>
@@ -64,6 +65,17 @@ static void boot_jump_linux(struct bootm_headers *images, int flag)
 			if (ret)
 				hang();
 #endif
+			/*
+			 * K3/CCI-550: the relocated and fixed-up FDT is written
+			 * with caches on, but flush_dcache_all() is a no-op on
+			 * x100, so the kernel can read a stale DTB with its MMU
+			 * still off. Flush the FDT range explicitly before jumping.
+			 */
+			flush_dcache_range((ulong)images->ft_addr,
+					   (ulong)images->ft_addr + images->ft_len);
+			printf("## FDT @ %p size %lx boot_hart %ld\n",
+			       images->ft_addr, (ulong)images->ft_len,
+			       gd->arch.boot_hart);
 			kernel(gd->arch.boot_hart, images->ft_addr);
 		}
 	}

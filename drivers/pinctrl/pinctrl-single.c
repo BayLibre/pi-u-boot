@@ -449,6 +449,81 @@ static int single_configure_bits(struct udevice *dev,
 	list_add(&func->node, &priv->functions);
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_TARGET_SPACEMIT_K3)
+/*
+ * SpacemiT K3 pad voltage domains (vendor pinctrl-single extension): a
+ * "power-source" property on a pin group selects the 1.8V/3.3V IO domain
+ * of the AIB register bank backing those pads. Without this the pads stay
+ * at the 3.3V reset default and 1.8V peripherals (e.g. the CrosEC on
+ * eSPI, pads GPIO_91..98) never see a valid signal.
+ */
+#define IOPWRDOM_BASE		0xD401E800
+#define APBC_ASFAR		0xD4015050
+#define AKEY_ASFAR		0xBABA
+#define AKEY_ASSAR		0xEB10
+#define IO_PWR_DOMAIN_1V8EN	(1 << 2)
+#define IO_PWR_DOMAIN_3V3EN	(0)
+
+#define AIB_GPIO1_IO_REG_K3	0x4
+#define AIB_GPIO2_IO_REG_Kx	0xC
+#define AIB_GPIO4_IO_REG_K3	0x20
+#define AIB_GPIO5_IO_REG_K3	0x10
+#define AIB_SD_IO_REG_K3	0x1C
+#define AIB_QSPI_IO_REG_K3	0x2C
+
+static inline int k3_prop2pin(const u32 *prop)
+{
+	return fdt32_to_cpu(prop[0]) / 4;
+}
+
+static int k3_pin2pwr_domain_offset(int pin)
+{
+	switch (pin) {
+	case 0 ... 20:
+		return AIB_GPIO1_IO_REG_K3;
+	case 21 ... 41:
+		return AIB_GPIO2_IO_REG_Kx;
+	case 76 ... 98:
+		return AIB_GPIO4_IO_REG_K3;
+	case 99 ... 127:
+		return AIB_GPIO5_IO_REG_K3;
+	case 134 ... 139:
+		return AIB_SD_IO_REG_K3;
+	case 140 ... 146:
+		return AIB_QSPI_IO_REG_K3;
+	default:
+		return -1;
+	}
+}
+
+static int k3_set_pwr_domain(const u32 *prop, u32 power)
+{
+	void __iomem *apbc_asfar = (void *)(ulong)APBC_ASFAR;
+	void __iomem *aib_io;
+	int offset;
+
+	offset = k3_pin2pwr_domain_offset(k3_prop2pin(prop));
+	if (offset < 0)
+		return -1;
+	aib_io = (void *)(ulong)(IOPWRDOM_BASE + offset);
+
+	/* unlock the AIB */
+	writel(AKEY_ASFAR, apbc_asfar);
+	writel(AKEY_ASSAR, apbc_asfar + 4);
+
+	if (power == 1800) {
+		writel(IO_PWR_DOMAIN_1V8EN, aib_io);
+		return 0;
+	} else if (power == 3300) {
+		writel(IO_PWR_DOMAIN_3V3EN, aib_io);
+		return 0;
+	}
+
+	return -1;
+}
+#endif /* CONFIG_TARGET_SPACEMIT_K3 */
+
 static int single_set_state(struct udevice *dev,
 			    struct udevice *config)
 {
@@ -464,6 +539,16 @@ static int single_set_state(struct udevice *dev,
 			dev_dbg(dev, "  invalid pin configuration in fdt\n");
 			return -FDT_ERR_BADSTRUCTURE;
 		}
+#if IS_ENABLED(CONFIG_TARGET_SPACEMIT_K3)
+		{
+			u32 power;
+
+			if (!dev_read_u32(config, "power-source", &power) &&
+			    k3_set_pwr_domain(prop, power) < 0)
+				dev_err(dev, "setting %s power domain (%u) failed\n",
+					config->name, power);
+		}
+#endif
 		single_configure_pins(dev, prop, len, config->name);
 		return 0;
 	}

@@ -79,9 +79,10 @@
 			reg = <0>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu0_intc: interrupt-controller {
@@ -96,9 +97,10 @@
 			reg = <1>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu1_intc: interrupt-controller {
@@ -113,9 +115,10 @@
 			reg = <2>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu2_intc: interrupt-controller {
@@ -130,9 +133,10 @@
 			reg = <3>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu3_intc: interrupt-controller {
@@ -147,9 +151,10 @@
 			reg = <4>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu4_intc: interrupt-controller {
@@ -164,9 +169,10 @@
 			reg = <5>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu5_intc: interrupt-controller {
@@ -181,9 +187,10 @@
 			reg = <6>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu6_intc: interrupt-controller {
@@ -198,9 +205,10 @@
 			reg = <7>;
 			status = "okay";
 			compatible = "riscv";
-			riscv,isa = "rv64imafdcvh_zicbom";
+			riscv,isa = "rv64imafdcvh_zicbom_sstc_svpbmt";
 			riscv,isa-base = "rv64i";
 			riscv,cbom-block-size = <64>;
+			riscv,cboz-block-size = <64>;
 			mmu-type = "riscv,sv39";
 
 			cpu7_intc: interrupt-controller {

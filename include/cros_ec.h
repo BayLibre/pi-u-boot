@@ -306,6 +306,17 @@ void cros_ec_dump_data(const char *name, int cmd, const uint8_t *data, int len);
  */
 int cros_ec_calc_checksum(const uint8_t *data, int size);
 
+/**
+ * Invalidate the EC's cached firmware hash
+ *
+ * Forces the EC to discard its current firmware hash so that a freshly
+ * written RW image is re-hashed and re-verified on the next EFS check.
+ *
+ * @param dev		CROS-EC device
+ * Return: 0 if ok, -1 on error
+ */
+int cros_ec_invalidate_hash(struct udevice *dev);
+
 int cros_ec_flash_erase(struct udevice *dev, uint32_t offset, uint32_t size);
 
 /**

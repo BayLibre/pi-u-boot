@@ -572,7 +572,7 @@ int cros_ec_read_hash(struct udevice *dev, uint hash_offset,
 	return 0;
 }
 
-static int cros_ec_invalidate_hash(struct udevice *dev)
+int cros_ec_invalidate_hash(struct udevice *dev)
 {
 	struct ec_params_vboot_hash p;
 	struct ec_response_vboot_hash *hash;

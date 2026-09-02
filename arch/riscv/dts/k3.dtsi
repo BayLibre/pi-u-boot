@@ -1089,7 +1089,103 @@
 			vwire-channel-enable;
 			oob-channel-enable;
 			peripheral-channel-enable;
+			flash-channel-enable;
+			crc-enable;
+			response-modifier-enable;
+			auto-gating-enable;
+			watchdog-timeout = <0xFFFF>;
 			status = "disabled";
 		};
+	};
+
+	/*
+	 * RISC-V interrupt / timer controllers. OpenSBI parses these out of
+	 * the U-Boot control DTB: the generic mtimer binds "sifive,clint0"
+	 * (timer), and the AIA irqchip binds "riscv,imsics" + "riscv,aplic".
+	 * Ported from the kernel DT (arch/riscv/boot/dts/spacemit/k3.dtsi);
+	 * only the S-mode-facing controllers are described here.
+	 */
+	/*
+	 * S-mode IMSIC. Geometry must be self-consistent with the 8 X100 harts
+	 * enumerated below: the AIA MSI file window spans
+	 *   2^hart-index-bits * 2^guest-index-bits * 4KiB == reg size.
+	 * With guest-index-bits = 6 (256 KiB stride) 8 harts span exactly 2 MiB,
+	 * so hart-index-bits = 3 and reg = 0x200000. The vendor uses 4 / 4 MiB
+	 * because it enumerates all 16 harts (8 X100 + 8 A100); keeping that
+	 * 16-hart geometry with only 8 harts leaves a phantom slot at
+	 * base + reg-size that the kernel IPI path faults on.
+	 */
+	simsic: interrupt-controller@e0400000 {
+		compatible = "spacemit,k3-imsics", "riscv,imsics";
+		reg = <0x0 0xe0400000 0x0 0x200000>;
+		#interrupt-cells = <0>;
+		#msi-cells = <0>;
+		interrupt-controller;
+		interrupts-extended = <&cpu0_intc 9>, <&cpu1_intc 9>,
+				      <&cpu2_intc 9>, <&cpu3_intc 9>,
+				      <&cpu4_intc 9>, <&cpu5_intc 9>,
+				      <&cpu6_intc 9>, <&cpu7_intc 9>;
+		msi-controller;
+		riscv,guest-index-bits = <6>;
+		riscv,hart-index-bits = <3>;
+		riscv,num-guest-ids = <511>;
+		riscv,num-ids = <511>;
+	};
+
+	/*
+	 * M-mode AIA hierarchy for OpenSBI. Device IRQs land on the M-mode
+	 * APLIC (maplic), which delegates sources 1..512 to the S-mode APLIC
+	 * (saplic) via riscv,delegate; OpenSBI programs the SOURCECFG delegate
+	 * bit from these nodes. Without them device MSIs never reach S-mode.
+	 * M-mode IMSIC has no guest files -> guest-index-bits=0 -> reg=8*4KiB.
+	 */
+	mimsic: interrupt-controller@f1000000 {
+		compatible = "spacemit,k3-imsics", "riscv,imsics";
+		reg = <0x0 0xf1000000 0x0 0x8000>;
+		#interrupt-cells = <0>;
+		#msi-cells = <0>;
+		interrupt-controller;
+		interrupts-extended = <&cpu0_intc 11>, <&cpu1_intc 11>,
+				      <&cpu2_intc 11>, <&cpu3_intc 11>,
+				      <&cpu4_intc 11>, <&cpu5_intc 11>,
+				      <&cpu6_intc 11>, <&cpu7_intc 11>;
+		msi-controller;
+		riscv,hart-index-bits = <3>;
+		riscv,num-ids = <511>;
+	};
+
+	maplic: interrupt-controller@f1800000 {
+		compatible = "spacemit,k3-aplic", "riscv,aplic";
+		reg = <0x0 0xf1800000 0x0 0x4000>;
+		#interrupt-cells = <2>;
+		interrupt-controller;
+		msi-parent = <&mimsic>;
+		riscv,num-sources = <512>;
+		riscv,children = <&saplic>;
+		riscv,delegate = <&saplic 1 512>;
+	};
+
+	saplic: interrupt-controller@e0804000 {
+		compatible = "spacemit,k3-aplic", "riscv,aplic";
+		reg = <0x0 0xe0804000 0x0 0x4000>;
+		#interrupt-cells = <2>;
+		interrupt-controller;
+		msi-parent = <&simsic>;
+		riscv,num-sources = <512>;
+		/* delegated from maplic; OpenSBI must not init it standalone */
+		status = "disabled";
+	};
+
+	clint: timer@e081c000 {
+		compatible = "spacemit,k3-clint", "sifive,clint0";
+		reg = <0x0 0xe081c000 0x0 0x4000>;
+		interrupts-extended = <&cpu0_intc 3>, <&cpu0_intc 7>,
+				      <&cpu1_intc 3>, <&cpu1_intc 7>,
+				      <&cpu2_intc 3>, <&cpu2_intc 7>,
+				      <&cpu3_intc 3>, <&cpu3_intc 7>,
+				      <&cpu4_intc 3>, <&cpu4_intc 7>,
+				      <&cpu5_intc 3>, <&cpu5_intc 7>,
+				      <&cpu6_intc 3>, <&cpu6_intc 7>,
+				      <&cpu7_intc 3>, <&cpu7_intc 7>;
 	};
 };

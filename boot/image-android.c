@@ -318,6 +318,15 @@ static ulong android_image_get_kernel_addr(struct andr_image_data *img_data,
 					   ulong comp)
 {
 	/*
+	 * With IGNORE_BLOB_ADDR the in-image load addresses are not trusted,
+	 * so always relocate the kernel to kernel_addr_r. Executing it in
+	 * place is not safe: the in-image offset need not be 2 MiB-aligned,
+	 * which RISC-V and arm64 require of the kernel Image.
+	 */
+	if (IS_ENABLED(CONFIG_ANDROID_BOOT_IMAGE_IGNORE_BLOB_ADDR))
+		return env_get_ulong("kernel_addr_r", 16, 0);
+
+	/*
 	 * All the Android tools that generate a boot.img use this
 	 * address as the default.
 	 *
@@ -328,8 +337,7 @@ static ulong android_image_get_kernel_addr(struct andr_image_data *img_data,
 	 *
 	 * Otherwise, we will return the actual value set by the user.
 	 */
-	if (img_data->kernel_addr  == ANDROID_IMAGE_DEFAULT_KERNEL_ADDR ||
-	    IS_ENABLED(CONFIG_ANDROID_BOOT_IMAGE_IGNORE_BLOB_ADDR)) {
+	if (img_data->kernel_addr == ANDROID_IMAGE_DEFAULT_KERNEL_ADDR) {
 		if (comp == IH_COMP_NONE)
 			return img_data->kernel_ptr;
 		return env_get_ulong("kernel_addr_r", 16, 0);

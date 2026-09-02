@@ -325,6 +325,60 @@
 			status = "okay";
 		};
 
+		/*
+		 * RCPU power processors (ESOS/RT-Thread firmware = the RPMI
+		 * agent behind the rpmi-shmem queues below). Loaded and started
+		 * by the SPL (FIT post-process hook) BEFORE OpenSBI probes the
+		 * RPMI base group. Enabled nodes also arm the OpenSBI PMP locks
+		 * on the RCPU memory regions. U-Boot proper never probes them
+		 * (driver is SPL-only): a re-probe would memset the heap of a
+		 * live RCPU.
+		 */
+		rcpu0: rcpu@0 {
+			compatible = "spacemit,k3-rproc";
+			bootph-pre-ram;
+			reg = <0x0 0x0 0x0 0x0>;
+			remoteproc-name = "rcpu0";
+			coreid = <0>;
+			mem_heap_start = <0x1 0x500000>;
+			mem_heap_size = <0x200000>;
+			fw_boot_entry = <0x1 0x200000>;
+			status = "okay";
+		};
+
+		rcpu1: rcpu@1 {
+			compatible = "spacemit,k3-rproc";
+			bootph-pre-ram;
+			reg = <0x0 0x0 0x0 0x0>;
+			remoteproc-name = "rcpu1";
+			coreid = <1>;
+			mem_heap_start = <0x1 0xb00000>;
+			mem_heap_size = <0x200000>;
+			fw_boot_entry = <0x1 0x800000>;
+			status = "okay";
+		};
+
+		rpmi_shmem_mbox: rpmi-shmem-mbox@100e00000 {
+			compatible = "riscv,rpmi-shmem-mbox";
+			reg = <0x1 0x00e00000 0x0 0x1000>,
+			      <0x1 0x00e01000 0x0 0x1000>,
+			      <0x1 0x00e02000 0x0 0x1000>,
+			      <0x1 0x00e03000 0x0 0x1000>,
+			      <0x0 0xcac90c00 0x0 0x200>;
+			reg-names = "a2p-req", "p2a-ack", "p2a-req", "a2p-ack", "a2p-doorbell";
+			riscv,slot-size = <256>;
+			riscv,a2p-doorbell-value = <1>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		rpmi_mpxy_device_power: rpmi-mpxy-device-power {
+			compatible = "riscv,rpmi-mpxy-device-power";
+			mboxes = <&rpmi_shmem_mbox 9>;
+			riscv,sbi-mpxy-channel-id = <9>;
+			status = "okay";
+		};
+
 		gpio: gpio@d4019000 {
 			compatible = "spacemit,k3-gpio";
 			reg = <0x0 0xd4019000 0x0 0x800>;

@@ -1875,6 +1875,14 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 	ft_board_cpu_fixup(blob, bd);
 	ft_board_info_fixup(blob, bd);
 	ft_board_mac_addr_fixup(blob, bd);
+
+	/*
+	 * Correct the kernel's /memory node to the actual usable DRAM. The
+	 * static DTB starts it at 0x100000000 and claims 16 GiB, handing the
+	 * kernel both OpenSBI's PMP-protected low 32 MiB and non-existent RAM.
+	 * dram_init() put the real base/size in gd.
+	 */
+	fdt_fixup_memory(blob, gd->ram_base, gd->ram_size);
 	return 0;
 }
 

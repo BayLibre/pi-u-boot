@@ -32,6 +32,17 @@ config REMOTEPROC_K3_PROC
 	  Say 'y' here to add support for the SpacemiT K3 (X100) RCPU power
 	  processors.
 
+config SPL_REMOTEPROC_K3_PROC
+	bool "Support for SpacemiT K3 power processor in SPL"
+	select SPL_REMOTEPROC
+	depends on SPL_DM
+	depends on SPL_OF_CONTROL
+	help
+	  Load and start the SpacemiT K3 (X100) RCPU power processors from
+	  the SPL, before OpenSBI runs. The RCPUs run the ESOS firmware that
+	  implements the RPMI service groups (device power, clock, ...)
+	  consumed by OpenSBI (MPXY) and the kernel.
+
 config REMOTEPROC_ADI_SC5XX
 	bool "Support for ADI SC5xx SHARC cores"
 	select REMOTEPROC

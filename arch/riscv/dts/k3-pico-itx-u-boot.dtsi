@@ -140,6 +140,84 @@
 					};
 				};
 
+				/*
+				 * RCPU (ESOS) payloads, started by the SPL before
+				 * OpenSBI so a live RPMI agent answers the MPXY
+				 * device-power probe. The vendor ships them in a
+				 * separate esos.itb; here binman packs them into
+				 * u-boot.itb as extra loadables. Node names are
+				 * load-bearing: the SPL FIT post-process hook
+				 * matches "rcpu0-fw"/"rcpu1-fw" (rproc_load+start,
+				 * generic copy skipped) and "rcpu-data-null"
+				 * (product-name slot the ESOS matches against the
+				 * /model of its dtbs). The dtb load addresses are
+				 * the fixed vendor slots from esos.itb.
+				 */
+				rcpu-data-null {
+					description = "RCPU product-name slot";
+					type = "standalone";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <0x100f00000>;
+					entry = /bits/ 64 <0x100f00000>;
+
+					blob-ext {
+						filename = "rcpu-data-null.bin";
+					};
+				};
+
+				rcpu0-dtb-pico-itx {
+					description = "ESOS Core0 Pico-ITX dtb";
+					type = "standalone";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <0x100fe2000>;
+					entry = /bits/ 64 <0x100fe2000>;
+
+					blob-ext {
+						filename = "k3_rt240_pico_itx.dtb";
+					};
+				};
+
+				rcpu1-dtb-pico-itx {
+					description = "ESOS Core1 Pico-ITX dtb";
+					type = "standalone";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <0x100fee800>;
+					entry = /bits/ 64 <0x100fee800>;
+
+					blob-ext {
+						filename = "k3_rt241_pico_itx.dtb";
+					};
+				};
+
+				rcpu0-fw {
+					description = "ESOS Core0 (RT24 firmware)";
+					type = "standalone";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <0x100200000>;
+					entry = /bits/ 64 <0x100200000>;
+
+					blob-ext {
+						filename = "rt24_os0_rcpu.elf";
+					};
+				};
+
+				rcpu1-fw {
+					description = "ESOS Core1 (RT24 firmware)";
+					type = "standalone";
+					arch = "riscv";
+					compression = "none";
+					load = /bits/ 64 <0x100800000>;
+					entry = /bits/ 64 <0x100800000>;
+
+					blob-ext {
+						filename = "rt24_os1_rcpu.elf";
+					};
+				};
+
 				@fdt-SEQ {
 					fit,operation = "gen-fdt-nodes";
 					description = "NAME";
@@ -154,7 +232,13 @@
 				@conf-SEQ {
 					description = "NAME";
 					firmware = "opensbi";
-					loadables = "uboot";
+					/* data + dtbs before the fw (the ESOS reads
+					 * them at start); uboot last (vendor rule). */
+					loadables = "rcpu-data-null",
+						    "rcpu0-dtb-pico-itx",
+						    "rcpu1-dtb-pico-itx",
+						    "rcpu0-fw", "rcpu1-fw",
+						    "uboot";
 					fdt = "fdt-SEQ";
 				};
 			};

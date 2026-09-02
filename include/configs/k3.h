@@ -108,7 +108,13 @@
 #define K3_NOR_UFS_DEVNUM_DEFAULT	(0)
 #define K3_NOR_EMMC_DEVNUM_DEFAULT	(MMC_DEV_EMMC)
 
-#define DEFAULT_PRODUCT_NAME		"k3_deb1"
+/*
+ * Fallback when the TLV EEPROM has no product name. Must match the /model
+ * of a bundled ESOS RCPU dtb ("k3-pico-itx"): the ESOS picks its dtb by
+ * comparing this string (written to the rcpu-data-null slot by the SPL)
+ * against its dtbs, and stays without one on a mismatch.
+ */
+#define DEFAULT_PRODUCT_NAME		"k3-pico-itx"
 #define BOOTFS_NAME			("bootfs")
 
 // for those has NOT been through test procedure(ATE)

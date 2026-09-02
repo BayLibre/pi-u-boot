@@ -523,6 +523,29 @@ void board_fit_image_post_process(const void *fit, int node, void **p_image,
 	bool free_image = false;
 	int ret;
 
+	/*
+	 * The ESOS picks its own dtb by matching this product-name slot
+	 * against the /model of the bundled RCPU dtbs. The vendor filled it
+	 * from board_spl_fit_image_post_load(), a hook upstream no longer
+	 * calls, so write it here and skip the generic copy (this hook runs
+	 * before the FIT loader places the image).
+	 */
+	if (name && !strcmp(name, "rcpu-data-null")) {
+		ulong load;
+
+		if (!fit_image_get_load(fit, node, &load)) {
+			char product_name[64] = { 0 };
+
+			get_product_name(product_name, sizeof(product_name));
+			memcpy(map_sysmem(load, sizeof(product_name)),
+			       product_name, sizeof(product_name));
+			flush_cache(load, sizeof(product_name));
+			printf("RCPU product name: %s\n", product_name);
+		}
+		*p_size = 0;
+		return;
+	}
+
 	if (!fw_image)
 		return;
 
@@ -539,12 +562,16 @@ void board_fit_image_post_process(const void *fit, int node, void **p_image,
 			ret = rproc_start(0);
 		if (ret)
 			pr_err("failed to start rcpu0 firmware: %d\n", ret);
+		else
+			printf("rcpu0 firmware started\n");
 	} else {
 		ret = rproc_load(1, (ulong)*p_image, *p_size);
 		if (!ret)
 			ret = rproc_start(1);
 		if (ret)
 			pr_err("failed to start rcpu1 firmware: %d\n", ret);
+		else
+			printf("rcpu1 firmware started\n");
 	}
 
 	if (free_image)

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-2.0
+
+menuconfig VIDEO_SPACEMIT
+	bool "Enable SpacemiT video support"
+	depends on VIDEO
+	help
+	  SpacemiT SoCs provide video output through the Saturn display
+	  processing unit (DPU).  This enables the on-chip display
+	  controller so that U-Boot can bring up a display and show a
+	  splash screen before handing over to the OS.
+
+config VIDEO_SPACEMIT_MAX_XRES
+	int "Maximum horizontal resolution (for memory allocation purposes)"
+	depends on VIDEO_SPACEMIT
+	default 3840
+	help
+	  The maximum horizontal resolution to support for the framebuffer.
+	  This configuration is used for reserving/allocating memory for the
+	  framebuffer during device-model binding/probing.
+
+config VIDEO_SPACEMIT_MAX_YRES
+	int "Maximum vertical resolution (for memory allocation purposes)"
+	depends on VIDEO_SPACEMIT
+	default 2160
+	help
+	  The maximum vertical resolution to support for the framebuffer.
+	  This configuration is used for reserving/allocating memory for the
+	  framebuffer during device-model binding/probing.
+
+if VIDEO_SPACEMIT
+
+config DISPLAY_SPACEMIT_INNO_DP
+	bool "Innosilicon DisplayPort"
+	select DISPLAY
+	help
+	  This enables the Innosilicon DisplayPort transmitter found on
+	  SpacemiT K3 (X100), including its PHY and link training.  It
+	  drives a DP sink either directly or through a USB-C connector.
+
+endif

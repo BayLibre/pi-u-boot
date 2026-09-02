@@ -1881,8 +1881,18 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 	 * static DTB starts it at 0x100000000 and claims 16 GiB, handing the
 	 * kernel both OpenSBI's PMP-protected low 32 MiB and non-existent RAM.
 	 * dram_init() put the real base/size in gd.
+	 *
+	 * Cap the top at 0x400000000 (34-bit): the DPU AXI master cannot address
+	 * beyond 16 GiB, so a scanout buffer placed in RAM above that reads a
+	 * truncated address and underruns the display. Keep /memory reachable.
 	 */
-	fdt_fixup_memory(blob, gd->ram_base, gd->ram_size);
+	{
+		phys_size_t mem_size = gd->ram_size;
+
+		if ((u64)gd->ram_base + mem_size > 0x400000000ULL)
+			mem_size = 0x400000000ULL - gd->ram_base;
+		fdt_fixup_memory(blob, gd->ram_base, mem_size);
+	}
 	return 0;
 }
 

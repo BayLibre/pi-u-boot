@@ -909,6 +909,8 @@ config VIDEO_SANDBOX_SDL
 	  console device and can display stdout output. Within U-Boot is is
 	  a normal bitmap display and can display images as well as text.
 
+source "drivers/video/spacemit/Kconfig"
+
 source "drivers/video/stm32/Kconfig"
 
 source "drivers/video/tidss/Kconfig"

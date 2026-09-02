@@ -36,6 +36,7 @@ obj-$(CONFIG_BACKLIGHT_LP855x) += lp855x_backlight.o
 obj-$(CONFIG_BACKLIGHT_SAMSUNG_CMC623) += cmc623_backlight.o
 obj-${CONFIG_EXYNOS_FB} += exynos/
 obj-${CONFIG_VIDEO_ROCKCHIP} += rockchip/
+obj-${CONFIG_VIDEO_SPACEMIT} += spacemit/
 obj-${CONFIG_VIDEO_STM32} += stm32/
 obj-${CONFIG_$(PHASE_)VIDEO_TIDSS} += tidss/
 obj-y += ti/

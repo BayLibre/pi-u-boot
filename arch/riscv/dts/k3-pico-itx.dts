@@ -529,3 +529,44 @@
 		};
 	};
 };
+
+/*
+ * Display: the board only routes DP1 out, over the USB-C connector. Pipeline 0
+ * (eDP0) has no panel wired, so only crtc1 / dp1 are brought up.
+ */
+&dpu {
+	/*
+	 * Keep the display off in U-Boot. The kernel brings the DPU and the DP
+	 * link up on its own, so the splash buys nothing, and leaving the PHY
+	 * configured here only adds a state the kernel has to undo.
+	 */
+	status = "disabled";
+
+	dpu_out: port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		dpu_out_dp1: endpoint@1 {
+			reg = <1>;
+			remote-endpoint = <&dp1_in_dpu>;
+		};
+	};
+};
+
+&dp1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_dp1>;
+	status = "okay";
+
+	ports {
+		dp1_in: port {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			dp1_in_dpu: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&dpu_out_dp1>;
+			};
+		};
+	};
+};

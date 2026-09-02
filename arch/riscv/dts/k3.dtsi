@@ -22,6 +22,7 @@
 #include <dt-bindings/clock/spacemit-k3-clock.h>
 #include <dt-bindings/reset/spacemit-k3-reset.h>
 #include <dt-bindings/pinctrl/k3-pinctrl.h>
+#include <dt-bindings/power/spacemit-k3-power.h>
 
 / {
 	#address-cells = <2>;
@@ -421,6 +422,12 @@
 				power-source = <1800>;
 				pinctrl-single,pins = <
 					K3_PADCONF(QSPI_CS0, MUX_MODE0, (EDGE_NONE | PULL_UP | PAD_DS8)) /* qspi_cs0 */
+				>;
+			};
+
+			pinctrl_dp1: dp1_grp {
+				pinctrl-single,pins = <
+					K3_PADCONF(GPIO_24, MUX_MODE6, (EDGE_NONE | PULL_DIS | PAD_DS8)) /* dp1_hpd */
 				>;
 			};
 
@@ -1094,6 +1101,51 @@
 			response-modifier-enable;
 			auto-gating-enable;
 			watchdog-timeout = <0xFFFF>;
+			status = "disabled";
+		};
+
+		pmu: power-management@d4282800 {
+			compatible = "spacemit,k3-pm-domain";
+			reg = <0x0 0xd4282800 0x0 0x400>;
+			#power-domain-cells = <1>;
+		};
+
+		dpu: dpu@c0340000 {
+			/*
+			 * Bound before relocation so that video_reserve() can
+			 * carve out the framebuffer; without this the video
+			 * uclass has no base address and initr_dm() fails.
+			 */
+			bootph-some-ram;
+			compatible = "spacemit,dpu";
+			reg = <0x0 0xc0340000 0x0 0x54000>,
+			      <0x0 0xc0440000 0x0 0x54000>;
+			reg-names = "crtc0", "crtc1";
+			status = "disabled";
+		};
+
+		dp1: dp1@cac88000 {
+			compatible = "spacemit,inno-dp";
+			reg = <0x0 0xcac88000 0x0 0x4000>;
+			reg-names = "base";
+			dpu-id = <1>;
+			dp-id = <1>;
+			clocks = <&ccu CLK_DSI4LN2_LCD_PXCLK>,
+				 <&ccu CLK_DSI4LN2_LCD_MCLK>,
+				 <&ccu CLK_DSI4LN2_DSI_ESC>,
+				 <&ccu CLK_DSI4LN2_DPU_ACLK>,
+				 <&ccu CLK_DSI4LN2_LCD_DSC>,
+				 <&ccu CLK_EDP1_PXCLK>;
+			clock-names = "pxclk", "mclk", "escclk", "aclk", "dscclk", "dppxclk";
+			resets = <&reset RESET_DSI4LN2_LCD_MCLK>,
+				 <&reset RESET_DSI4LN2_LCD_SW>,
+				 <&reset RESET_DSI4LN2_ESCCLK>,
+				 <&reset RESET_DSI4LN2_DPU_ACLK>,
+				 <&reset RESET_DSI4LN2_LCD_DSCCLK>,
+				 <&reset RESET_EDP1>;
+			reset-names = "mclk_reset", "lcd_reset", "esc_reset",
+				      "aclk_reset", "dscclk_reset", "dp_reset";
+			power-domains = <&pmu K3_PMU_LCD1_PWR_DOMAIN>;
 			status = "disabled";
 		};
 	};

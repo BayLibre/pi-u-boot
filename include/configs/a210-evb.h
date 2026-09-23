@@ -27,7 +27,6 @@
 	"str_file=str.bin\0" \
 	"initrd_size=0x400000\0" \
 	"init_file=/sbin/init\0" \
-	"fdt_high=0xffffffffffffffff\0" \
 	"splashimage=0x30000000\0" \
 	"splashpos=m,m\0" \
 	"rdsize=200M\0" \
@@ -103,9 +102,11 @@
  * boot/image-android.c:android_image_get_ramdisk() similarly needs
  * "ramdisk_addr_r" to assemble the final vendor+boot ramdisk before booting
  * a v3+ image, and fails with "Invalid ramdisk_addr_r to copy ramdisk into"
- * if unset. Reuses EVN_COMMON's initrd_addr, an already-valid A210 DRAM
- * address used by the Linux-BSP boot flow, which sits comfortably above the
- * kernel/vendor_boot staging areas.
+ * if unset.
+ *
+ * The ramdisk and the DTB handed to Linux must stay out of the kernel's
+ * reusable CMA pool (0x90000000-0xcfffffff): CMA frees those pages to the
+ * page allocator and they get overwritten at runtime.
  *
  * boot/image-fdt.c's Android branch first looks for a DTB embedded in
  * vendor_boot's own DTB area (android_image_get_dtb_by_index(), selected by
@@ -120,10 +121,13 @@
 #define ANDROID_ENV_SETTINGS \
 	"vendor_boot_comp_addr_r=0x91000000\0" \
 	"init_boot_comp_addr_r=0x93000000\0" \
-	"ramdisk_addr_r=0x9e000000\0" \
-	"fdtaddr=0x8c000000\0"
+	"ramdisk_addr_r=0x84000000\0" \
+	"initrd_high=0xffffffffffffffff\0" \
+	"fdtaddr=0x8c000000\0" \
+	"fdt_high=0x8c000000\0"
 #else
-#define ANDROID_ENV_SETTINGS
+#define ANDROID_ENV_SETTINGS \
+	"fdt_high=0xffffffffffffffff\0"
 #endif
 
 #define CFG_EXTRA_ENV_SETTINGS \

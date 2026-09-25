@@ -8,9 +8,12 @@
 #include <asm/io.h>
 #include <dm.h>
 #include <dm/uclass-internal.h>
+#include <env.h>
 #include <exports.h>
+#include <mmc.h>
 #include <serial.h>
 #include <fdt_support.h>
+#include <vsprintf.h>
 
 #include "board_porting.h"
 #include "board_boot.h"
@@ -64,6 +67,28 @@ int board_init(void)
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
+/*
+ * Nothing else provides serial#: derive it from the eMMC so that fastboot
+ * and androidboot.serialno get a value unique to the board.
+ */
+static void set_serialno_from_emmc(void)
+{
+	struct mmc *mmc;
+	char serial[13];
+
+	if (env_get("serial#"))
+		return;
+
+	mmc = find_mmc_device(0);
+	if (!mmc || mmc_init(mmc))
+		return;
+
+	/* Product serial number, CID bits [47:16] */
+	snprintf(serial, sizeof(serial), "A210%04X%04X",
+		 mmc->cid[2] & 0xffff, mmc->cid[3] >> 16);
+	env_set("serial#", serial);
+}
+
 int board_late_init(void)
 {
 	/* After env are loaded, sync board info*/
@@ -72,6 +97,7 @@ int board_late_init(void)
 	/* If it is in fastboot mode, the function does not return */
 	if (uboot_bootrom_fastboot()) {
 		run_command("env default -fa", 0);
+		set_serialno_from_emmc();
 		/* Config eMMC BOOT_PARTITION_ENABLE, fix qspiboot access emmcboot fail */
 		run_command("mmc partconf 0 0 1 0", 0);
 		/* Wait a moment, confirm that all content has been output. */
@@ -91,6 +117,7 @@ int board_late_init(void)
 			gpt write ${devtype} ${devnum} $partitions; \
 			env set first_boot_done yes; env save; \
 			fi", 0);
+		set_serialno_from_emmc();
 	}
 
 	return 0;

@@ -19,7 +19,7 @@
 /* DELAY LANE Config */
 #define TXDELAY_DEFAULT 50
 static char s_delay_lanes[]= {
-#ifdef CONFIG_TARGET_A210_EVB
+#ifdef CONFIG_TARGET_A210
 	TXDELAY_DEFAULT, /* 0: MMC_LEGACY */
 	TXDELAY_DEFAULT, /* 1: MMC_HS */
 	TXDELAY_DEFAULT, /* 2: SD_HS */

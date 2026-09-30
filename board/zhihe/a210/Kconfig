@@ -1,18 +1,18 @@
-if TARGET_A210_EVB
+if TARGET_A210
 
 source board/zhihe/common/Kconfig
 
 config SYS_BOARD
-	default "a210-evb"
+	default "a210"
 
 choice
 	prompt "Configure the A210 sub platform"
 	optional
 
-config A210_EVB_ON_HAPS
+config A210_ON_HAPS
 	bool "HAPS"
 
-config A210_EVB_ON_EMU
+config A210_ON_EMU
 	bool "EMU"
 
 endchoice
@@ -24,29 +24,29 @@ config SYS_CPU
 	default "zhxtc9"
 
 config SYS_CONFIG_NAME
-	default "a210-evb"
+	default "a210"
 
 config ZHP100EVB_DDR_INIT
-	bool "Configure the A210 evb DDR init"
+	bool "Configure the A210 DDR init"
 	default y
 
 config ZHP100EVB_AUXDISP_CMD_SUPPORT
-        bool "Support configure auxdisp for zhihe a210-evb in uboot command line"
+        bool "Support configure auxdisp for zhihe a210 in uboot command line"
         default n
 config ZHP100EVB_GPU_MAX_POWER_TEST
         bool "Support run gpu max power test"
         default n
 
 config ZHP100EVB_USBATE_CMD_SUPPORT
-        bool "USB C10PHY ATE unit test for zhihe a210-evb in uboot command line"
+        bool "USB C10PHY ATE unit test for zhihe a210 in uboot command line"
         default n
 
 config ZHP100EVB_PCIEATE_CMD_SUPPORT
-        bool "PCIe ATE unit test for zhihe a210-evb in uboot command line"
+        bool "PCIe ATE unit test for zhihe a210 in uboot command line"
         default n
 
 config ZHP100EVB_ADCTEST_CMD_SUPPORT
-        bool "adc test for zhihe a210-evb in uboot command line"
+        bool "adc test for zhihe a210 in uboot command line"
         default n
 
 config ZHP100EMU_LP4X

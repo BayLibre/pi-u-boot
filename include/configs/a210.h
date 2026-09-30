@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 
-#ifndef __CONFIG_A210_EVB_H
-#define __CONFIG_A210_EVB_H
+#ifndef __CONFIG_A210_H
+#define __CONFIG_A210_H
 
 /* ENV Flags */
 #define CFG_ENV_FLAGS_LIST_STATIC "^nv_.*#$:so,"
@@ -167,4 +167,4 @@
 	BOOT_NFS \
 	ANDROID_ENV_SETTINGS \
 	"\0"
-#endif /* __CONFIG_A210_EVB_H */
+#endif /* __CONFIG_A210_H */

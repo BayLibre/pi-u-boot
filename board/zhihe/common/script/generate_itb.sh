@@ -22,7 +22,7 @@ sed -i "s#replace-path#${IMG_PATH}#g" ${ITS_FILE_LINUX}
 sed -i "s#replace-path#${IMG_PATH}#g" ${ITS_FILE_BOOT}
 
 # Replace first fdt
-FDT_NAME=a210-evb.dtb
+FDT_NAME=a210.dtb
 if [ -n "$4" ]; then
     FDT_NAME=$4
 fi

@@ -1,0 +1,6 @@
+A210
+M:	hongyi <hongyi@zhcomputing.com>
+S:	Maintained
+F:	board/zhihe/a210/
+F:	configs/a210_defconfig
+

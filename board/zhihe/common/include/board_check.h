@@ -31,10 +31,10 @@ enum ddr_type {
     DDR_LP4X_4266_2Rank,
 
     /* Fix size */
-    DDR_LP4X_4266_1Rank_2GBx2, /* a210-evb */
-    DDR_LP4X_4266_1Rank_4GBx2, /* a210-evb */
-    DDR_LP4X_4266_2Rank_8GBx2, /* a210-evb */
-    DDR_LP4X_3733_2Rank_8GBx2, /* a210-evb */
+    DDR_LP4X_4266_1Rank_2GBx2, /* a210 */
+    DDR_LP4X_4266_1Rank_4GBx2, /* a210 */
+    DDR_LP4X_4266_2Rank_8GBx2, /* a210 */
+    DDR_LP4X_3733_2Rank_8GBx2, /* a210 */
 
     DDR_TYPE_UNKNOWN,
 };

@@ -4,6 +4,7 @@
  */
 
 #include <dt-bindings/clock/a210-clock.h>
+#include <dt-bindings/iopmp/zh-iopmp.h>
 
 / {
 	model = "zhihe a210";
@@ -15,43 +16,202 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		bootph-pre-ram;
-		cpu@0 {
+
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
 			compatible = "riscv";
 			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
 			mmu-type = "riscv,sv39";
 			bootph-pre-ram;
+
+			cpu0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
 		};
 
-		cpu@8 {
+		cpu1: cpu@1 {
 			device_type = "cpu";
-			reg = <8>;
+			reg = <1>;
 			status = "okay";
 			compatible = "riscv";
 			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
 			mmu-type = "riscv,sv39";
 			bootph-pre-ram;
+
+			cpu1_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
 		};
-		cpu@16 {
+
+		cpu2: cpu@2 {
 			device_type = "cpu";
-			reg = <16>;
+			reg = <2>;
 			status = "okay";
 			compatible = "riscv";
 			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
 			mmu-type = "riscv,sv39";
 			bootph-pre-ram;
+
+			cpu2_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
 		};
-		cpu@24 {
+
+		cpu3: cpu@3 {
 			device_type = "cpu";
-			reg = <24>;
+			reg = <3>;
 			status = "okay";
 			compatible = "riscv";
 			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
 			mmu-type = "riscv,sv39";
 			bootph-pre-ram;
+
+			cpu3_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
 		};
+
+		cpu4: cpu@4 {
+			device_type = "cpu";
+			reg = <4>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
+			mmu-type = "riscv,sv39";
+			bootph-pre-ram;
+
+			cpu4_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		cpu5: cpu@5 {
+			device_type = "cpu";
+			reg = <5>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
+			mmu-type = "riscv,sv39";
+			bootph-pre-ram;
+
+			cpu5_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		cpu6: cpu@6 {
+			device_type = "cpu";
+			reg = <6>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
+			mmu-type = "riscv,sv39";
+			bootph-pre-ram;
+
+			cpu6_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		cpu7: cpu@7 {
+			device_type = "cpu";
+			reg = <7>;
+			status = "okay";
+			compatible = "riscv";
+			riscv,isa = "rv64imafdcvsu";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicntr",
+					       "zicsr", "zifencei", "zihpm", "zba", "zbb",
+					       "zbc", "zbs", "svpbmt", "sscofpmf";
+			mmu-type = "riscv,sv39";
+			bootph-pre-ram;
+
+			cpu7_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+			};
+		};
+	};
+
+	pmu {
+		compatible = "riscv,pmu";
+		riscv,event-to-mhpmevent =
+			<0x00001 0x00000000 0x00000000>,	/* CPU_CYCLES */
+			<0x00002 0x00000000 0x00000000>,	/* INSTRUCTIONS */
+			<0x00005 0x00000000 0x00000007>,	/* BRANCH_INSTRUCTIONS */
+			<0x00006 0x00000000 0x00000006>,	/* BRANCH_MISSES */
+			<0x00008 0x00000000 0x00000027>,	/* STALLED_CYCLES_FRONTEND */
+			<0x00009 0x00000000 0x00000028>,	/* STALLED_CYCLES_BACKEND */
+			<0x10000 0x00000000 0x0000000c>,	/* L1D_READ_ACCESS */
+			<0x10001 0x00000000 0x0000000d>,	/* L1D_READ_MISS */
+			<0x10002 0x00000000 0x0000000e>,	/* L1D_WRITE_ACCESS */
+			<0x10003 0x00000000 0x0000000f>,	/* L1D_WRITE_MISS */
+			<0x10008 0x00000000 0x00000001>,	/* L1I_READ_ACCESS */
+			<0x10009 0x00000000 0x00000002>,	/* L1I_READ_MISS */
+			<0x10019 0x00000000 0x00000004>,	/* dTLB_READ_MISS */
+			<0x10021 0x00000000 0x00000003>;	/* iTLB_READ_MISS */
+		riscv,event-to-mhpmcounters =
+			<0x00001 0x00001 0x00000001>,
+			<0x00002 0x00002 0x00000004>,
+			<0x00005 0x00005 0xfffffff8>,
+			<0x00006 0x00006 0xfffffff8>,
+			<0x00008 0x00008 0xfffffff8>,
+			<0x00009 0x00009 0xfffffff8>,
+			<0x10000 0x10000 0xfffffff8>,
+			<0x10001 0x10001 0xfffffff8>,
+			<0x10002 0x10002 0xfffffff8>,
+			<0x10003 0x10003 0xfffffff8>,
+			<0x10008 0x10008 0xfffffff8>,
+			<0x10009 0x10009 0xfffffff8>,
+			<0x10019 0x10019 0xfffffff8>,
+			<0x10021 0x10021 0xfffffff8>;
+		riscv,raw-event-to-mhpmcounters =
+			<0x0 0x0 0xffffffff 0xffffff00 0xfffffff8>;
 	};
 
 	soc {
@@ -61,9 +221,362 @@
 		ranges;
 		bootph-pre-ram;
 
+		/* OpenSBI: secondary harts release + PLIC S-mode delegation */
+		reset: reset-sample {
+			compatible = "zhihe,reset-sample";
+			reg = <0x00 0x00 0x00 0x00>;
+			plic-delegate = <0x00 0x181ffffc>;
+			entry-reg = <0x00 0x10148040 0x00 0x10148060>;
+			entry-cnt = <4 4>;
+			control-reg = <0x00 0x10144004 0x00 0x10144008>;
+			control-val = <0x1f 0x1f>;
+		};
+
+		clint0: clint@001c000000 {
+			compatible = "riscv,clint0";
+			interrupts-extended = <
+				&cpu0_intc 3 &cpu0_intc 7
+				&cpu1_intc 3 &cpu1_intc 7
+				&cpu2_intc 3 &cpu2_intc 7
+				&cpu3_intc 3 &cpu3_intc 7
+				&cpu4_intc 3 &cpu4_intc 7
+				&cpu5_intc 3 &cpu5_intc 7
+				&cpu6_intc 3 &cpu6_intc 7
+				&cpu7_intc 3 &cpu7_intc 7
+			>;
+			reg = <0x00 0x1c000000 0x0 0x0000d000>;
+			clint,has-no-64bit-mmio;
+		};
+
+		/*
+		 * OpenSBI IOPMP extension (SBI_EXT_CONFIG_IOPMP). Linux power
+		 * domains call it to open the bus master windows (GPU, VPU, ...)
+		 * when powering them on. Without these nodes the extension is not
+		 * registered and e.g. the PowerVR firmware fails to boot.
+		 */
+		iopmp_regions: iopmp-regions {
+			#address-cells = <2>;
+			#size-cells = <2>;
+			security_device_region: sec-dev-region {
+				reg = <0x00 0x20000000 0x00 0x18000000>;
+				permission = "no-access";
+				mode = "TOR";
+			};
+
+			trust_firmware_region:  tf-region {
+				reg = <0x00 0x80000000 0x00 0x200000>;
+				permission = "no-access";
+				mode = "NAPOT";
+			};
+
+			tee_os_region: tee-os-region{
+				reg = <0x00 0x88000000 0x00 0x2000000>;
+				permission = "no-access";
+				mode = "NAPOT";
+			};
+
+			bypass_region: bypass-region {
+				reg = <0x00 0x00 0x80 0x00>;
+				permission = "rwx";
+				mode = "TOR";
+			};
+		};
+
+		iopmp: iopmp-controller {
+			compatible = "zhihe, A100-iopmp";
+			reg = <0x00 0x26B12000 0x00 0x1000>,
+				  <0x00 0x26372000 0x00 0x1000>,
+				  <0x00 0x27102000 0x00 0x1000>,
+				  <0x00 0x26712000 0x00 0x1000>,
+				  <0x00 0x22032000 0x00 0x1000>,
+				  <0x00 0x2A012000 0x00 0x1000>,
+				  <0x00 0x28022000 0x00 0x1000>,
+				  <0x00 0x26D12000 0x00 0x1000>,
+				  <0x00 0x29032000 0x00 0x1000>,
+				  <0x00 0x30150000 0x00 0x1000>;
+			reg-names = "VP-IOPMP", "VI-IOPMP", "NPU-IOPMP",
+						"VO-IOPMP", "PERI1-IOPMP", "PCIE-IOPMP",
+						"USB-IOPMP", "GPU-IOPMP", "D2D-RX-IOPMP",
+						"D2D-SS-IOPMP";
+		};
+
+		iopmp_devices {
+			/* PCIE iopmp*/
+			device_pcie_mt_iopmp: pcie-mt-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_PCIE_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_pcie_0_iopmp: pcie-0-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_PCIE_0>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_pcie_1_iopmp: pcie-1-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_PCIE_1>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_sata_0_iopmp: sata-0-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_SATA_0>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_eip120i_iopmp: eip120i-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_TEE_EIP120SI>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_eip120ii_iopmp: eip120ii-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_TEE_EIP120SII>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_eip120iii_iopmp: eip120iii-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_TEE_EIP120SIII>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_tee_dmac_iopmp: tee-dmac-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_TEE_DMAC>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_dmac_ap_iopmp: dmac-ap-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_DMAC_AP>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_sd_iopmp: sd-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_SD>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_emmc_iopmp: emmc-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_EMMC>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_pcie_iommu_iopmp: pcie-iommu-iopmp {
+				iopmp-name = "PCIE-IOPMP";
+				device-id = <IOPMP_DEV_PCIE_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* VP iopmp*/
+			device_vp_mt_iopmp: vp-mt-iopmp {
+				iopmp-name = "VP-IOPMP";
+				device-id = <IOPMP_DEV_VP_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_venc_iopmp: venc-iopmp {
+				iopmp-name = "VP-IOPMP";
+				device-id = <IOPMP_DEV_VENC>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_vdec_iopmp: vdec-iopmp {
+				iopmp-name = "VP-IOPMP";
+				device-id = <IOPMP_DEV_VDEC>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_g2d_iopmp: g2d-iopmp {
+				iopmp-name = "VP-IOPMP";
+				device-id = <IOPMP_DEV_G2D>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_vp_iommu_iopmp: vp-iommu-iopmp {
+				iopmp-name = "VP-IOPMP";
+				device-id = <IOPMP_DEV_VP_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* VI iopmp*/
+			device_vi_mt_iopmp: vi-mt-iopmp {
+				iopmp-name = "VI-IOPMP";
+				device-id = <IOPMP_DEV_VI_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_isp_iopmp: isp-iopmp {
+				iopmp-name = "VI-IOPMP";
+				device-id = <IOPMP_DEV_ISP>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_vipre_iopmp: vipre-iopmp {
+				iopmp-name = "VI-IOPMP";
+				device-id = <IOPMP_DEV_VIPRE>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_dw200_iopmp: dw200-iopmp {
+				iopmp-name = "VI-IOPMP";
+				device-id = <IOPMP_DEV_DW200>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_vi_comp_decomp_iopmp: vi_comp_decomp-iopmp {
+				iopmp-name = "VI-IOPMP";
+				device-id = <IOPMP_DEV_VI_COMP_DECOMP>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_vi_iommu_iopmp: vi-iommu-iopmp {
+				iopmp-name = "VI-IOPMP";
+				device-id = <IOPMP_DEV_VI_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* NPU iopmp*/
+			device_npu_mt_iopmp: npu-mt-iopmp {
+				iopmp-name = "NPU-IOPMP";
+				device-id = <IOPMP_DEV_NPU_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_npu_iopmp: npu-iopmp {
+				iopmp-name = "NPU-IOPMP";
+				device-id = <IOPMP_DEV_NPU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_npu_iommu_iopmp: npu-iommu-iopmp {
+				iopmp-name = "NPU-IOPMP";
+				device-id = <IOPMP_DEV_NPU_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* VO iopmp */
+			device_vo_mt_iopmp: vo-mt-iopmp {
+				iopmp-name = "VO-IOPMP";
+				device-id = <IOPMP_DEV_VO_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_display_0_iopmp: display-0-iopmp {
+				iopmp-name = "VO-IOPMP";
+				device-id = <IOPMP_DEV_DISPLAY_0>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_display_1_iopmp: display-1-iopmp {
+				iopmp-name = "VO-IOPMP";
+				device-id = <IOPMP_DEV_DISPLAY_1>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_auxdisp_iopmp: auxdisp-iopmp {
+				iopmp-name = "VO-IOPMP";
+				device-id = <IOPMP_DEV_AUXDISP>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_vo_iommu_iopmp: vo-iommu-iopmp {
+				iopmp-name = "VO-IOPMP";
+				device-id = <IOPMP_DEV_VO_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* PERI1 iopmp */
+			device_peri1_mt_iopmp: peri1-mt-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEV_PERI1_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_gmac_0_iopmp: gmac-0-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEV_GMAC_0>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_gmac_1_iopmp: gmac-1-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEV_GMAC_1>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_gmac_2_iopmp: gmac-2-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEV_GMAC_2>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_chip_dbg_iopmp: chip-dbg-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEVICE_CHIP_DBG>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_aon_iopmp: aon-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEVICE_AON>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_peri1_iommu_iopmp: peri1-iommu-iopmp {
+				iopmp-name = "PERI1-IOPMP";
+				device-id = <IOPMP_DEV_PERI1_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* USB iopmp*/
+			device_usb_mt_iopmp: usb-mt-iopmp {
+				iopmp-name = "USB-IOPMP";
+				device-id = <IOPMP_DEV_USB_DFMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_usb3_0_iopmp: usb3-0-iopmp {
+				iopmp-name = "USB-IOPMP";
+				device-id = <IOPMP_DEV_USB3_0>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_usb2_1_iopmp: usb2-1-iopmp {
+				iopmp-name = "USB-IOPMP";
+				device-id = <IOPMP_DEV_USB2_1>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_usb2_2_iopmp: usb2-2-iopmp {
+				iopmp-name = "USB-IOPMP";
+				device-id = <IOPMP_DEV_USB2_2>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_usb_iommu_iopmp: usb-iommu-iopmp {
+				iopmp-name = "USB-IOPMP";
+				device-id = <IOPMP_DEV_USB_IOMMU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* GPU iopmp*/
+			device_gpu_mt_iopmp: gpu-mt-iopmp {
+				iopmp-name = "GPU-IOPMP";
+				device-id = <IOPMP_DEV_GPU_SS>;
+				iopmp-regions = <&bypass_region>;
+			};
+			device_gpu_iopmp: gpu-iopmp {
+				iopmp-name = "GPU-IOPMP";
+				device-id = <IOPMP_DEV_GPU>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* D2D RX iopmp*/
+			device_d2d_rx_iopmp: d2d-rx-iopmp {
+				iopmp-name = "D2D-RX-IOPMP";
+				device-id = <IOPMP_DEV_D2D_RX>;
+				global = <1>;
+				iopmp-regions = <&bypass_region>;
+			};
+
+			/* D2D CPU iopmp*/
+			device_d2d_cpu_iopmp: d2d-cpu-iopmp {
+				iopmp-name = "D2D-SS-IOPMP";
+				device-id = <IOPMP_DEV_REMOTE_CPU>;
+				global = <1>;
+				iopmp-regions = <&bypass_region>;
+			};
+		};
+
 		intc: interrupt-controller@0018000000 {
 			compatible = "riscv,plic0";
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			interrupts-extended = <
+				&cpu0_intc 0xffffffff &cpu0_intc 9
+				&cpu1_intc 0xffffffff &cpu1_intc 9
+				&cpu2_intc 0xffffffff &cpu2_intc 9
+				&cpu3_intc 0xffffffff &cpu3_intc 9
+				&cpu4_intc 0xffffffff &cpu4_intc 9
+				&cpu5_intc 0xffffffff &cpu5_intc 9
+				&cpu6_intc 0xffffffff &cpu6_intc 9
+				&cpu7_intc 0xffffffff &cpu7_intc 9
+			>;
 			reg = <0x00 0x18000000 0x0 0x04000000>;
+			reg-names = "control";
+			riscv,max-priority = <7>;
+			riscv,ndev = <351>;
 			status = "okay";
 		};
 
@@ -145,6 +658,7 @@
 			clocks = <&clk PERI2_UART4_SCLK_EN>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
+			current-speed = <115200>; /* OpenSBI */
 			bootph-pre-ram;
 		};
 

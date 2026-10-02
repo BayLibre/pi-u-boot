@@ -94,10 +94,24 @@ static int fit_os_fdt_fixup(void *fit_header, void *os_fdt)
     return 0;
 }
 
-/* Override weak imp at common/spl/spl_fit.c */
+/*
+ * Override weak imp at common/spl/spl_fit.c
+ *
+ * Prefer a FIT configuration named after the detected board variant
+ * (e.g. "a210-dev", "a210-dev-sec" from riscv-multiboot*.its). If the FIT
+ * has none (e.g. riscv-boot.its with a single generic "a210" config),
+ * return NULL so SPL falls back to the configuration named by the
+ * "default" property.
+ */
 const char * board_get_fit_config(void)
 {
-	return spl_get_fit_dtb_name(1);
+	const void *fit = map_sysmem(CONFIG_SYS_LOAD_ADDR, 0);
+	const char *name = spl_get_fit_dtb_name(1);
+
+	if (fit_conf_get_node(fit, name) >= 0)
+		return name;
+
+	return NULL;
 }
 
 

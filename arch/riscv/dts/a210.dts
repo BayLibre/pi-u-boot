@@ -8,8 +8,8 @@
 #include "a210-soc.dtsi"
 
 / {
-	model = "zhihe a210 evb";
-	compatible = "zhihe,a210-soc", "zhihe, a210-evb";
+	model = "zhihe a210";
+	compatible = "zhihe,a210";
 	#address-cells = <2>;
 	#size-cells = <2>;
 
